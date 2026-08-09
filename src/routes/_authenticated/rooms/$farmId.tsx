@@ -124,7 +124,9 @@ export const Route = createFileRoute("/_authenticated/rooms/$farmId")({
 function useFarmDetail(farmId: string) {
   return useQuery({
     queryKey: ["farm", farmId],
+    staleTime: 60_000,
     queryFn: async () => {
+
       const since = daysAgoISO(30);
       const [farm, bags, readings, batches, contamination] = await Promise.all([
         supabase.from("farms").select("*").eq("id", farmId).maybeSingle(),
