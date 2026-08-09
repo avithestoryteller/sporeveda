@@ -40,17 +40,18 @@ export function AppShell({ children }: { children?: ReactNode }) {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <header className="sticky top-0 z-30 border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-          <Link to="/dashboard" className="flex min-w-0 items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-md bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
-              S
-            </span>
-            <span className="truncate font-display text-sm font-semibold">
-              Sporeveda
-              <span className="ml-1.5 hidden font-normal text-sidebar-foreground/70 sm:inline">
-                Farm Manager
-              </span>
-            </span>
+          <Link
+            to="/dashboard"
+            className="flex min-w-0 items-center gap-2 rounded-md bg-background px-2 py-1"
+          >
+            <img src={markAsset.url} alt="Sporeveda mushroom mark" className="h-7 w-7 object-contain" />
+            <img
+              src={wordmarkAsset.url}
+              alt="Sporeveda"
+              className="h-5 w-auto max-w-[130px] object-contain"
+            />
           </Link>
+
 
           <nav className="ml-4 hidden items-center gap-1 md:flex">
             {NAV.map((item) => {
