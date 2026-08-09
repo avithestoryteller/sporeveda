@@ -61,7 +61,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
           </Link>
 
 
-          <nav className="ml-2 hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto md:flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">ial
+          <nav className="ml-2 hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto md:flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {NAV.map((item) => {
               const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
               return (
