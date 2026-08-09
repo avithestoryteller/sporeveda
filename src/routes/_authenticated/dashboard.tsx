@@ -321,7 +321,7 @@ function DashboardPage() {
                   ) : null}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
+                <div className="grid grid-cols-3 gap-3 border-t border-border pt-3 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Contamination (month)</p>
                     <p className="stat-value text-base">
@@ -333,11 +333,20 @@ function DashboardPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Last avg temp</p>
                     <p className="stat-value flex items-center gap-1 text-base">
-                      <Droplets className="size-3.5 text-muted-foreground" />
+                      <Thermometer className="size-3.5 text-muted-foreground" />
                       {num(farm.lastTemp)}
                       <span className="text-xs font-normal text-muted-foreground">°C</span>
                     </p>
                   </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Last avg humidity</p>
+                    <p className="stat-value flex items-center gap-1 text-base">
+                      <Droplets className="size-3.5 text-muted-foreground" />
+                      {num(farm.lastHumidity)}
+                      <span className="text-xs font-normal text-muted-foreground">%</span>
+                    </p>
+                  </div>
+
                 </div>
               </CardContent>
             </Card>
