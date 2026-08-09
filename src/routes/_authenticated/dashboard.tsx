@@ -173,6 +173,8 @@ function useDashboardData(orgId: string) {
             : null,
           daysSinceReading: latest ? daysSince(latest.date) : null,
           lastTemp: latest?.temp ?? null,
+          lastHumidity: latest?.humidity ?? null,
+
         };
       });
 
