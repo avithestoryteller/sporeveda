@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedFarmsIndexRouteImport } from './routes/_authenticated/farms/index'
+import { Route as AuthenticatedFarmsFarmIdRouteImport } from './routes/_authenticated/farms/$farmId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,17 +40,25 @@ const AuthenticatedFarmsIndexRoute = AuthenticatedFarmsIndexRouteImport.update({
   path: '/farms/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFarmsFarmIdRoute =
+  AuthenticatedFarmsFarmIdRouteImport.update({
+    id: '/farms/$farmId',
+    path: '/farms/$farmId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/farms/$farmId': typeof AuthenticatedFarmsFarmIdRoute
   '/farms/': typeof AuthenticatedFarmsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/farms/$farmId': typeof AuthenticatedFarmsFarmIdRoute
   '/farms': typeof AuthenticatedFarmsIndexRoute
 }
 export interface FileRoutesById {
@@ -58,19 +67,21 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/farms/$farmId': typeof AuthenticatedFarmsFarmIdRoute
   '/_authenticated/farms/': typeof AuthenticatedFarmsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/farms/'
+  fullPaths: '/' | '/auth' | '/dashboard' | '/farms/$farmId' | '/farms/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/farms'
+  to: '/' | '/auth' | '/dashboard' | '/farms/$farmId' | '/farms'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/farms/$farmId'
     | '/_authenticated/farms/'
   fileRoutesById: FileRoutesById
 }
@@ -117,16 +128,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFarmsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/farms/$farmId': {
+      id: '/_authenticated/farms/$farmId'
+      path: '/farms/$farmId'
+      fullPath: '/farms/$farmId'
+      preLoaderRoute: typeof AuthenticatedFarmsFarmIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedFarmsFarmIdRoute: typeof AuthenticatedFarmsFarmIdRoute
   AuthenticatedFarmsIndexRoute: typeof AuthenticatedFarmsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedFarmsFarmIdRoute: AuthenticatedFarmsFarmIdRoute,
   AuthenticatedFarmsIndexRoute: AuthenticatedFarmsIndexRoute,
 }
 
