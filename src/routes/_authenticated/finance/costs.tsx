@@ -227,6 +227,8 @@ function CostsPage() {
       incurredDate: mode === "edit" ? row.incurred_date : todayISO(),
       farmId: row.farm_id ?? NONE,
       batchId: row.batch_id ?? NONE,
+      batchIds: row.batch_id ? [row.batch_id] : [],
+      splitAmount: false,
       notes: row.notes ?? "",
     });
     setEditingId(mode === "edit" ? row.id : null);
