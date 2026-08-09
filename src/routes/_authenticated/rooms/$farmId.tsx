@@ -174,7 +174,10 @@ function useFarmDetail(farmId: string) {
 
 function FarmDetailPage() {
   const { farmId } = Route.useParams();
+  const orgId = useOrgId();
+  const { canEdit } = useOrg();
   const { data, isPending, error } = useFarmDetail(farmId);
+
 
   if (isPending) {
     return (
