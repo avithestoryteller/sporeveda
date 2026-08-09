@@ -30,7 +30,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { fmtDate, todayISO } from "@/lib/format";
-import { STAGE_LABEL, STAGE_ORDER } from "@/lib/stages";
+import { STAGE_COLOR, STAGE_LABEL, STAGE_ORDER, type BagStage } from "@/lib/stages";
 
 
 export const Route = createFileRoute("/_authenticated/batches/")({
@@ -113,7 +113,7 @@ function StageFunnel({
                   style={{
                     width: `${Math.max(width, step.count > 0 ? 4 : 1)}%`,
                     marginLeft: `${(100 - Math.max(width, step.count > 0 ? 4 : 1)) / 2}%`,
-                    background: `var(--color-stage-${step.stage})`,
+                    background: STAGE_COLOR[step.stage as BagStage],
                     opacity: step.count === 0 ? 0.25 : 1,
                   }}
                 />

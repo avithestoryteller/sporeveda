@@ -20,7 +20,7 @@ import { StatTile } from "@/components/StatTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { STAGE_ORDER, STAGE_LABEL, type BagStage } from "@/lib/stages";
+import { STAGE_ORDER, STAGE_LABEL, STAGE_COLOR, type BagStage } from "@/lib/stages";
 import { daysAgoISO, fmtDate, num, range, toNumber } from "@/lib/format";
 
 function TargetVsActual({
@@ -386,7 +386,7 @@ function FarmDetailPage() {
                       key={stage}
                       dataKey={STAGE_LABEL[stage as BagStage]}
                       stackId="stages"
-                      fill={`var(--color-stage-${stage})`}
+                      fill={STAGE_COLOR[stage as BagStage]}
                       radius={index === STAGE_ORDER.length - 1 ? [4, 4, 0, 0] : 0}
                     />
                   ))}
