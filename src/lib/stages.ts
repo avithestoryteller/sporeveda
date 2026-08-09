@@ -25,7 +25,18 @@ export const STAGE_LABEL: Record<BagStage, string> = {
   discarded: "Discarded",
 };
 
+/** Raw CSS custom properties for charts (the --color-* aliases are @theme inline). */
+export const STAGE_COLOR: Record<BagStage, string> = {
+  prep: "var(--stage-prep)",
+  colonizing: "var(--stage-colonizing)",
+  bulking: "var(--stage-bulking)",
+  fruiting: "var(--stage-fruiting)",
+  harvested: "var(--stage-harvested)",
+  discarded: "var(--stage-discarded)",
+};
+
 export const STAGE_DOT: Record<BagStage, string> = {
+
   prep: "bg-stage-prep",
   colonizing: "bg-stage-colonizing",
   bulking: "bg-stage-bulking",
