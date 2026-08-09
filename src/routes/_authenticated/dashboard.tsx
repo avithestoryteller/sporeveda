@@ -44,8 +44,11 @@ function useDashboardData(orgId: string) {
   return useQuery({
     queryKey: ["dashboard", orgId],
     enabled: Boolean(orgId),
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       const monthStart = startOfMonthISO();
+
 
       const [farms, bags, contamination, readings, stageLog, harvests, contaminationFeed] =
         await Promise.all([
@@ -54,15 +57,17 @@ function useDashboardData(orgId: string) {
             .select("id, name, is_active, location_notes")
             .eq("is_active", true)
             .order("name"),
-          supabase.from("bags").select("id, farm_id, current_stage, is_discarded"),
+          supabase.from("bags").select("farm_id, current_stage"),
           supabase
             .from("contamination_events")
-            .select("id, detected_at, bag_id, bags!inner(farm_id)")
+            .select("bag_id, bags!inner(farm_id)")
             .gte("detected_at", monthStart),
           supabase
             .from("environment_readings")
             .select("farm_id, reading_date, avg_temp_c, avg_humidity_pct")
-            .order("reading_date", { ascending: false }),
+            .order("reading_date", { ascending: false })
+            .limit(200),
+
           supabase
             .from("bag_stage_history")
             .select("id, stage, changed_at, bag_id, bags(bag_code)")
