@@ -4,6 +4,9 @@ import { Activity, LineChart, ShieldCheck, Sprout } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import markAsset from "@/assets/sporeveda-mark.png.asset.json";
+import wordmarkAsset from "@/assets/sporeveda-wordmark.png.asset.json";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
