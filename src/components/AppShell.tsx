@@ -47,12 +47,19 @@ export function AppShell({ children }: { children?: ReactNode }) {
             to="/dashboard"
             className="flex min-w-0 items-center gap-2 rounded-md bg-background px-2 py-1"
           >
-            <img src={markAsset.url} alt="Sporeveda mushroom mark" className="h-7 w-7 object-contain" />
             <img
-              src={wordmarkAsset.url}
-              alt="Sporeveda"
-              className="h-5 w-auto max-w-[130px] object-contain"
+              src={markAsset.url}
+              alt="Sporeveda mushroom mark"
+              className="h-[42px] w-[42px] object-contain"
             />
+            <span className="flex h-6 items-center overflow-hidden">
+              <img
+                src={wordmarkAsset.url}
+                alt="Sporeveda"
+                className="h-8 w-auto max-w-[210px] object-contain"
+              />
+            </span>
+
           </Link>
 
 
