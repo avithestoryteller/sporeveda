@@ -128,12 +128,26 @@ function FarmsPage() {
                         </p>
                       ) : null}
                     </div>
-                    {!farm.is_active ? (
-                      <span className="rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground">
-                        Inactive
-                      </span>
-                    ) : null}
+                    <div className="flex shrink-0 items-center gap-1">
+                      {!farm.is_active ? (
+                        <span className="rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground">
+                          Inactive
+                        </span>
+                      ) : null}
+                      {canEdit ? (
+                        <RoomFormDialog
+                          orgId={orgId}
+                          farm={farm}
+                          trigger={
+                            <Button size="icon" variant="ghost" aria-label={`Edit ${farm.name}`}>
+                              <Pencil className="size-4" />
+                            </Button>
+                          }
+                        />
+                      ) : null}
+                    </div>
                   </div>
+
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
                   <div className="grid grid-cols-3 gap-2">
