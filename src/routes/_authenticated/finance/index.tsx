@@ -33,7 +33,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { fmtDate, todayISO } from "@/lib/format";
 import {
   type DateRangePreset,
@@ -383,6 +388,7 @@ function FinanceDashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 font-display text-base">
                 Batch profitability
+                <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button type="button" aria-label="About batch profitability">
@@ -394,6 +400,7 @@ function FinanceDashboard() {
                     without tagged entries are intentionally left out — nothing is broken.
                   </TooltipContent>
                 </Tooltip>
+                </TooltipProvider>
               </CardTitle>
               <p className="text-xs text-muted-foreground">Sorted worst margin first.</p>
             </CardHeader>
