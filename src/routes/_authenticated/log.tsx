@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
 import { PageHeader } from "@/components/AppShell";
+import { SourceBadge } from "@/components/SourceBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -277,19 +278,40 @@ function LogPage() {
               <p className="p-5 text-sm text-muted-foreground">No readings yet.</p>
             ) : (
               <ul className="divide-y divide-border">
-                {(recent.data ?? []).map((row) => (
-                  <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {(row.farms as { name: string } | null)?.name ?? "Room"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{fmtDate(row.reading_date)}</p>
-                    </div>
-                    <p className="stat-value shrink-0 text-sm">
-                      {num(row.avg_temp_c)}°C · {num(row.avg_humidity_pct)}%
-                    </p>
-                  </li>
-                ))}
+                {(recent.data ?? []).map((row) => {
+                  const hasTempRange = row.min_temp_c !== null || row.max_temp_c !== null;
+                  const hasHumRange =
+                    row.min_humidity_pct !== null || row.max_humidity_pct !== null;
+                  return (
+                    <li key={row.id} className="flex items-start justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-medium">
+                            {(row.farms as { name: string } | null)?.name ?? "Room"}
+                          </p>
+                          <SourceBadge source={row.source} />
+                        </div>
+                        <p className="text-xs text-muted-foreground">{fmtDate(row.reading_date)}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="stat-value text-sm">
+                          {num(row.avg_temp_c)}°C · {num(row.avg_humidity_pct)}%
+                        </p>
+                        {hasTempRange || hasHumRange ? (
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {hasTempRange
+                              ? `${num(row.min_temp_c)}–${num(row.max_temp_c)}°C`
+                              : null}
+                            {hasTempRange && hasHumRange ? " · " : null}
+                            {hasHumRange
+                              ? `${num(row.min_humidity_pct)}–${num(row.max_humidity_pct)}%`
+                              : null}
+                          </p>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>

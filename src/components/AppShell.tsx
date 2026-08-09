@@ -7,6 +7,7 @@ import {
   ClipboardList,
   BarChart3,
   ListChecks,
+  FileUp,
   LogOut,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -26,6 +27,7 @@ const NAV = [
   { to: "/log", label: "Log", icon: ClipboardList },
   { to: "/compare", label: "Compare", icon: BarChart3 },
   { to: "/bulk", label: "Bulk", icon: ListChecks },
+  { to: "/import", label: "Import", icon: FileUp },
 ] as const;
 
 export function AppShell({ children }: { children?: ReactNode }) {
@@ -108,7 +110,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
       <main className="mx-auto w-full max-w-6xl px-4 py-5">{children ?? <Outlet />}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card md:hidden">
-        <div className="mx-auto grid max-w-6xl grid-cols-6">
+        <div className="mx-auto grid max-w-6xl grid-cols-7">
           {NAV.map((item) => {
             const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
             const Icon = item.icon;
