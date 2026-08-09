@@ -367,7 +367,7 @@ function FarmDetailPage() {
                       dataKey={STAGE_LABEL[stage as BagStage]}
                       stackId="stages"
                       fill={`var(--color-stage-${stage})`}
-                      radius={index === STAGE_ORDER.length - 1 ? [4, 4, 0, 0] : undefined}
+                      radius={index === STAGE_ORDER.length - 1 ? [4, 4, 0, 0] : 0}
                     />
                   ))}
                 </BarChart>
