@@ -550,16 +550,28 @@ function CostsPage() {
                       </td>
                       <td className="py-2 pr-3 text-right font-medium">{fmtMoney(row.amount)}</td>
                       <td className="py-2 text-right">
-                        {row.cost_type === "recurring" && canEdit ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => duplicate(row)}
-                            aria-label="Duplicate last entry"
-                          >
-                            <Copy className="size-4" />
-                          </Button>
-                        ) : null}
+                        <div className="flex justify-end gap-1">
+                          {row.cost_type === "recurring" && canEdit ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => duplicate(row)}
+                              aria-label="Duplicate last entry"
+                            >
+                              <Copy className="size-4" />
+                            </Button>
+                          ) : null}
+                          {canEdit ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => startEdit(row)}
+                              aria-label="Edit cost"
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}
