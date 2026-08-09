@@ -4,6 +4,9 @@ import { Activity, LineChart, ShieldCheck, Sprout } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import markAsset from "@/assets/sporeveda-mark.png.asset.json";
+import wordmarkAsset from "@/assets/sporeveda-wordmark.png.asset.json";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -66,11 +69,10 @@ function Landing() {
       <header className="border-b border-border">
         <div className="mx-auto flex h-14 max-w-5xl items-center px-4">
           <span className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-              S
-            </span>
-            <span className="font-display text-sm font-semibold">Sporeveda</span>
+            <img src={markAsset.url} alt="Sporeveda mushroom mark" className="h-8 w-8 object-contain" />
+            <img src={wordmarkAsset.url} alt="Sporeveda" className="h-5 w-auto max-w-[140px] object-contain" />
           </span>
+
           <div className="ml-auto">
             <Button asChild size="sm" variant={signedIn ? "default" : "outline"}>
               <Link to={signedIn ? "/dashboard" : "/auth"}>
@@ -84,8 +86,9 @@ function Landing() {
       <main className="mx-auto max-w-5xl px-4 py-16">
         <section className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-            Mushroom farm operations
+            Mushroom Farm Management System
           </p>
+
           <h1 className="mt-3 font-display text-4xl font-semibold leading-tight sm:text-5xl">
             Every bag accounted for, from inoculation to final flush.
           </h1>
