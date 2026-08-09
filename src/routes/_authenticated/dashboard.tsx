@@ -247,7 +247,7 @@ function DashboardPage() {
               No active rooms yet. Add your first grow room to start tracking batches.
             </p>
             <Button asChild size="sm">
-              <Link to="/farms">Add a room</Link>
+              <Link to="/rooms">Add a room</Link>
             </Button>
           </CardContent>
         </Card>
@@ -260,7 +260,7 @@ function DashboardPage() {
                   <div className="min-w-0">
                     <CardTitle className="truncate font-display text-base">
                       <Link
-                        to="/farms/$farmId"
+                        to="/rooms/$farmId"
                         params={{ farmId: farm.id }}
                         className="hover:underline"
                       >

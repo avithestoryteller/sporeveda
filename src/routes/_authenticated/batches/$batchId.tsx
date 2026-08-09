@@ -117,7 +117,7 @@ function BatchDetailPage() {
             {batch.species?.common_name ?? "Species"} ·{" "}
             {batch.farms ? (
               <Link
-                to="/farms/$farmId"
+                to="/rooms/$farmId"
                 params={{ farmId: batch.farms.id }}
                 className="underline-offset-2 hover:underline"
               >

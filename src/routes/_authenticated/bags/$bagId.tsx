@@ -236,7 +236,7 @@ function BagDetailPage() {
             ·{" "}
             {bag.farms ? (
               <Link
-                to="/farms/$farmId"
+                to="/rooms/$farmId"
                 params={{ farmId: bag.farms.id }}
                 className="underline-offset-2 hover:underline"
               >
