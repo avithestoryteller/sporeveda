@@ -307,26 +307,41 @@ function FarmDetailPage() {
                 </ResponsiveContainer>
               </div>
             )}
-            <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
+            <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs text-muted-foreground sm:grid-cols-4">
               <div>
-                <dt>Colonization target</dt>
+                <dt>Colonization temp</dt>
                 <dd className="text-foreground">
                   {range(farm.target_colonization_temp_min, farm.target_colonization_temp_max, "°C")}
                 </dd>
               </div>
               <div>
-                <dt>Fruiting target</dt>
+                <dt>Colonization humidity</dt>
+                <dd className="text-foreground">
+                  {range(
+                    farm.target_colonization_humidity_min_pct,
+                    farm.target_colonization_humidity_max_pct,
+                    "%",
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Fruiting temp</dt>
                 <dd className="text-foreground">
                   {range(farm.target_fruiting_temp_min, farm.target_fruiting_temp_max, "°C")}
                 </dd>
               </div>
               <div>
-                <dt>Humidity target</dt>
+                <dt>Fruiting humidity</dt>
                 <dd className="text-foreground">
-                  {humMin === null && humMax === null ? "Not set" : `${humMin ?? "≤"}–${humMax ?? ""}%`}
+                  {range(
+                    farm.target_fruiting_humidity_min_pct ?? farm.target_humidity_min_pct,
+                    farm.target_fruiting_humidity_max_pct ?? farm.target_humidity_max_pct,
+                    "%",
+                  )}
                 </dd>
               </div>
             </dl>
+
           </CardContent>
         </Card>
 
