@@ -186,7 +186,7 @@ function CostsPage() {
 
       if (editingId) {
         const [first, ...rest] = rows;
-        const { error } = await supabase.from("costs").update(first).eq("id", editingId);
+        const { error } = await supabase.from("costs").update(first!).eq("id", editingId);
         if (error) throw error;
         if (rest.length > 0) {
           const { error: insertError } = await supabase
