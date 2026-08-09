@@ -14,6 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/hooks/use-org";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import markAsset from "@/assets/sporeveda-mark.png.asset.json";
+import wordmarkAsset from "@/assets/sporeveda-wordmark.png.asset.json";
+
 
 const NAV = [
   { to: "/dashboard", label: "Home", icon: LayoutDashboard },
