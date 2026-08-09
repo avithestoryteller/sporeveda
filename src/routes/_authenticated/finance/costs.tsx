@@ -151,11 +151,6 @@ function CostsPage() {
   const total = (costs ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
 
   const isMultiBatch = MULTI_BATCH_CATEGORIES.includes(form.category);
-  const selectedBatchIds = isMultiBatch
-    ? form.batchIds
-    : form.batchId === NONE
-      ? []
-      : [form.batchId];
 
   const addCost = useMutation({
     mutationFn: async () => {
