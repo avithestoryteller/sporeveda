@@ -194,8 +194,11 @@ function FarmDetailPage() {
   const discarded = bags.filter((bag) => bag.current_stage === "discarded").length;
   const latest = readings[readings.length - 1];
 
-  const humMin = toNumber(farm.target_humidity_min_pct);
-  const humMax = toNumber(farm.target_humidity_max_pct);
+  const humMin =
+    toNumber(farm.target_fruiting_humidity_min_pct) ?? toNumber(farm.target_humidity_min_pct);
+  const humMax =
+    toNumber(farm.target_fruiting_humidity_max_pct) ?? toNumber(farm.target_humidity_max_pct);
+
   const fruitMin = toNumber(farm.target_fruiting_temp_min);
   const fruitMax = toNumber(farm.target_fruiting_temp_max);
 
