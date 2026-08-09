@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { daysSince, range } from "@/lib/format";
 
-export const Route = createFileRoute("/_authenticated/farms/")({
+export const Route = createFileRoute("/_authenticated/rooms/")({
   head: () => ({
     meta: [
       { title: "Grow rooms — Sporeveda Farm Manager" },
@@ -254,7 +254,7 @@ function FarmsPage() {
                     <div className="min-w-0">
                       <CardTitle className="truncate font-display text-base">
                         <Link
-                          to="/farms/$farmId"
+                          to="/rooms/$farmId"
                           params={{ farmId: farm.id }}
                           className="hover:underline"
                         >

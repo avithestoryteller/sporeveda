@@ -213,7 +213,7 @@ function ComparePage() {
                     <TableRow key={farm.id}>
                       <TableCell className="font-medium">
                         <Link
-                          to="/farms/$farmId"
+                          to="/rooms/$farmId"
                           params={{ farmId: farm.id }}
                           className="hover:underline"
                         >

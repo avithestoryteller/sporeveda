@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { STAGE_ORDER, STAGE_LABEL, type BagStage } from "@/lib/stages";
 import { daysAgoISO, fmtDate, num, range, toNumber } from "@/lib/format";
 
-export const Route = createFileRoute("/_authenticated/farms/$farmId")({
+export const Route = createFileRoute("/_authenticated/rooms/$farmId")({
   head: () => ({
     meta: [
       { title: "Room detail — Sporeveda Farm Manager" },
