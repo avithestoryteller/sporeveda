@@ -197,6 +197,18 @@ function FarmDetailPage() {
   const fruitMin = toNumber(farm.target_fruiting_temp_min);
   const fruitMax = toNumber(farm.target_fruiting_temp_max);
 
+  const batchLabel = new Map(batches.map((batch) => [batch.id, batch.batch_code]));
+  const stackData = Array.from(
+    bags.reduce((acc, bag) => {
+      const key = batchLabel.get(bag.batch_id) ?? "Other";
+      const row = acc.get(key) ?? { batch: key };
+      const label = STAGE_LABEL[bag.current_stage as BagStage];
+      row[label] = ((row[label] as number | undefined) ?? 0) + 1;
+      acc.set(key, row);
+      return acc;
+    }, new Map<string, Record<string, string | number>>()),
+  ).map(([, row]) => row);
+
   return (
     <div>
       <PageHeader
@@ -209,7 +221,7 @@ function FarmDetailPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <StatTile label="Bags in room" value={bags.length} />
         <StatTile label="Active bags" value={activeBags} />
         <StatTile
@@ -218,11 +230,17 @@ function FarmDetailPage() {
           tone={discarded > 0 ? "warning" : "default"}
         />
         <StatTile
-          label="Last reading"
+          label="Last avg temp"
           value={latest ? `${num(latest.temp)}°C` : "—"}
-          hint={latest ? `${num(latest.humidity)}% RH · ${fmtDate(latest.date)}` : "No logs yet"}
+          hint={latest ? fmtDate(latest.date) : "No logs yet"}
+        />
+        <StatTile
+          label="Last avg humidity"
+          value={latest ? `${num(latest.humidity)}%` : "—"}
+          hint={latest ? fmtDate(latest.date) : "No logs yet"}
         />
       </div>
+
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
