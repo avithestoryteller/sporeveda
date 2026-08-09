@@ -403,19 +403,32 @@ function FarmDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <TargetVsActual
-              label="Temperature (fruiting target)"
+              label="Temperature"
               unit="°C"
               actual={latest?.temp ?? null}
-              min={fruitMin}
-              max={fruitMax}
+              ranges={[
+                {
+                  name: "Colonisation",
+                  min: toNumber(farm.target_colonization_temp_min),
+                  max: toNumber(farm.target_colonization_temp_max),
+                },
+                { name: "Fruiting", min: fruitMin, max: fruitMax },
+              ]}
             />
             <TargetVsActual
               label="Humidity"
               unit="%"
               actual={latest?.humidity ?? null}
-              min={humMin}
-              max={humMax}
+              ranges={[
+                {
+                  name: "Colonisation",
+                  min: toNumber(farm.target_colonization_humidity_min_pct),
+                  max: toNumber(farm.target_colonization_humidity_max_pct),
+                },
+                { name: "Fruiting", min: humMin, max: humMax },
+              ]}
             />
+
             <p className="border-t border-border pt-3 text-xs text-muted-foreground">
               {latest ? `Latest reading ${fmtDate(latest.date)}` : "No readings logged yet"}
             </p>
