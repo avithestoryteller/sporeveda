@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedBagsBagIdRouteImport } from './routes/_authenticated/bags/$bagId'
 import { Route as AuthenticatedBatchesIndexRouteImport } from './routes/_authenticated/batches/index'
 import { Route as AuthenticatedBatchesBatchIdRouteImport } from './routes/_authenticated/batches/$batchId'
 import { Route as AuthenticatedFarmsIndexRouteImport } from './routes/_authenticated/farms/index'
@@ -35,6 +36,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBagsBagIdRoute = AuthenticatedBagsBagIdRouteImport.update({
+  id: '/bags/$bagId',
+  path: '/bags/$bagId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBatchesIndexRoute =
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/farms/$farmId': typeof AuthenticatedFarmsFarmIdRoute
   '/batches/': typeof AuthenticatedBatchesIndexRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/farms/$farmId': typeof AuthenticatedFarmsFarmIdRoute
   '/batches': typeof AuthenticatedBatchesIndexRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
   '/_authenticated/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/_authenticated/farms/$farmId': typeof AuthenticatedFarmsFarmIdRoute
   '/_authenticated/batches/': typeof AuthenticatedBatchesIndexRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/bags/$bagId'
     | '/batches/$batchId'
     | '/farms/$farmId'
     | '/batches/'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/bags/$bagId'
     | '/batches/$batchId'
     | '/farms/$farmId'
     | '/batches'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/bags/$bagId'
     | '/_authenticated/batches/$batchId'
     | '/_authenticated/farms/$farmId'
     | '/_authenticated/batches/'
@@ -157,6 +169,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/bags/$bagId': {
+      id: '/_authenticated/bags/$bagId'
+      path: '/bags/$bagId'
+      fullPath: '/bags/$bagId'
+      preLoaderRoute: typeof AuthenticatedBagsBagIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/batches/': {
       id: '/_authenticated/batches/'
       path: '/batches'
@@ -190,6 +209,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedBagsBagIdRoute: typeof AuthenticatedBagsBagIdRoute
   AuthenticatedBatchesBatchIdRoute: typeof AuthenticatedBatchesBatchIdRoute
   AuthenticatedFarmsFarmIdRoute: typeof AuthenticatedFarmsFarmIdRoute
   AuthenticatedBatchesIndexRoute: typeof AuthenticatedBatchesIndexRoute
@@ -198,6 +218,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedBagsBagIdRoute: AuthenticatedBagsBagIdRoute,
   AuthenticatedBatchesBatchIdRoute: AuthenticatedBatchesBatchIdRoute,
   AuthenticatedFarmsFarmIdRoute: AuthenticatedFarmsFarmIdRoute,
   AuthenticatedBatchesIndexRoute: AuthenticatedBatchesIndexRoute,
