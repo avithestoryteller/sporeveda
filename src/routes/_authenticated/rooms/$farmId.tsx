@@ -377,7 +377,7 @@ function FarmDetailPage() {
         </CardContent>
       </Card>
 
-      </div>
+
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Card>
