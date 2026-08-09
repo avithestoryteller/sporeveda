@@ -9,6 +9,7 @@ import {
   BarChart3,
   ListChecks,
   FileUp,
+  IndianRupee,
   LogOut,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -31,8 +32,11 @@ const NAV = [
   { to: "/import", label: "Import", icon: FileUp },
 ] as const;
 
+const FINANCE_NAV = { to: "/finance", label: "Finance", icon: IndianRupee } as const;
+
 export function AppShell({ children }: { children?: ReactNode }) {
-  const { org, role } = useOrg();
+  const { org, role, isAdmin } = useOrg();
+  const navItems = isAdmin ? [...NAV, FINANCE_NAV] : [...NAV];
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -62,7 +66,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
 
 
           <nav className="ml-2 hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto md:flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {NAV.map((item) => {
+            {navItems.map((item) => {
               const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
               return (
                 <Link
@@ -104,8 +108,8 @@ export function AppShell({ children }: { children?: ReactNode }) {
       <main className="mx-auto w-full max-w-6xl px-4 py-5">{children ?? <Outlet />}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card md:hidden">
-        <div className="mx-auto grid max-w-6xl grid-cols-8">
-          {NAV.map((item) => {
+        <div className="mx-auto flex max-w-6xl overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {navItems.map((item) => {
             const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
             const Icon = item.icon;
             return (
@@ -113,7 +117,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
+                  "flex min-w-[4.5rem] flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >

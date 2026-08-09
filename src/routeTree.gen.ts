@@ -15,12 +15,16 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBulkRouteImport } from './routes/_authenticated/bulk'
 import { Route as AuthenticatedCompareRouteImport } from './routes/_authenticated/compare'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedFinanceRouteRouteImport } from './routes/_authenticated/finance/route'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedLogRouteImport } from './routes/_authenticated/log'
 import { Route as AuthenticatedBagsBagIdRouteImport } from './routes/_authenticated/bags/$bagId'
 import { Route as AuthenticatedBatchesIndexRouteImport } from './routes/_authenticated/batches/index'
 import { Route as AuthenticatedBatchesBatchIdRouteImport } from './routes/_authenticated/batches/$batchId'
 import { Route as AuthenticatedFarmsIndexRouteImport } from './routes/_authenticated/farms/index'
+import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance/index'
+import { Route as AuthenticatedFinanceCostsRouteImport } from './routes/_authenticated/finance/costs'
+import { Route as AuthenticatedFinanceRevenueRouteImport } from './routes/_authenticated/finance/revenue'
 import { Route as AuthenticatedRoomsIndexRouteImport } from './routes/_authenticated/rooms/index'
 import { Route as AuthenticatedRoomsFarmIdRouteImport } from './routes/_authenticated/rooms/$farmId'
 
@@ -53,6 +57,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFinanceRouteRoute =
+  AuthenticatedFinanceRouteRouteImport.update({
+    id: '/finance',
+    path: '/finance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
   id: '/import',
   path: '/import',
@@ -85,6 +95,24 @@ const AuthenticatedFarmsIndexRoute = AuthenticatedFarmsIndexRouteImport.update({
   path: '/farms/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFinanceIndexRoute =
+  AuthenticatedFinanceIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedFinanceRouteRoute,
+  } as any)
+const AuthenticatedFinanceCostsRoute =
+  AuthenticatedFinanceCostsRouteImport.update({
+    id: '/costs',
+    path: '/costs',
+    getParentRoute: () => AuthenticatedFinanceRouteRoute,
+  } as any)
+const AuthenticatedFinanceRevenueRoute =
+  AuthenticatedFinanceRevenueRouteImport.update({
+    id: '/revenue',
+    path: '/revenue',
+    getParentRoute: () => AuthenticatedFinanceRouteRoute,
+  } as any)
 const AuthenticatedRoomsIndexRoute = AuthenticatedRoomsIndexRouteImport.update({
   id: '/rooms/',
   path: '/rooms/',
@@ -100,6 +128,7 @@ const AuthenticatedRoomsFarmIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/finance': typeof AuthenticatedFinanceRouteRouteWithChildren
   '/bulk': typeof AuthenticatedBulkRoute
   '/compare': typeof AuthenticatedCompareRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -107,9 +136,12 @@ export interface FileRoutesByFullPath {
   '/log': typeof AuthenticatedLogRoute
   '/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
+  '/finance/costs': typeof AuthenticatedFinanceCostsRoute
+  '/finance/revenue': typeof AuthenticatedFinanceRevenueRoute
   '/rooms/$farmId': typeof AuthenticatedRoomsFarmIdRoute
   '/batches/': typeof AuthenticatedBatchesIndexRoute
   '/farms/': typeof AuthenticatedFarmsIndexRoute
+  '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/rooms/': typeof AuthenticatedRoomsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -122,9 +154,12 @@ export interface FileRoutesByTo {
   '/log': typeof AuthenticatedLogRoute
   '/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
+  '/finance/costs': typeof AuthenticatedFinanceCostsRoute
+  '/finance/revenue': typeof AuthenticatedFinanceRevenueRoute
   '/rooms/$farmId': typeof AuthenticatedRoomsFarmIdRoute
   '/batches': typeof AuthenticatedBatchesIndexRoute
   '/farms': typeof AuthenticatedFarmsIndexRoute
+  '/finance': typeof AuthenticatedFinanceIndexRoute
   '/rooms': typeof AuthenticatedRoomsIndexRoute
 }
 export interface FileRoutesById {
@@ -132,6 +167,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/finance': typeof AuthenticatedFinanceRouteRouteWithChildren
   '/_authenticated/bulk': typeof AuthenticatedBulkRoute
   '/_authenticated/compare': typeof AuthenticatedCompareRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -139,9 +175,12 @@ export interface FileRoutesById {
   '/_authenticated/log': typeof AuthenticatedLogRoute
   '/_authenticated/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
   '/_authenticated/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
+  '/_authenticated/finance/costs': typeof AuthenticatedFinanceCostsRoute
+  '/_authenticated/finance/revenue': typeof AuthenticatedFinanceRevenueRoute
   '/_authenticated/rooms/$farmId': typeof AuthenticatedRoomsFarmIdRoute
   '/_authenticated/batches/': typeof AuthenticatedBatchesIndexRoute
   '/_authenticated/farms/': typeof AuthenticatedFarmsIndexRoute
+  '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/_authenticated/rooms/': typeof AuthenticatedRoomsIndexRoute
 }
 export interface FileRouteTypes {
@@ -149,6 +188,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/finance'
     | '/bulk'
     | '/compare'
     | '/dashboard'
@@ -156,9 +196,12 @@ export interface FileRouteTypes {
     | '/log'
     | '/bags/$bagId'
     | '/batches/$batchId'
+    | '/finance/costs'
+    | '/finance/revenue'
     | '/rooms/$farmId'
     | '/batches/'
     | '/farms/'
+    | '/finance/'
     | '/rooms/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -171,15 +214,19 @@ export interface FileRouteTypes {
     | '/log'
     | '/bags/$bagId'
     | '/batches/$batchId'
+    | '/finance/costs'
+    | '/finance/revenue'
     | '/rooms/$farmId'
     | '/batches'
     | '/farms'
+    | '/finance'
     | '/rooms'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/finance'
     | '/_authenticated/bulk'
     | '/_authenticated/compare'
     | '/_authenticated/dashboard'
@@ -187,9 +234,12 @@ export interface FileRouteTypes {
     | '/_authenticated/log'
     | '/_authenticated/bags/$bagId'
     | '/_authenticated/batches/$batchId'
+    | '/_authenticated/finance/costs'
+    | '/_authenticated/finance/revenue'
     | '/_authenticated/rooms/$farmId'
     | '/_authenticated/batches/'
     | '/_authenticated/farms/'
+    | '/_authenticated/finance/'
     | '/_authenticated/rooms/'
   fileRoutesById: FileRoutesById
 }
@@ -243,6 +293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/finance': {
+      id: '/_authenticated/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof AuthenticatedFinanceRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/import': {
       id: '/_authenticated/import'
       path: '/import'
@@ -285,6 +342,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFarmsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/finance/': {
+      id: '/_authenticated/finance/'
+      path: '/'
+      fullPath: '/finance/'
+      preLoaderRoute: typeof AuthenticatedFinanceIndexRouteImport
+      parentRoute: typeof AuthenticatedFinanceRouteRoute
+    }
+    '/_authenticated/finance/costs': {
+      id: '/_authenticated/finance/costs'
+      path: '/costs'
+      fullPath: '/finance/costs'
+      preLoaderRoute: typeof AuthenticatedFinanceCostsRouteImport
+      parentRoute: typeof AuthenticatedFinanceRouteRoute
+    }
+    '/_authenticated/finance/revenue': {
+      id: '/_authenticated/finance/revenue'
+      path: '/revenue'
+      fullPath: '/finance/revenue'
+      preLoaderRoute: typeof AuthenticatedFinanceRevenueRouteImport
+      parentRoute: typeof AuthenticatedFinanceRouteRoute
+    }
     '/_authenticated/rooms/': {
       id: '/_authenticated/rooms/'
       path: '/rooms'
@@ -302,7 +380,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedFinanceRouteRouteChildren {
+  AuthenticatedFinanceCostsRoute: typeof AuthenticatedFinanceCostsRoute
+  AuthenticatedFinanceRevenueRoute: typeof AuthenticatedFinanceRevenueRoute
+  AuthenticatedFinanceIndexRoute: typeof AuthenticatedFinanceIndexRoute
+}
+
+const AuthenticatedFinanceRouteRouteChildren: AuthenticatedFinanceRouteRouteChildren =
+  {
+    AuthenticatedFinanceCostsRoute: AuthenticatedFinanceCostsRoute,
+    AuthenticatedFinanceRevenueRoute: AuthenticatedFinanceRevenueRoute,
+    AuthenticatedFinanceIndexRoute: AuthenticatedFinanceIndexRoute,
+  }
+
+const AuthenticatedFinanceRouteRouteWithChildren =
+  AuthenticatedFinanceRouteRoute._addFileChildren(
+    AuthenticatedFinanceRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedFinanceRouteRoute: typeof AuthenticatedFinanceRouteRouteWithChildren
   AuthenticatedBulkRoute: typeof AuthenticatedBulkRoute
   AuthenticatedCompareRoute: typeof AuthenticatedCompareRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -317,6 +414,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedFinanceRouteRoute: AuthenticatedFinanceRouteRouteWithChildren,
   AuthenticatedBulkRoute: AuthenticatedBulkRoute,
   AuthenticatedCompareRoute: AuthenticatedCompareRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,

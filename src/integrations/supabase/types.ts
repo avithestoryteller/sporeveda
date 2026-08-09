@@ -114,6 +114,13 @@ export type Database = {
             foreignKeyName: "bags_batch_id_fkey"
             columns: ["batch_id"]
             isOneToOne: false
+            referencedRelation: "v_batch_profitability"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "bags_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
             referencedRelation: "v_contamination_rate_by_batch"
             referencedColumns: ["batch_id"]
           },
@@ -266,6 +273,107 @@ export type Database = {
           },
           {
             foreignKeyName: "contamination_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      costs: {
+        Row: {
+          amount: number
+          batch_id: string | null
+          category: string
+          cost_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          farm_id: string | null
+          id: string
+          incurred_date: string
+          notes: string | null
+          org_id: string
+          recurrence_interval: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          batch_id?: string | null
+          category: string
+          cost_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          farm_id?: string | null
+          id?: string
+          incurred_date?: string
+          notes?: string | null
+          org_id: string
+          recurrence_interval?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          batch_id?: string | null
+          category?: string
+          cost_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          farm_id?: string | null
+          id?: string
+          incurred_date?: string
+          notes?: string | null
+          org_id?: string
+          recurrence_interval?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costs_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costs_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_batch_profitability"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "costs_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_contamination_rate_by_batch"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "costs_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_yield_by_batch"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "costs_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costs_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "v_farm_species_performance"
+            referencedColumns: ["farm_id"]
+          },
+          {
+            foreignKeyName: "costs_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -536,6 +644,117 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue: {
+        Row: {
+          amount: number
+          batch_id: string | null
+          buyer: string | null
+          created_at: string
+          created_by: string | null
+          farm_id: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          payment_method: string | null
+          price_per_kg: number | null
+          quantity_kg: number | null
+          sale_date: string
+          species_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          batch_id?: string | null
+          buyer?: string | null
+          created_at?: string
+          created_by?: string | null
+          farm_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          payment_method?: string | null
+          price_per_kg?: number | null
+          quantity_kg?: number | null
+          sale_date?: string
+          species_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          batch_id?: string | null
+          buyer?: string | null
+          created_at?: string
+          created_by?: string | null
+          farm_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          payment_method?: string | null
+          price_per_kg?: number | null
+          quantity_kg?: number | null
+          sale_date?: string
+          species_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_batch_profitability"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "revenue_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_contamination_rate_by_batch"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "revenue_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_yield_by_batch"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "revenue_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "v_farm_species_performance"
+            referencedColumns: ["farm_id"]
+          },
+          {
+            foreignKeyName: "revenue_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "species"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       species: {
         Row: {
           common_name: string
@@ -588,6 +807,26 @@ export type Database = {
       }
     }
     Views: {
+      v_batch_profitability: {
+        Row: {
+          batch_code: string | null
+          batch_id: string | null
+          net_margin: number | null
+          org_id: string | null
+          species_name: string | null
+          total_cost: number | null
+          total_revenue: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batches_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_contamination_rate_by_batch: {
         Row: {
           batch_code: string | null
@@ -614,6 +853,34 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_cost_breakdown_by_category: {
+        Row: {
+          category: string | null
+          entry_count: number | null
+          incurred_date: string | null
+          org_id: string | null
+          total_amount: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_cumulative_financials: {
+        Row: {
+          cumulative_cost: number | null
+          cumulative_net: number | null
+          cumulative_revenue: number | null
+          day: string | null
+          org_id: string | null
+        }
+        Relationships: []
       }
       v_farm_species_performance: {
         Row: {
@@ -642,6 +909,16 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_monthly_financials: {
+        Row: {
+          month: string | null
+          net_profit: number | null
+          org_id: string | null
+          total_cost: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
       }
       v_yield_by_batch: {
         Row: {
