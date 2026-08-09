@@ -66,11 +66,10 @@ function Landing() {
       <header className="border-b border-border">
         <div className="mx-auto flex h-14 max-w-5xl items-center px-4">
           <span className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-              S
-            </span>
-            <span className="font-display text-sm font-semibold">Sporeveda</span>
+            <img src={markAsset.url} alt="Sporeveda mushroom mark" className="h-8 w-8 object-contain" />
+            <img src={wordmarkAsset.url} alt="Sporeveda" className="h-5 w-auto max-w-[140px] object-contain" />
           </span>
+
           <div className="ml-auto">
             <Button asChild size="sm" variant={signedIn ? "default" : "outline"}>
               <Link to={signedIn ? "/dashboard" : "/auth"}>
