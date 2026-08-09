@@ -425,17 +425,20 @@ function BatchesPage() {
         </div>
       ) : error ? (
         <p className="text-sm text-destructive">{error.message}</p>
-      ) : data.length === 0 ? (
+      ) : data.rows.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
             No batches yet. Start one to generate its bags.
           </CardContent>
         </Card>
       ) : (
+        <>
+        <StageFunnel funnel={data.funnel} totalBags={data.totalBags} />
         <Card>
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
-              {data.map(({ batch, bagCount, discarded }) => (
+              {data.rows.map(({ batch, bagCount, discarded }) => (
+
                 <li key={batch.id}>
                   <Link
                     to="/batches/$batchId"
