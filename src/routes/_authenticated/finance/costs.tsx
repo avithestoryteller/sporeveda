@@ -393,11 +393,25 @@ function CostsPage() {
                 />
               </div>
 
-              <div className="sm:col-span-2">
+              <div className="flex gap-2 sm:col-span-2">
                 <Button type="submit" disabled={addCost.isPending} className="w-full sm:w-auto">
-                  {addCost.isPending ? "Saving…" : "Save cost"}
+                  {addCost.isPending ? "Saving…" : editingId ? "Update cost" : "Save cost"}
                 </Button>
+                {editingId ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setEditingId(null);
+                      setForm({ ...EMPTY, incurredDate: todayISO() });
+                      setShowForm(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                ) : null}
               </div>
+
             </form>
           </CardContent>
         </Card>
