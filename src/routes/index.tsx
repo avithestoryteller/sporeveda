@@ -84,8 +84,9 @@ function Landing() {
       <main className="mx-auto max-w-5xl px-4 py-16">
         <section className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-            Mushroom farm operations
+            Mushroom Farm Management System
           </p>
+
           <h1 className="mt-3 font-display text-4xl font-semibold leading-tight sm:text-5xl">
             Every bag accounted for, from inoculation to final flush.
           </h1>
