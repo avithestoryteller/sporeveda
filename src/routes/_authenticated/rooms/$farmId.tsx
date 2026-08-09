@@ -1,7 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ReferenceArea,
@@ -13,13 +16,86 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/AppShell";
-import { StageBadge } from "@/components/StageBadge";
 import { StatTile } from "@/components/StatTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { STAGE_ORDER, STAGE_LABEL, type BagStage } from "@/lib/stages";
 import { daysAgoISO, fmtDate, num, range, toNumber } from "@/lib/format";
+
+function TargetVsActual({
+  label,
+  unit,
+  actual,
+  min,
+  max,
+}: {
+  label: string;
+  unit: string;
+  actual: number | null;
+  min: number | null;
+  max: number | null;
+}) {
+  const hasTarget = min !== null || max !== null;
+  const status =
+    actual === null || !hasTarget
+      ? "unknown"
+      : (min !== null && actual < min) || (max !== null && actual > max)
+        ? "out"
+        : "in";
+
+  const lo = min ?? (actual !== null ? Math.min(actual, max ?? actual) : 0);
+  const hi = max ?? (actual !== null ? Math.max(actual, min ?? actual) : 1);
+  const padding = Math.max((hi - lo) * 0.6, 1);
+  const scaleMin = lo - padding;
+  const scaleMax = hi + padding;
+  const pct = (value: number) =>
+    Math.min(100, Math.max(0, ((value - scaleMin) / (scaleMax - scaleMin)) * 100));
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+        <span
+          className={
+            status === "out"
+              ? "rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive"
+              : status === "in"
+                ? "rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"
+                : "rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+          }
+        >
+          {status === "out" ? "Out of range" : status === "in" ? "In range" : "No data"}
+        </span>
+      </div>
+      <p className="stat-value mt-1 text-xl">
+        {actual === null ? "—" : `${num(actual)}${unit}`}
+        <span className="ml-2 text-xs font-normal text-muted-foreground">
+          target {min === null && max === null ? "not set" : `${min ?? "≤"}–${max ?? ""}${unit}`}
+        </span>
+      </p>
+      <div className="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+        {hasTarget ? (
+          <div
+            className="absolute inset-y-0 rounded-full bg-primary/25"
+            style={{ left: `${pct(lo)}%`, width: `${Math.max(2, pct(hi) - pct(lo))}%` }}
+          />
+        ) : null}
+        {actual !== null ? (
+          <div
+            className={
+              status === "out"
+                ? "absolute inset-y-0 w-1 rounded-full bg-destructive"
+                : "absolute inset-y-0 w-1 rounded-full bg-foreground"
+            }
+            style={{ left: `calc(${pct(actual)}% - 2px)` }}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 
 export const Route = createFileRoute("/_authenticated/rooms/$farmId")({
   head: () => ({
