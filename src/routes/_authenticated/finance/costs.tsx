@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -52,6 +53,8 @@ export const Route = createFileRoute("/_authenticated/finance/costs")({
 const ALL = "__all__";
 const NONE = "__none__";
 
+const MULTI_BATCH_CATEGORIES = ["substrate", "spawn"];
+
 type FormState = {
   category: string;
   otherCategory: string;
@@ -62,6 +65,8 @@ type FormState = {
   incurredDate: string;
   farmId: string;
   batchId: string;
+  batchIds: string[];
+  splitAmount: boolean;
   notes: string;
 };
 
@@ -75,6 +80,8 @@ const EMPTY: FormState = {
   incurredDate: todayISO(),
   farmId: NONE,
   batchId: NONE,
+  batchIds: [],
+  splitAmount: true,
   notes: "",
 };
 
@@ -143,28 +150,51 @@ function CostsPage() {
 
   const total = (costs ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
 
+  const isMultiBatch = MULTI_BATCH_CATEGORIES.includes(form.category);
+
   const addCost = useMutation({
     mutationFn: async () => {
       const category = form.category === "other" ? form.otherCategory.trim() || "other" : form.category;
       const amount = Number(form.amount);
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
-      const payload = {
+      const targets = isMultiBatch && form.batchIds.length > 0 ? form.batchIds : [null];
+      const perRow =
+        isMultiBatch && form.splitAmount && targets.length > 1
+          ? Math.round((amount / targets.length) * 100) / 100
+          : amount;
+      const base = {
         category,
         description: form.description.trim() || null,
-        amount,
         cost_type: form.costType,
         recurrence_interval: form.costType === "recurring" ? form.recurrence : null,
         incurred_date: form.incurredDate,
         farm_id: form.farmId === NONE ? null : form.farmId,
-        batch_id: form.batchId === NONE ? null : form.batchId,
         notes: form.notes.trim() || null,
       };
+      const rows = targets.map((batchId, index) => ({
+        ...base,
+        batch_id: isMultiBatch ? batchId : form.batchId === NONE ? null : form.batchId,
+        amount:
+          index === targets.length - 1 && perRow !== amount
+            ? Math.round((amount - perRow * (targets.length - 1)) * 100) / 100
+            : perRow,
+      }));
+
       if (editingId) {
-        const { error } = await supabase.from("costs").update(payload).eq("id", editingId);
+        const [first, ...rest] = rows;
+        const { error } = await supabase.from("costs").update(first!).eq("id", editingId);
         if (error) throw error;
+        if (rest.length > 0) {
+          const { error: insertError } = await supabase
+            .from("costs")
+            .insert(rest.map((row) => ({ org_id: orgId, ...row })));
+          if (insertError) throw insertError;
+        }
         return "updated" as const;
       }
-      const { error } = await supabase.from("costs").insert({ org_id: orgId, ...payload });
+      const { error } = await supabase
+        .from("costs")
+        .insert(rows.map((row) => ({ org_id: orgId, ...row })));
       if (error) throw error;
       return "created" as const;
     },
@@ -193,6 +223,8 @@ function CostsPage() {
       incurredDate: mode === "edit" ? row.incurred_date : todayISO(),
       farmId: row.farm_id ?? NONE,
       batchId: row.batch_id ?? NONE,
+      batchIds: row.batch_id ? [row.batch_id] : [],
+      splitAmount: false,
       notes: row.notes ?? "",
     });
     setEditingId(mode === "edit" ? row.id : null);
@@ -350,6 +382,7 @@ function CostsPage() {
                   onValueChange={(value) => {
                     set("farmId", value);
                     set("batchId", NONE);
+                    set("batchIds", []);
                   }}
                 >
                   <SelectTrigger>
@@ -366,22 +399,68 @@ function CostsPage() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5">
-                <Label>Batch (optional)</Label>
-                <Select value={form.batchId} onValueChange={(value) => set("batchId", value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>No batch</SelectItem>
-                    {formBatches.map((batch) => (
-                      <SelectItem key={batch.id} value={batch.id}>
-                        {batch.batch_code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {isMultiBatch ? (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Batches (optional — select one or more)</Label>
+                  <div className="max-h-44 space-y-1.5 overflow-y-auto rounded-md border border-border p-2">
+                    {formBatches.length === 0 ? (
+                      <p className="p-1 text-sm text-muted-foreground">No batches available.</p>
+                    ) : (
+                      formBatches.map((batch) => {
+                        const checked = form.batchIds.includes(batch.id);
+                        return (
+                          <label
+                            key={batch.id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-muted/60"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(value) =>
+                                set(
+                                  "batchIds",
+                                  value
+                                    ? [...form.batchIds, batch.id]
+                                    : form.batchIds.filter((id) => id !== batch.id),
+                                )
+                              }
+                            />
+                            {batch.batch_code}
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                  {form.batchIds.length > 1 ? (
+                    <label className="flex items-center gap-2 pt-1 text-sm text-muted-foreground">
+                      <Checkbox
+                        checked={form.splitAmount}
+                        onCheckedChange={(value) => set("splitAmount", Boolean(value))}
+                      />
+                      Split amount evenly across {form.batchIds.length} batches
+                      {form.splitAmount && Number(form.amount) > 0
+                        ? ` (~${fmtMoney(Number(form.amount) / form.batchIds.length)} each)`
+                        : " (full amount on each)"}
+                    </label>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label>Batch (optional)</Label>
+                  <Select value={form.batchId} onValueChange={(value) => set("batchId", value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>No batch</SelectItem>
+                      {formBatches.map((batch) => (
+                        <SelectItem key={batch.id} value={batch.id}>
+                          {batch.batch_code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="cost-notes">Notes</Label>
