@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedBatchesIndexRouteImport } from './routes/_authenticated/batches/index'
 import { Route as AuthenticatedFarmsIndexRouteImport } from './routes/_authenticated/farms/index'
 import { Route as AuthenticatedFarmsFarmIdRouteImport } from './routes/_authenticated/farms/$farmId'
 
@@ -35,6 +36,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBatchesIndexRoute =
+  AuthenticatedBatchesIndexRouteImport.update({
+    id: '/batches/',
+    path: '/batches/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFarmsIndexRoute = AuthenticatedFarmsIndexRouteImport.update({
   id: '/farms/',
   path: '/farms/',
@@ -52,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/farms/$farmId': typeof AuthenticatedFarmsFarmIdRoute
+  '/batches/': typeof AuthenticatedBatchesIndexRoute
   '/farms/': typeof AuthenticatedFarmsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -59,6 +67,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/farms/$farmId': typeof AuthenticatedFarmsFarmIdRoute
+  '/batches': typeof AuthenticatedBatchesIndexRoute
   '/farms': typeof AuthenticatedFarmsIndexRoute
 }
 export interface FileRoutesById {
@@ -68,13 +77,15 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/farms/$farmId': typeof AuthenticatedFarmsFarmIdRoute
+  '/_authenticated/batches/': typeof AuthenticatedBatchesIndexRoute
   '/_authenticated/farms/': typeof AuthenticatedFarmsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/farms/$farmId' | '/farms/'
+  fullPaths:
+    '/' | '/auth' | '/dashboard' | '/farms/$farmId' | '/batches/' | '/farms/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/farms/$farmId' | '/farms'
+  to: '/' | '/auth' | '/dashboard' | '/farms/$farmId' | '/batches' | '/farms'
   id:
     | '__root__'
     | '/'
@@ -82,6 +93,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/dashboard'
     | '/_authenticated/farms/$farmId'
+    | '/_authenticated/batches/'
     | '/_authenticated/farms/'
   fileRoutesById: FileRoutesById
 }
@@ -121,6 +133,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/batches/': {
+      id: '/_authenticated/batches/'
+      path: '/batches'
+      fullPath: '/batches/'
+      preLoaderRoute: typeof AuthenticatedBatchesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/farms/': {
       id: '/_authenticated/farms/'
       path: '/farms'
@@ -141,12 +160,14 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedFarmsFarmIdRoute: typeof AuthenticatedFarmsFarmIdRoute
+  AuthenticatedBatchesIndexRoute: typeof AuthenticatedBatchesIndexRoute
   AuthenticatedFarmsIndexRoute: typeof AuthenticatedFarmsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedFarmsFarmIdRoute: AuthenticatedFarmsFarmIdRoute,
+  AuthenticatedBatchesIndexRoute: AuthenticatedBatchesIndexRoute,
   AuthenticatedFarmsIndexRoute: AuthenticatedFarmsIndexRoute,
 }
 
