@@ -16,8 +16,9 @@ export function OrgSetup() {
   const createOrg = useServerFn(createOrganization);
 
   const mutation = useMutation({
-    mutationFn: (payload: { name: string; displayName?: string }) =>
+    mutationFn: (payload: { name: string; displayName?: string | undefined }) =>
       createOrg({ data: payload }),
+
     onSuccess: async () => {
       toast.success("Organization created");
       await queryClient.invalidateQueries({ queryKey: ["memberships"] });
