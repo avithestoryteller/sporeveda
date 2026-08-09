@@ -84,6 +84,7 @@ function CostsPage() {
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [filters, setFilters] = useState({
     from: presetRange("this_year").from,
