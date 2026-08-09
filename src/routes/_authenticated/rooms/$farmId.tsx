@@ -14,9 +14,13 @@ import {
   YAxis,
 } from "recharts";
 
+import { Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrg, useOrgId } from "@/hooks/use-org";
 import { PageHeader } from "@/components/AppShell";
+import { RoomFormDialog } from "@/components/RoomFormDialog";
 import { StatTile } from "@/components/StatTile";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -174,7 +178,10 @@ function useFarmDetail(farmId: string) {
 
 function FarmDetailPage() {
   const { farmId } = Route.useParams();
+  const orgId = useOrgId();
+  const { canEdit } = useOrg();
   const { data, isPending, error } = useFarmDetail(farmId);
+
 
   if (isPending) {
     return (
@@ -194,8 +201,11 @@ function FarmDetailPage() {
   const discarded = bags.filter((bag) => bag.current_stage === "discarded").length;
   const latest = readings[readings.length - 1];
 
-  const humMin = toNumber(farm.target_humidity_min_pct);
-  const humMax = toNumber(farm.target_humidity_max_pct);
+  const humMin =
+    toNumber(farm.target_fruiting_humidity_min_pct) ?? toNumber(farm.target_humidity_min_pct);
+  const humMax =
+    toNumber(farm.target_fruiting_humidity_max_pct) ?? toNumber(farm.target_humidity_max_pct);
+
   const fruitMin = toNumber(farm.target_fruiting_temp_min);
   const fruitMax = toNumber(farm.target_fruiting_temp_max);
 
@@ -217,10 +227,24 @@ function FarmDetailPage() {
         title={farm.name}
         subtitle={farm.location_notes ?? "Grow room"}
         action={
-          <Button asChild size="sm" variant="outline">
-            <Link to="/log">Log a reading</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            {canEdit ? (
+              <RoomFormDialog
+                orgId={orgId}
+                farm={farm}
+                trigger={
+                  <Button size="sm" variant="outline">
+                    <Pencil className="size-4" /> Edit room
+                  </Button>
+                }
+              />
+            ) : null}
+            <Button asChild size="sm" variant="outline">
+              <Link to="/log">Log a reading</Link>
+            </Button>
+          </div>
         }
+
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -307,26 +331,41 @@ function FarmDetailPage() {
                 </ResponsiveContainer>
               </div>
             )}
-            <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
+            <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs text-muted-foreground sm:grid-cols-4">
               <div>
-                <dt>Colonization target</dt>
+                <dt>Colonization temp</dt>
                 <dd className="text-foreground">
                   {range(farm.target_colonization_temp_min, farm.target_colonization_temp_max, "°C")}
                 </dd>
               </div>
               <div>
-                <dt>Fruiting target</dt>
+                <dt>Colonization humidity</dt>
+                <dd className="text-foreground">
+                  {range(
+                    farm.target_colonization_humidity_min_pct,
+                    farm.target_colonization_humidity_max_pct,
+                    "%",
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Fruiting temp</dt>
                 <dd className="text-foreground">
                   {range(farm.target_fruiting_temp_min, farm.target_fruiting_temp_max, "°C")}
                 </dd>
               </div>
               <div>
-                <dt>Humidity target</dt>
+                <dt>Fruiting humidity</dt>
                 <dd className="text-foreground">
-                  {humMin === null && humMax === null ? "Not set" : `${humMin ?? "≤"}–${humMax ?? ""}%`}
+                  {range(
+                    farm.target_fruiting_humidity_min_pct ?? farm.target_humidity_min_pct,
+                    farm.target_fruiting_humidity_max_pct ?? farm.target_humidity_max_pct,
+                    "%",
+                  )}
                 </dd>
               </div>
             </dl>
+
           </CardContent>
         </Card>
 

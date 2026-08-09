@@ -354,8 +354,12 @@ export type Database = {
           location_notes: string | null
           name: string
           org_id: string
+          target_colonization_humidity_max_pct: number | null
+          target_colonization_humidity_min_pct: number | null
           target_colonization_temp_max: number | null
           target_colonization_temp_min: number | null
+          target_fruiting_humidity_max_pct: number | null
+          target_fruiting_humidity_min_pct: number | null
           target_fruiting_temp_max: number | null
           target_fruiting_temp_min: number | null
           target_humidity_max_pct: number | null
@@ -369,8 +373,12 @@ export type Database = {
           location_notes?: string | null
           name: string
           org_id: string
+          target_colonization_humidity_max_pct?: number | null
+          target_colonization_humidity_min_pct?: number | null
           target_colonization_temp_max?: number | null
           target_colonization_temp_min?: number | null
+          target_fruiting_humidity_max_pct?: number | null
+          target_fruiting_humidity_min_pct?: number | null
           target_fruiting_temp_max?: number | null
           target_fruiting_temp_min?: number | null
           target_humidity_max_pct?: number | null
@@ -384,8 +392,12 @@ export type Database = {
           location_notes?: string | null
           name?: string
           org_id?: string
+          target_colonization_humidity_max_pct?: number | null
+          target_colonization_humidity_min_pct?: number | null
           target_colonization_temp_max?: number | null
           target_colonization_temp_min?: number | null
+          target_fruiting_humidity_max_pct?: number | null
+          target_fruiting_humidity_min_pct?: number | null
           target_fruiting_temp_max?: number | null
           target_fruiting_temp_min?: number | null
           target_humidity_max_pct?: number | null
