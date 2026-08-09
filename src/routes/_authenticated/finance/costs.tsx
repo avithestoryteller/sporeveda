@@ -149,28 +149,56 @@ function CostsPage() {
 
   const total = (costs ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
 
+  const isMultiBatch = MULTI_BATCH_CATEGORIES.includes(form.category);
+  const selectedBatchIds = isMultiBatch
+    ? form.batchIds
+    : form.batchId === NONE
+      ? []
+      : [form.batchId];
+
   const addCost = useMutation({
     mutationFn: async () => {
       const category = form.category === "other" ? form.otherCategory.trim() || "other" : form.category;
       const amount = Number(form.amount);
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
-      const payload = {
+      const targets = isMultiBatch && form.batchIds.length > 0 ? form.batchIds : [null];
+      const perRow =
+        isMultiBatch && form.splitAmount && targets.length > 1
+          ? Math.round((amount / targets.length) * 100) / 100
+          : amount;
+      const base = {
         category,
         description: form.description.trim() || null,
-        amount,
         cost_type: form.costType,
         recurrence_interval: form.costType === "recurring" ? form.recurrence : null,
         incurred_date: form.incurredDate,
         farm_id: form.farmId === NONE ? null : form.farmId,
-        batch_id: form.batchId === NONE ? null : form.batchId,
         notes: form.notes.trim() || null,
       };
+      const rows = targets.map((batchId, index) => ({
+        ...base,
+        batch_id: isMultiBatch ? batchId : form.batchId === NONE ? null : form.batchId,
+        amount:
+          index === targets.length - 1 && perRow !== amount
+            ? Math.round((amount - perRow * (targets.length - 1)) * 100) / 100
+            : perRow,
+      }));
+
       if (editingId) {
-        const { error } = await supabase.from("costs").update(payload).eq("id", editingId);
+        const [first, ...rest] = rows;
+        const { error } = await supabase.from("costs").update(first).eq("id", editingId);
         if (error) throw error;
+        if (rest.length > 0) {
+          const { error: insertError } = await supabase
+            .from("costs")
+            .insert(rest.map((row) => ({ org_id: orgId, ...row })));
+          if (insertError) throw insertError;
+        }
         return "updated" as const;
       }
-      const { error } = await supabase.from("costs").insert({ org_id: orgId, ...payload });
+      const { error } = await supabase
+        .from("costs")
+        .insert(rows.map((row) => ({ org_id: orgId, ...row })));
       if (error) throw error;
       return "created" as const;
     },
