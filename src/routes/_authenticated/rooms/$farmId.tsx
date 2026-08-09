@@ -220,10 +220,24 @@ function FarmDetailPage() {
         title={farm.name}
         subtitle={farm.location_notes ?? "Grow room"}
         action={
-          <Button asChild size="sm" variant="outline">
-            <Link to="/log">Log a reading</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            {canEdit ? (
+              <RoomFormDialog
+                orgId={orgId}
+                farm={farm}
+                trigger={
+                  <Button size="sm" variant="outline">
+                    <Pencil className="size-4" /> Edit room
+                  </Button>
+                }
+              />
+            ) : null}
+            <Button asChild size="sm" variant="outline">
+              <Link to="/log">Log a reading</Link>
+            </Button>
+          </div>
         }
+
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
