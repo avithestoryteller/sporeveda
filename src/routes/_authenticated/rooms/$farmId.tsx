@@ -312,29 +312,71 @@ function FarmDetailPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base">Bags by stage</CardTitle>
+            <CardTitle className="font-display text-base">Target vs actual</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {STAGE_ORDER.map((stage) => {
-              const count = bags.filter((bag) => bag.current_stage === stage).length;
-              const pct = bags.length ? (count / bags.length) * 100 : 0;
-              return (
-                <div key={stage}>
-                  <div className="flex items-center justify-between text-sm">
-                    <StageBadge stage={stage as BagStage} size="sm" />
-                    <span className="stat-value">{count}</span>
-                  </div>
-                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-            {bags.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No bags assigned to this room.</p>
-            ) : null}
+          <CardContent className="space-y-4">
+            <TargetVsActual
+              label="Temperature (fruiting target)"
+              unit="°C"
+              actual={latest?.temp ?? null}
+              min={fruitMin}
+              max={fruitMax}
+            />
+            <TargetVsActual
+              label="Humidity"
+              unit="%"
+              actual={latest?.humidity ?? null}
+              min={humMin}
+              max={humMax}
+            />
+            <p className="border-t border-border pt-3 text-xs text-muted-foreground">
+              {latest ? `Latest reading ${fmtDate(latest.date)}` : "No readings logged yet"}
+            </p>
           </CardContent>
         </Card>
+      </div>
+
+      <Card className="mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-display text-base">Bags per batch by stage</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stackData.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              No bags assigned to this room.
+            </p>
+          ) : (
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stackData} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="batch" tick={{ fontSize: 11 }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11 }} tickLine={false} width={38} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: 8,
+                      border: "1px solid var(--color-border)",
+                      background: "var(--color-card)",
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  {STAGE_ORDER.map((stage, index) => (
+                    <Bar
+                      key={stage}
+                      dataKey={STAGE_LABEL[stage as BagStage]}
+                      stackId="stages"
+                      fill={`var(--color-stage-${stage})`}
+                      radius={index === STAGE_ORDER.length - 1 ? [4, 4, 0, 0] : undefined}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
