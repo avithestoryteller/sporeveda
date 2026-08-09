@@ -148,8 +148,7 @@ function CostsPage() {
       const category = form.category === "other" ? form.otherCategory.trim() || "other" : form.category;
       const amount = Number(form.amount);
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
-      const { error } = await supabase.from("costs").insert({
-        org_id: orgId,
+      const payload = {
         category,
         description: form.description.trim() || null,
         amount,
@@ -159,12 +158,20 @@ function CostsPage() {
         farm_id: form.farmId === NONE ? null : form.farmId,
         batch_id: form.batchId === NONE ? null : form.batchId,
         notes: form.notes.trim() || null,
-      });
+      };
+      if (editingId) {
+        const { error } = await supabase.from("costs").update(payload).eq("id", editingId);
+        if (error) throw error;
+        return "updated" as const;
+      }
+      const { error } = await supabase.from("costs").insert({ org_id: orgId, ...payload });
       if (error) throw error;
+      return "created" as const;
     },
-    onSuccess: () => {
-      toast.success("Cost logged");
+    onSuccess: (result) => {
+      toast.success(result === "updated" ? "Cost updated" : "Cost logged");
       setForm({ ...EMPTY, incurredDate: todayISO() });
+      setEditingId(null);
       setShowForm(false);
       queryClient.invalidateQueries({ queryKey: ["costs"] });
       queryClient.invalidateQueries({ queryKey: ["financials"] });
@@ -172,22 +179,33 @@ function CostsPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  function duplicate(row: (typeof costs extends undefined ? never : NonNullable<typeof costs>)[number]) {
+  type CostRow = NonNullable<typeof costs>[number];
+
+  function fillFrom(row: CostRow, mode: "edit" | "duplicate") {
     const known = (COST_CATEGORIES as readonly string[]).includes(row.category);
     setForm({
       category: known ? row.category : "other",
       otherCategory: known ? "" : row.category,
       description: row.description ?? "",
       amount: String(row.amount ?? ""),
-      costType: "recurring",
+      costType: mode === "edit" ? (row.cost_type as FormState["costType"]) : "recurring",
       recurrence: row.recurrence_interval ?? "monthly",
-      incurredDate: todayISO(),
+      incurredDate: mode === "edit" ? row.incurred_date : todayISO(),
       farmId: row.farm_id ?? NONE,
       batchId: row.batch_id ?? NONE,
       notes: row.notes ?? "",
     });
+    setEditingId(mode === "edit" ? row.id : null);
     setShowForm(true);
+  }
+
+  function duplicate(row: CostRow) {
+    fillFrom(row, "duplicate");
     toast.info("Pre-filled from last entry — confirm the date and save");
+  }
+
+  function startEdit(row: CostRow) {
+    fillFrom(row, "edit");
   }
 
   return (
