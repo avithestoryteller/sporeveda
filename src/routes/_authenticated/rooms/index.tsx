@@ -66,145 +66,6 @@ function useFarms(orgId: string) {
   });
 }
 
-function NewFarmDialog({ orgId }: { orgId: string }) {
-  const [open, setOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const [form, setForm] = useState({
-    name: "",
-    location_notes: "",
-    colMin: "",
-    colMax: "",
-    fruitMin: "",
-    fruitMax: "",
-    humMin: "",
-    humMax: "",
-  });
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const numeric = (value: string) => (value.trim() === "" ? null : Number(value));
-      const { error } = await supabase.from("farms").insert({
-        org_id: orgId,
-        name: form.name.trim(),
-        location_notes: form.location_notes.trim() || null,
-        target_colonization_temp_min: numeric(form.colMin),
-        target_colonization_temp_max: numeric(form.colMax),
-        target_fruiting_temp_min: numeric(form.fruitMin),
-        target_fruiting_temp_max: numeric(form.fruitMax),
-        target_humidity_min_pct: numeric(form.humMin),
-        target_humidity_max_pct: numeric(form.humMax),
-      });
-      if (error) throw error;
-    },
-    onSuccess: async () => {
-      toast.success("Room added");
-      setOpen(false);
-      setForm({
-        name: "",
-        location_notes: "",
-        colMin: "",
-        colMax: "",
-        fruitMin: "",
-        fruitMax: "",
-        humMin: "",
-        humMax: "",
-      });
-      await queryClient.invalidateQueries({ queryKey: ["farms"] });
-      await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  const pair = (
-    label: string,
-    minKey: keyof typeof form,
-    maxKey: keyof typeof form,
-    unit: string,
-  ) => (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          step="0.1"
-          placeholder={`Min ${unit}`}
-          value={form[minKey]}
-          onChange={(event) => setForm((prev) => ({ ...prev, [minKey]: event.target.value }))}
-        />
-        <span className="text-muted-foreground">–</span>
-        <Input
-          type="number"
-          step="0.1"
-          placeholder={`Max ${unit}`}
-          value={form[maxKey]}
-          onChange={(event) => setForm((prev) => ({ ...prev, [maxKey]: event.target.value }))}
-        />
-      </div>
-    </div>
-  );
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="size-4" /> New room
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="font-display">Add a grow room</DialogTitle>
-          <DialogDescription>
-            Target ranges are optional — they drive the in-range checks on environment logs.
-          </DialogDescription>
-        </DialogHeader>
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (form.name.trim().length < 2) {
-              toast.error("Give the room a name");
-              return;
-            }
-            mutation.mutate();
-          }}
-        >
-          <div className="space-y-1.5">
-            <Label htmlFor="farm-name">Room name</Label>
-            <Input
-              id="farm-name"
-              value={form.name}
-              maxLength={80}
-              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-              placeholder="Fruiting room A"
-              required
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="farm-notes">Location notes</Label>
-            <Textarea
-              id="farm-notes"
-              value={form.location_notes}
-              maxLength={500}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, location_notes: event.target.value }))
-              }
-              placeholder="North shed, shelf racks 1–4"
-            />
-          </div>
-          {pair("Colonization temp", "colMin", "colMax", "°C")}
-          {pair("Fruiting temp", "fruitMin", "fruitMax", "°C")}
-          {pair("Humidity", "humMin", "humMax", "%")}
-          <DialogFooter>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "Saving…" : "Add room"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function FarmsPage() {
   const orgId = useOrgId();
   const { canEdit } = useOrg();
@@ -215,8 +76,20 @@ function FarmsPage() {
       <PageHeader
         title="Grow rooms"
         subtitle="Each room carries its own target climate and bag population."
-        action={canEdit ? <NewFarmDialog orgId={orgId} /> : null}
+        action={
+          canEdit ? (
+            <RoomFormDialog
+              orgId={orgId}
+              trigger={
+                <Button size="sm">
+                  <Plus className="size-4" /> New room
+                </Button>
+              }
+            />
+          ) : null
+        }
       />
+
 
       {isPending ? (
         <div className="grid gap-3 md:grid-cols-2">
