@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Warehouse,
+  Building2,
   Boxes,
   ClipboardList,
   BarChart3,
@@ -22,7 +23,8 @@ import wordmarkAsset from "@/assets/sporeveda-wordmark.png.asset.json";
 
 const NAV = [
   { to: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { to: "/farms", label: "Farms", icon: Warehouse },
+  { to: "/farms", label: "Farms", icon: Building2 },
+  { to: "/rooms", label: "Grow Rooms", icon: Warehouse },
   { to: "/batches", label: "Batches", icon: Boxes },
   { to: "/log", label: "Log", icon: ClipboardList },
   { to: "/compare", label: "Compare", icon: BarChart3 },
@@ -110,7 +112,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
       <main className="mx-auto w-full max-w-6xl px-4 py-5">{children ?? <Outlet />}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card md:hidden">
-        <div className="mx-auto grid max-w-6xl grid-cols-7">
+        <div className="mx-auto grid max-w-6xl grid-cols-8">
           {NAV.map((item) => {
             const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
             const Icon = item.icon;

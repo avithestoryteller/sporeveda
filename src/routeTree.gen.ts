@@ -20,6 +20,7 @@ import { Route as AuthenticatedLogRouteImport } from './routes/_authenticated/lo
 import { Route as AuthenticatedBagsBagIdRouteImport } from './routes/_authenticated/bags/$bagId'
 import { Route as AuthenticatedBatchesIndexRouteImport } from './routes/_authenticated/batches/index'
 import { Route as AuthenticatedBatchesBatchIdRouteImport } from './routes/_authenticated/batches/$batchId'
+import { Route as AuthenticatedFarmsIndexRouteImport } from './routes/_authenticated/farms/index'
 import { Route as AuthenticatedRoomsIndexRouteImport } from './routes/_authenticated/rooms/index'
 import { Route as AuthenticatedRoomsFarmIdRouteImport } from './routes/_authenticated/rooms/$farmId'
 
@@ -79,6 +80,11 @@ const AuthenticatedBatchesBatchIdRoute =
     path: '/batches/$batchId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFarmsIndexRoute = AuthenticatedFarmsIndexRouteImport.update({
+  id: '/farms/',
+  path: '/farms/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRoomsIndexRoute = AuthenticatedRoomsIndexRouteImport.update({
   id: '/rooms/',
   path: '/rooms/',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/rooms/$farmId': typeof AuthenticatedRoomsFarmIdRoute
   '/batches/': typeof AuthenticatedBatchesIndexRoute
+  '/farms/': typeof AuthenticatedFarmsIndexRoute
   '/rooms/': typeof AuthenticatedRoomsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/rooms/$farmId': typeof AuthenticatedRoomsFarmIdRoute
   '/batches': typeof AuthenticatedBatchesIndexRoute
+  '/farms': typeof AuthenticatedFarmsIndexRoute
   '/rooms': typeof AuthenticatedRoomsIndexRoute
 }
 export interface FileRoutesById {
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/_authenticated/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/_authenticated/rooms/$farmId': typeof AuthenticatedRoomsFarmIdRoute
   '/_authenticated/batches/': typeof AuthenticatedBatchesIndexRoute
+  '/_authenticated/farms/': typeof AuthenticatedFarmsIndexRoute
   '/_authenticated/rooms/': typeof AuthenticatedRoomsIndexRoute
 }
 export interface FileRouteTypes {
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/batches/$batchId'
     | '/rooms/$farmId'
     | '/batches/'
+    | '/farms/'
     | '/rooms/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/batches/$batchId'
     | '/rooms/$farmId'
     | '/batches'
+    | '/farms'
     | '/rooms'
   id:
     | '__root__'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/_authenticated/batches/$batchId'
     | '/_authenticated/rooms/$farmId'
     | '/_authenticated/batches/'
+    | '/_authenticated/farms/'
     | '/_authenticated/rooms/'
   fileRoutesById: FileRoutesById
 }
@@ -266,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBatchesBatchIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/farms/': {
+      id: '/_authenticated/farms/'
+      path: '/farms'
+      fullPath: '/farms/'
+      preLoaderRoute: typeof AuthenticatedFarmsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/rooms/': {
       id: '/_authenticated/rooms/'
       path: '/rooms'
@@ -293,6 +312,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBatchesBatchIdRoute: typeof AuthenticatedBatchesBatchIdRoute
   AuthenticatedRoomsFarmIdRoute: typeof AuthenticatedRoomsFarmIdRoute
   AuthenticatedBatchesIndexRoute: typeof AuthenticatedBatchesIndexRoute
+  AuthenticatedFarmsIndexRoute: typeof AuthenticatedFarmsIndexRoute
   AuthenticatedRoomsIndexRoute: typeof AuthenticatedRoomsIndexRoute
 }
 
@@ -306,6 +326,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBatchesBatchIdRoute: AuthenticatedBatchesBatchIdRoute,
   AuthenticatedRoomsFarmIdRoute: AuthenticatedRoomsFarmIdRoute,
   AuthenticatedBatchesIndexRoute: AuthenticatedBatchesIndexRoute,
+  AuthenticatedFarmsIndexRoute: AuthenticatedFarmsIndexRoute,
   AuthenticatedRoomsIndexRoute: AuthenticatedRoomsIndexRoute,
 }
 
@@ -320,13 +341,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
