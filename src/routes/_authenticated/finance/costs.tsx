@@ -402,22 +402,68 @@ function CostsPage() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5">
-                <Label>Batch (optional)</Label>
-                <Select value={form.batchId} onValueChange={(value) => set("batchId", value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>No batch</SelectItem>
-                    {formBatches.map((batch) => (
-                      <SelectItem key={batch.id} value={batch.id}>
-                        {batch.batch_code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {isMultiBatch ? (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Batches (optional — select one or more)</Label>
+                  <div className="max-h-44 space-y-1.5 overflow-y-auto rounded-md border border-border p-2">
+                    {formBatches.length === 0 ? (
+                      <p className="p-1 text-sm text-muted-foreground">No batches available.</p>
+                    ) : (
+                      formBatches.map((batch) => {
+                        const checked = form.batchIds.includes(batch.id);
+                        return (
+                          <label
+                            key={batch.id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-muted/60"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(value) =>
+                                set(
+                                  "batchIds",
+                                  value
+                                    ? [...form.batchIds, batch.id]
+                                    : form.batchIds.filter((id) => id !== batch.id),
+                                )
+                              }
+                            />
+                            {batch.batch_code}
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                  {form.batchIds.length > 1 ? (
+                    <label className="flex items-center gap-2 pt-1 text-sm text-muted-foreground">
+                      <Checkbox
+                        checked={form.splitAmount}
+                        onCheckedChange={(value) => set("splitAmount", Boolean(value))}
+                      />
+                      Split amount evenly across {form.batchIds.length} batches
+                      {form.splitAmount && Number(form.amount) > 0
+                        ? ` (~${fmtMoney(Number(form.amount) / form.batchIds.length)} each)`
+                        : " (full amount on each)"}
+                    </label>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label>Batch (optional)</Label>
+                  <Select value={form.batchId} onValueChange={(value) => set("batchId", value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>No batch</SelectItem>
+                      {formBatches.map((batch) => (
+                        <SelectItem key={batch.id} value={batch.id}>
+                          {batch.batch_code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="cost-notes">Notes</Label>
