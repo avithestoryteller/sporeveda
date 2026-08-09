@@ -42,15 +42,11 @@ function AuthPage() {
 
   useEffect(() => {
     let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) navigate({ to: "/dashboard", replace: true });
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) navigate({ to: "/dashboard", replace: true });
+    supabase.auth.getUser().then(({ data }) => {
+      if (active && data.user) navigate({ to: "/dashboard", replace: true });
     });
     return () => {
       active = false;
-      sub.subscription.unsubscribe();
     };
   }, [navigate]);
 
@@ -68,10 +64,14 @@ function AuthPage() {
     const values = validate();
     if (!values) return;
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword(values);
+    const { data, error } = await supabase.auth.signInWithPassword(values);
     setBusy(false);
     if (error) {
       toast.error(error.message);
+      return;
+    }
+    if (!data.session) {
+      toast.error("Sign-in completed without a session. Please try again.");
       return;
     }
     navigate({ to: "/dashboard", replace: true });
