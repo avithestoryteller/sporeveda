@@ -52,6 +52,8 @@ export const Route = createFileRoute("/_authenticated/finance/costs")({
 const ALL = "__all__";
 const NONE = "__none__";
 
+const MULTI_BATCH_CATEGORIES = ["substrate", "spawn"];
+
 type FormState = {
   category: string;
   otherCategory: string;
@@ -62,6 +64,8 @@ type FormState = {
   incurredDate: string;
   farmId: string;
   batchId: string;
+  batchIds: string[];
+  splitAmount: boolean;
   notes: string;
 };
 
@@ -75,6 +79,8 @@ const EMPTY: FormState = {
   incurredDate: todayISO(),
   farmId: NONE,
   batchId: NONE,
+  batchIds: [],
+  splitAmount: true,
   notes: "",
 };
 
