@@ -61,7 +61,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
           </Link>
 
 
-          <nav className="ml-4 hidden items-center gap-1 md:flex">
+          <nav className="ml-2 hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto md:flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {NAV.map((item) => {
               const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
               return (
@@ -69,7 +69,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
                   key={item.to}
                   to={item.to}
                   className={cn(
-                    "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                    "shrink-0 whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors lg:px-3",
                     active
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
