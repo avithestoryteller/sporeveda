@@ -44,8 +44,11 @@ function useDashboardData(orgId: string) {
   return useQuery({
     queryKey: ["dashboard", orgId],
     enabled: Boolean(orgId),
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       const monthStart = startOfMonthISO();
+
 
       const [farms, bags, contamination, readings, stageLog, harvests, contaminationFeed] =
         await Promise.all([
@@ -54,15 +57,17 @@ function useDashboardData(orgId: string) {
             .select("id, name, is_active, location_notes")
             .eq("is_active", true)
             .order("name"),
-          supabase.from("bags").select("id, farm_id, current_stage, is_discarded"),
+          supabase.from("bags").select("farm_id, current_stage"),
           supabase
             .from("contamination_events")
-            .select("id, detected_at, bag_id, bags!inner(farm_id)")
+            .select("bag_id, bags!inner(farm_id)")
             .gte("detected_at", monthStart),
           supabase
             .from("environment_readings")
             .select("farm_id, reading_date, avg_temp_c, avg_humidity_pct")
-            .order("reading_date", { ascending: false }),
+            .order("reading_date", { ascending: false })
+            .limit(200),
+
           supabase
             .from("bag_stage_history")
             .select("id, stage, changed_at, bag_id, bags(bag_code)")
@@ -121,15 +126,20 @@ function useDashboardData(orgId: string) {
         .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
         .slice(0, 10);
 
-      const latestReadingByFarm = new Map<string, { date: string; temp: string | number | null }>();
+      const latestReadingByFarm = new Map<
+        string,
+        { date: string; temp: string | number | null; humidity: string | number | null }
+      >();
       for (const reading of readings.data ?? []) {
         if (!latestReadingByFarm.has(reading.farm_id)) {
           latestReadingByFarm.set(reading.farm_id, {
             date: reading.reading_date,
             temp: reading.avg_temp_c,
+            humidity: reading.avg_humidity_pct,
           });
         }
       }
+
 
       const contaminatedBagIdsByFarm = new Map<string, Set<string>>();
       for (const event of contamination.data ?? []) {
@@ -163,6 +173,8 @@ function useDashboardData(orgId: string) {
             : null,
           daysSinceReading: latest ? daysSince(latest.date) : null,
           lastTemp: latest?.temp ?? null,
+          lastHumidity: latest?.humidity ?? null,
+
         };
       });
 
@@ -309,7 +321,7 @@ function DashboardPage() {
                   ) : null}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
+                <div className="grid grid-cols-3 gap-3 border-t border-border pt-3 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Contamination (month)</p>
                     <p className="stat-value text-base">
@@ -321,11 +333,20 @@ function DashboardPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Last avg temp</p>
                     <p className="stat-value flex items-center gap-1 text-base">
-                      <Droplets className="size-3.5 text-muted-foreground" />
+                      <Thermometer className="size-3.5 text-muted-foreground" />
                       {num(farm.lastTemp)}
                       <span className="text-xs font-normal text-muted-foreground">°C</span>
                     </p>
                   </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Last avg humidity</p>
+                    <p className="stat-value flex items-center gap-1 text-base">
+                      <Droplets className="size-3.5 text-muted-foreground" />
+                      {num(farm.lastHumidity)}
+                      <span className="text-xs font-normal text-muted-foreground">%</span>
+                    </p>
+                  </div>
+
                 </div>
               </CardContent>
             </Card>

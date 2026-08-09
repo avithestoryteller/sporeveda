@@ -1,7 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ReferenceArea,
@@ -13,13 +16,86 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/AppShell";
-import { StageBadge } from "@/components/StageBadge";
 import { StatTile } from "@/components/StatTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { STAGE_ORDER, STAGE_LABEL, type BagStage } from "@/lib/stages";
+import { STAGE_ORDER, STAGE_LABEL, STAGE_COLOR, type BagStage } from "@/lib/stages";
 import { daysAgoISO, fmtDate, num, range, toNumber } from "@/lib/format";
+
+function TargetVsActual({
+  label,
+  unit,
+  actual,
+  min,
+  max,
+}: {
+  label: string;
+  unit: string;
+  actual: number | null;
+  min: number | null;
+  max: number | null;
+}) {
+  const hasTarget = min !== null || max !== null;
+  const status =
+    actual === null || !hasTarget
+      ? "unknown"
+      : (min !== null && actual < min) || (max !== null && actual > max)
+        ? "out"
+        : "in";
+
+  const lo = min ?? (actual !== null ? Math.min(actual, max ?? actual) : 0);
+  const hi = max ?? (actual !== null ? Math.max(actual, min ?? actual) : 1);
+  const padding = Math.max((hi - lo) * 0.6, 1);
+  const scaleMin = lo - padding;
+  const scaleMax = hi + padding;
+  const pct = (value: number) =>
+    Math.min(100, Math.max(0, ((value - scaleMin) / (scaleMax - scaleMin)) * 100));
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+        <span
+          className={
+            status === "out"
+              ? "rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive"
+              : status === "in"
+                ? "rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"
+                : "rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+          }
+        >
+          {status === "out" ? "Out of range" : status === "in" ? "In range" : "No data"}
+        </span>
+      </div>
+      <p className="stat-value mt-1 text-xl">
+        {actual === null ? "—" : `${num(actual)}${unit}`}
+        <span className="ml-2 text-xs font-normal text-muted-foreground">
+          target {min === null && max === null ? "not set" : `${min ?? "≤"}–${max ?? ""}${unit}`}
+        </span>
+      </p>
+      <div className="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+        {hasTarget ? (
+          <div
+            className="absolute inset-y-0 rounded-full bg-primary/25"
+            style={{ left: `${pct(lo)}%`, width: `${Math.max(2, pct(hi) - pct(lo))}%` }}
+          />
+        ) : null}
+        {actual !== null ? (
+          <div
+            className={
+              status === "out"
+                ? "absolute inset-y-0 w-1 rounded-full bg-destructive"
+                : "absolute inset-y-0 w-1 rounded-full bg-foreground"
+            }
+            style={{ left: `calc(${pct(actual)}% - 2px)` }}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 
 export const Route = createFileRoute("/_authenticated/rooms/$farmId")({
   head: () => ({
@@ -48,7 +124,9 @@ export const Route = createFileRoute("/_authenticated/rooms/$farmId")({
 function useFarmDetail(farmId: string) {
   return useQuery({
     queryKey: ["farm", farmId],
+    staleTime: 60_000,
     queryFn: async () => {
+
       const since = daysAgoISO(30);
       const [farm, bags, readings, batches, contamination] = await Promise.all([
         supabase.from("farms").select("*").eq("id", farmId).maybeSingle(),
@@ -121,6 +199,18 @@ function FarmDetailPage() {
   const fruitMin = toNumber(farm.target_fruiting_temp_min);
   const fruitMax = toNumber(farm.target_fruiting_temp_max);
 
+  const batchLabel = new Map(batches.map((batch) => [batch.id, batch.batch_code]));
+  const stackData = Array.from(
+    bags.reduce((acc, bag) => {
+      const key = batchLabel.get(bag.batch_id) ?? "Other";
+      const row = acc.get(key) ?? { batch: key };
+      const label = STAGE_LABEL[bag.current_stage as BagStage];
+      row[label] = ((row[label] as number | undefined) ?? 0) + 1;
+      acc.set(key, row);
+      return acc;
+    }, new Map<string, Record<string, string | number>>()),
+  ).map(([, row]) => row);
+
   return (
     <div>
       <PageHeader
@@ -133,7 +223,7 @@ function FarmDetailPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <StatTile label="Bags in room" value={bags.length} />
         <StatTile label="Active bags" value={activeBags} />
         <StatTile
@@ -142,11 +232,17 @@ function FarmDetailPage() {
           tone={discarded > 0 ? "warning" : "default"}
         />
         <StatTile
-          label="Last reading"
+          label="Last avg temp"
           value={latest ? `${num(latest.temp)}°C` : "—"}
-          hint={latest ? `${num(latest.humidity)}% RH · ${fmtDate(latest.date)}` : "No logs yet"}
+          hint={latest ? fmtDate(latest.date) : "No logs yet"}
+        />
+        <StatTile
+          label="Last avg humidity"
+          value={latest ? `${num(latest.humidity)}%` : "—"}
+          hint={latest ? fmtDate(latest.date) : "No logs yet"}
         />
       </div>
+
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -236,30 +332,72 @@ function FarmDetailPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base">Bags by stage</CardTitle>
+            <CardTitle className="font-display text-base">Target vs actual</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {STAGE_ORDER.map((stage) => {
-              const count = bags.filter((bag) => bag.current_stage === stage).length;
-              const pct = bags.length ? (count / bags.length) * 100 : 0;
-              return (
-                <div key={stage}>
-                  <div className="flex items-center justify-between text-sm">
-                    <StageBadge stage={stage as BagStage} size="sm" />
-                    <span className="stat-value">{count}</span>
-                  </div>
-                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-            {bags.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No bags assigned to this room.</p>
-            ) : null}
+          <CardContent className="space-y-4">
+            <TargetVsActual
+              label="Temperature (fruiting target)"
+              unit="°C"
+              actual={latest?.temp ?? null}
+              min={fruitMin}
+              max={fruitMax}
+            />
+            <TargetVsActual
+              label="Humidity"
+              unit="%"
+              actual={latest?.humidity ?? null}
+              min={humMin}
+              max={humMax}
+            />
+            <p className="border-t border-border pt-3 text-xs text-muted-foreground">
+              {latest ? `Latest reading ${fmtDate(latest.date)}` : "No readings logged yet"}
+            </p>
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-display text-base">Bags per batch by stage</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stackData.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              No bags assigned to this room.
+            </p>
+          ) : (
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stackData} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="batch" tick={{ fontSize: 11 }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11 }} tickLine={false} width={38} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: 8,
+                      border: "1px solid var(--color-border)",
+                      background: "var(--color-card)",
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  {STAGE_ORDER.map((stage, index) => (
+                    <Bar
+                      key={stage}
+                      dataKey={STAGE_LABEL[stage as BagStage]}
+                      stackId="stages"
+                      fill={STAGE_COLOR[stage as BagStage]}
+                      radius={index === STAGE_ORDER.length - 1 ? [4, 4, 0, 0] : 0}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Card>
