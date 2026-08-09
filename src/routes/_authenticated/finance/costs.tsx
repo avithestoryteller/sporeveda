@@ -387,6 +387,7 @@ function CostsPage() {
                   onValueChange={(value) => {
                     set("farmId", value);
                     set("batchId", NONE);
+                    set("batchIds", []);
                   }}
                 >
                   <SelectTrigger>
