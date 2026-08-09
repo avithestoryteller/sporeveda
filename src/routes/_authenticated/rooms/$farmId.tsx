@@ -14,9 +14,13 @@ import {
   YAxis,
 } from "recharts";
 
+import { Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrg, useOrgId } from "@/hooks/use-org";
 import { PageHeader } from "@/components/AppShell";
+import { RoomFormDialog } from "@/components/RoomFormDialog";
 import { StatTile } from "@/components/StatTile";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
