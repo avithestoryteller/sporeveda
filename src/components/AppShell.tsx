@@ -17,8 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/hooks/use-org";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import markAsset from "@/assets/sporeveda-mark.png.asset.json";
-import wordmarkAsset from "@/assets/sporeveda-wordmark.png.asset.json";
+import logoAsset from "@/assets/sporeveda-logo.png.asset.json";
 
 
 const NAV = [
@@ -54,17 +53,10 @@ export function AppShell({ children }: { children?: ReactNode }) {
             className="flex min-w-0 items-center gap-2 rounded-md bg-background px-2 py-1"
           >
             <img
-              src={markAsset.url}
-              alt="Sporeveda mushroom mark"
-              className="h-[42px] w-[42px] object-contain"
+              src={logoAsset.url}
+              alt="Sporeveda"
+              className="h-9 w-auto object-contain"
             />
-            <span className="flex h-6 items-center overflow-hidden">
-              <img
-                src={wordmarkAsset.url}
-                alt="Sporeveda"
-                className="h-8 w-auto max-w-[210px] object-contain"
-              />
-            </span>
 
           </Link>
 

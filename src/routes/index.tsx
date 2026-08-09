@@ -4,8 +4,7 @@ import { Activity, LineChart, ShieldCheck, Sprout } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import markAsset from "@/assets/sporeveda-mark.png.asset.json";
-import wordmarkAsset from "@/assets/sporeveda-wordmark.png.asset.json";
+import logoAsset from "@/assets/sporeveda-logo.png.asset.json";
 
 
 export const Route = createFileRoute("/")({
@@ -70,17 +69,10 @@ function Landing() {
         <div className="mx-auto flex h-14 max-w-5xl items-center px-4">
           <span className="flex items-center gap-2">
             <img
-              src={markAsset.url}
-              alt="Sporeveda mushroom mark"
-              className="h-12 w-12 object-contain"
+              src={logoAsset.url}
+              alt="Sporeveda"
+              className="h-10 w-auto object-contain"
             />
-            <span className="flex h-6 items-center overflow-hidden">
-              <img
-                src={wordmarkAsset.url}
-                alt="Sporeveda"
-                className="h-8 w-auto max-w-[220px] object-contain"
-              />
-            </span>
           </span>
 
 
