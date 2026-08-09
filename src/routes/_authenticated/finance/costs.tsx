@@ -215,7 +215,14 @@ function CostsPage() {
         subtitle="Every rupee spent, tagged by category, room and batch."
         action={
           canEdit ? (
-            <Button onClick={() => setShowForm((value) => !value)}>
+            <Button
+              onClick={() => {
+                setShowForm((value) => {
+                  if (value) setEditingId(null);
+                  return !value;
+                });
+              }}
+            >
               <Plus className="size-4" /> {showForm ? "Close" : "Add cost"}
             </Button>
           ) : undefined
@@ -225,7 +232,9 @@ function CostsPage() {
       {showForm && canEdit ? (
         <Card className="mb-5">
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base">New cost</CardTitle>
+            <CardTitle className="font-display text-base">
+              {editingId ? "Edit cost" : "New cost"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form
