@@ -126,15 +126,20 @@ function useDashboardData(orgId: string) {
         .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
         .slice(0, 10);
 
-      const latestReadingByFarm = new Map<string, { date: string; temp: string | number | null }>();
+      const latestReadingByFarm = new Map<
+        string,
+        { date: string; temp: string | number | null; humidity: string | number | null }
+      >();
       for (const reading of readings.data ?? []) {
         if (!latestReadingByFarm.has(reading.farm_id)) {
           latestReadingByFarm.set(reading.farm_id, {
             date: reading.reading_date,
             temp: reading.avg_temp_c,
+            humidity: reading.avg_humidity_pct,
           });
         }
       }
+
 
       const contaminatedBagIdsByFarm = new Map<string, Set<string>>();
       for (const event of contamination.data ?? []) {
