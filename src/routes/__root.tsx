@@ -133,8 +133,13 @@ function AuthSync() {
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      // Auth callbacks run while the client holds its internal session lock.
+      // Defer work that can trigger getUser() so protected route guards do not
+      // race the session write and redirect a valid sign-in back to /auth.
+      window.setTimeout(() => {
+        void router.invalidate();
+        if (event !== "SIGNED_OUT") void queryClient.invalidateQueries();
+      }, 0);
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
