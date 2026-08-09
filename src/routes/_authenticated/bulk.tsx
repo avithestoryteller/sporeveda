@@ -32,6 +32,10 @@ import {
   type ContaminationSeverity,
 } from "@/lib/stages";
 import { fmtDate } from "@/lib/format";
+import type { Database } from "@/integrations/supabase/types";
+
+type BagUpdate = Database["public"]["Tables"]["bags"]["Update"];
+type BatchUpdate = Database["public"]["Tables"]["batches"]["Update"];
 
 export const Route = createFileRoute("/_authenticated/bulk")({
   head: () => ({
@@ -150,9 +154,9 @@ function BulkUpdatePage() {
     mutationFn: async () => {
       if (selectedBags.length === 0) throw new Error("Select at least one bag");
 
-      const patch: Record<string, unknown> = {};
+      const patch: BagUpdate = {};
       if (bagEdit.stage !== KEEP) {
-        patch['current_stage'] = bagEdit.stage;
+        patch['current_stage'] = bagEdit.stage as BagStage;
         patch['is_discarded'] = bagEdit.stage === "discarded";
       }
       if (bagEdit.farm !== KEEP) patch['farm_id'] = bagEdit.farm;
@@ -204,7 +208,7 @@ function BulkUpdatePage() {
   const batchMutation = useMutation({
     mutationFn: async () => {
       if (selectedBatches.length === 0) throw new Error("Select at least one batch");
-      const patch: Record<string, unknown> = {};
+      const patch: BatchUpdate = {};
       if (batchEdit.farm !== KEEP) patch['farm_id'] = batchEdit.farm;
       if (batchEdit.substrate.trim()) patch['substrate_type'] = batchEdit.substrate.trim();
       if (batchEdit.inoculation) patch['inoculation_date'] = batchEdit.inoculation;
