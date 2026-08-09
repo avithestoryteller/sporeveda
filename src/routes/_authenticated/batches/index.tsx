@@ -465,7 +465,9 @@ function BatchesPage() {
             </ul>
           </CardContent>
         </Card>
+        </>
       )}
+
     </div>
   );
 }
