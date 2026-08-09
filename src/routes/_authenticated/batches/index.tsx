@@ -52,27 +52,84 @@ export const Route = createFileRoute("/_authenticated/batches/")({
 function useBatches() {
   return useQuery({
     queryKey: ["batches"],
+    staleTime: 60_000,
     queryFn: async () => {
       const [batches, bags] = await Promise.all([
         supabase
           .from("batches")
           .select("*, farms(name), species(common_name)")
           .order("inoculation_date", { ascending: false }),
-        supabase.from("bags").select("id, batch_id, current_stage"),
+        supabase.from("bags").select("batch_id, current_stage"),
       ]);
       const error = batches.error ?? bags.error;
       if (error) throw error;
-      return (batches.data ?? []).map((batch) => {
-        const batchBags = (bags.data ?? []).filter((bag) => bag.batch_id === batch.id);
-        return {
-          batch,
-          bagCount: batchBags.length,
-          discarded: batchBags.filter((bag) => bag.current_stage === "discarded").length,
-        };
-      });
+      const allBags = bags.data ?? [];
+      const funnel = STAGE_ORDER.map((stage) => ({
+        stage,
+        label: STAGE_LABEL[stage],
+        count: allBags.filter((bag) => bag.current_stage === stage).length,
+      }));
+      return {
+        rows: (batches.data ?? []).map((batch) => {
+          const batchBags = allBags.filter((bag) => bag.batch_id === batch.id);
+          return {
+            batch,
+            bagCount: batchBags.length,
+            discarded: batchBags.filter((bag) => bag.current_stage === "discarded").length,
+          };
+        }),
+        funnel,
+        totalBags: allBags.length,
+      };
     },
   });
 }
+
+function StageFunnel({
+  funnel,
+  totalBags,
+}: {
+  funnel: { stage: string; label: string; count: number }[];
+  totalBags: number;
+}) {
+  const max = Math.max(1, ...funnel.map((step) => step.count));
+  return (
+    <Card className="mb-4">
+      <CardContent className="space-y-2 p-5">
+        <div className="flex items-baseline justify-between">
+          <h2 className="font-display text-base font-semibold">Bags by stage</h2>
+          <p className="text-xs text-muted-foreground">{totalBags} bags total</p>
+        </div>
+        {funnel.map((step) => {
+          const width = (step.count / max) * 100;
+          return (
+            <div key={step.stage} className="flex items-center gap-3">
+              <span className="w-24 shrink-0 text-xs text-muted-foreground">{step.label}</span>
+              <div className="relative h-7 flex-1">
+                <div
+                  className="h-full rounded-md transition-all"
+                  style={{
+                    width: `${Math.max(width, step.count > 0 ? 4 : 1)}%`,
+                    marginLeft: `${(100 - Math.max(width, step.count > 0 ? 4 : 1)) / 2}%`,
+                    background: `var(--color-stage-${step.stage})`,
+                    opacity: step.count === 0 ? 0.25 : 1,
+                  }}
+                />
+              </div>
+              <span className="stat-value w-16 shrink-0 text-right text-sm">
+                {step.count}
+                <span className="ml-1 text-xs font-normal text-muted-foreground">
+                  {totalBags ? `${Math.round((step.count / totalBags) * 100)}%` : "—"}
+                </span>
+              </span>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 function useFormOptions() {
   return useQuery({
