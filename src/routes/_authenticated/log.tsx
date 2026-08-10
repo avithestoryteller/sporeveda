@@ -192,7 +192,10 @@ function LogPage() {
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base">New reading</CardTitle>
+            <CardTitle className="font-display text-base">
+              {editingId ? "Edit reading" : "New reading"}
+            </CardTitle>
+
           </CardHeader>
           <CardContent>
             {farms.isPending ? (
