@@ -309,6 +309,34 @@ function LogPage() {
                           <SourceBadge source={row.source} />
                         </div>
                         <p className="text-xs text-muted-foreground">{fmtDate(row.reading_date)}</p>
+                        {canEdit ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="mt-1 h-7 px-2 text-xs"
+                            onClick={() => {
+                              setEditingId(row.id);
+                              setFarmId(row.farm_id);
+                              setDate(row.reading_date);
+                              setForm({
+                                avgTemp: row.avg_temp_c === null ? "" : String(row.avg_temp_c),
+                                avgHum:
+                                  row.avg_humidity_pct === null ? "" : String(row.avg_humidity_pct),
+                                minTemp: row.min_temp_c === null ? "" : String(row.min_temp_c),
+                                maxTemp: row.max_temp_c === null ? "" : String(row.max_temp_c),
+                                minHum:
+                                  row.min_humidity_pct === null ? "" : String(row.min_humidity_pct),
+                                maxHum:
+                                  row.max_humidity_pct === null ? "" : String(row.max_humidity_pct),
+                                notes: row.notes ?? "",
+                              });
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                          >
+                            {editingId === row.id ? "Editing…" : "Edit min/max"}
+                          </Button>
+                        ) : null}
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="stat-value text-sm">
@@ -327,6 +355,7 @@ function LogPage() {
                         ) : null}
                       </div>
                     </li>
+
                   );
                 })}
               </ul>
