@@ -93,9 +93,7 @@ function LogPage() {
       if (form.avgTemp.trim() === "" && form.avgHum.trim() === "") {
         throw new Error("Enter at least an average temperature or humidity");
       }
-      const { data: userData } = await supabase.auth.getUser();
-      const { error } = await supabase.from("environment_readings").insert({
-        org_id: orgId,
+      const values = {
         farm_id: farmId,
         reading_date: date,
         avg_temp_c: numeric(form.avgTemp),
@@ -104,15 +102,31 @@ function LogPage() {
         max_temp_c: numeric(form.maxTemp),
         min_humidity_pct: numeric(form.minHum),
         max_humidity_pct: numeric(form.maxHum),
+        notes: form.notes.trim() || null,
+      };
+
+      if (editingId) {
+        const { error } = await supabase
+          .from("environment_readings")
+          .update(values)
+          .eq("id", editingId);
+        if (error) throw error;
+        return;
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await supabase.from("environment_readings").insert({
+        org_id: orgId,
+        ...values,
         source: "manual",
         recorded_by: userData.user?.id ?? null,
-        notes: form.notes.trim() || null,
       });
       if (error) throw error;
     },
     onSuccess: async () => {
-      toast.success("Reading saved");
+      toast.success(editingId ? "Reading updated" : "Reading saved");
       setForm(EMPTY);
+      setEditingId(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["recent-readings"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
@@ -122,6 +136,7 @@ function LogPage() {
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
 
   const tempTarget = selectedFarm
     ? {
