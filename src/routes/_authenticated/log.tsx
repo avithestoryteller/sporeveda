@@ -57,6 +57,8 @@ function LogPage() {
   const [farmId, setFarmId] = useState("");
   const [date, setDate] = useState(todayISO());
   const [form, setForm] = useState(EMPTY);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
 
   const farms = useQuery({
     queryKey: ["log-farms"],
@@ -93,9 +95,7 @@ function LogPage() {
       if (form.avgTemp.trim() === "" && form.avgHum.trim() === "") {
         throw new Error("Enter at least an average temperature or humidity");
       }
-      const { data: userData } = await supabase.auth.getUser();
-      const { error } = await supabase.from("environment_readings").insert({
-        org_id: orgId,
+      const values = {
         farm_id: farmId,
         reading_date: date,
         avg_temp_c: numeric(form.avgTemp),
@@ -104,15 +104,31 @@ function LogPage() {
         max_temp_c: numeric(form.maxTemp),
         min_humidity_pct: numeric(form.minHum),
         max_humidity_pct: numeric(form.maxHum),
+        notes: form.notes.trim() || null,
+      };
+
+      if (editingId) {
+        const { error } = await supabase
+          .from("environment_readings")
+          .update(values)
+          .eq("id", editingId);
+        if (error) throw error;
+        return;
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await supabase.from("environment_readings").insert({
+        org_id: orgId,
+        ...values,
         source: "manual",
         recorded_by: userData.user?.id ?? null,
-        notes: form.notes.trim() || null,
       });
       if (error) throw error;
     },
     onSuccess: async () => {
-      toast.success("Reading saved");
+      toast.success(editingId ? "Reading updated" : "Reading saved");
       setForm(EMPTY);
+      setEditingId(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["recent-readings"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
@@ -122,6 +138,7 @@ function LogPage() {
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
 
   const tempTarget = selectedFarm
     ? {
@@ -175,7 +192,10 @@ function LogPage() {
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base">New reading</CardTitle>
+            <CardTitle className="font-display text-base">
+              {editingId ? "Edit reading" : "New reading"}
+            </CardTitle>
+
           </CardHeader>
           <CardContent>
             {farms.isPending ? (
@@ -251,9 +271,28 @@ function LogPage() {
                   />
                 </div>
 
-                <Button type="submit" disabled={mutation.isPending || !canEdit}>
-                  {mutation.isPending ? "Saving…" : "Save reading"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button type="submit" disabled={mutation.isPending || !canEdit}>
+                    {mutation.isPending
+                      ? "Saving…"
+                      : editingId
+                        ? "Update reading"
+                        : "Save reading"}
+                  </Button>
+                  {editingId ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditingId(null);
+                        setForm(EMPTY);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  ) : null}
+                </div>
+
                 {!canEdit ? (
                   <p className="text-xs text-muted-foreground">
                     Your role can view records but not add them.
@@ -292,6 +331,34 @@ function LogPage() {
                           <SourceBadge source={row.source} />
                         </div>
                         <p className="text-xs text-muted-foreground">{fmtDate(row.reading_date)}</p>
+                        {canEdit ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="mt-1 h-7 px-2 text-xs"
+                            onClick={() => {
+                              setEditingId(row.id);
+                              setFarmId(row.farm_id);
+                              setDate(row.reading_date);
+                              setForm({
+                                avgTemp: row.avg_temp_c === null ? "" : String(row.avg_temp_c),
+                                avgHum:
+                                  row.avg_humidity_pct === null ? "" : String(row.avg_humidity_pct),
+                                minTemp: row.min_temp_c === null ? "" : String(row.min_temp_c),
+                                maxTemp: row.max_temp_c === null ? "" : String(row.max_temp_c),
+                                minHum:
+                                  row.min_humidity_pct === null ? "" : String(row.min_humidity_pct),
+                                maxHum:
+                                  row.max_humidity_pct === null ? "" : String(row.max_humidity_pct),
+                                notes: row.notes ?? "",
+                              });
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                          >
+                            {editingId === row.id ? "Editing…" : "Edit min/max"}
+                          </Button>
+                        ) : null}
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="stat-value text-sm">
@@ -310,6 +377,7 @@ function LogPage() {
                         ) : null}
                       </div>
                     </li>
+
                   );
                 })}
               </ul>
