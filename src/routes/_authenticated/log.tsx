@@ -57,6 +57,8 @@ function LogPage() {
   const [farmId, setFarmId] = useState("");
   const [date, setDate] = useState(todayISO());
   const [form, setForm] = useState(EMPTY);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
 
   const farms = useQuery({
     queryKey: ["log-farms"],
