@@ -268,9 +268,28 @@ function LogPage() {
                   />
                 </div>
 
-                <Button type="submit" disabled={mutation.isPending || !canEdit}>
-                  {mutation.isPending ? "Saving…" : "Save reading"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button type="submit" disabled={mutation.isPending || !canEdit}>
+                    {mutation.isPending
+                      ? "Saving…"
+                      : editingId
+                        ? "Update reading"
+                        : "Save reading"}
+                  </Button>
+                  {editingId ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditingId(null);
+                        setForm(EMPTY);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  ) : null}
+                </div>
+
                 {!canEdit ? (
                   <p className="text-xs text-muted-foreground">
                     Your role can view records but not add them.
