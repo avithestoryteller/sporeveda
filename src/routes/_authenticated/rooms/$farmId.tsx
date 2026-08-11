@@ -249,6 +249,13 @@ function FarmDetailPage() {
     }, new Map<string, Record<string, string | number>>()),
   ).map(([, row]) => row);
 
+  const temps = readings.map((r) => r.temp).filter((v): v is number => v != null);
+  const humidities = readings.map((r) => r.humidity).filter((v): v is number => v != null);
+  const avgTemp = temps.length ? temps.reduce((a, b) => a + b, 0) / temps.length : null;
+  const avgHumidity = humidities.length
+    ? humidities.reduce((a, b) => a + b, 0) / humidities.length
+    : null;
+
   return (
     <div>
       <PageHeader
@@ -275,7 +282,7 @@ function FarmDetailPage() {
 
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
         <StatTile label="Bags in room" value={bags.length} />
         <StatTile label="Active bags" value={activeBags} />
         <StatTile
@@ -289,9 +296,19 @@ function FarmDetailPage() {
           hint={latest ? fmtDate(latest.date) : "No logs yet"}
         />
         <StatTile
+          label="Avg temp (30d)"
+          value={avgTemp !== null ? `${num(avgTemp)}°C` : "—"}
+          hint={readings.length ? `${readings.length} readings` : "No logs yet"}
+        />
+        <StatTile
           label="Last avg humidity"
           value={latest ? `${num(latest.humidity)}%` : "—"}
           hint={latest ? fmtDate(latest.date) : "No logs yet"}
+        />
+        <StatTile
+          label="Avg humidity (30d)"
+          value={avgHumidity !== null ? `${num(avgHumidity)}%` : "—"}
+          hint={readings.length ? `${readings.length} readings` : "No logs yet"}
         />
       </div>
 

@@ -9,7 +9,7 @@ import { RoomFormDialog } from "@/components/RoomFormDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { daysSince, range } from "@/lib/format";
+import { daysSince, num, range } from "@/lib/format";
 
 
 export const Route = createFileRoute("/_authenticated/rooms/")({
@@ -40,13 +40,34 @@ function useFarms(orgId: string) {
         supabase.from("bags").select("id, farm_id, current_stage"),
         supabase
           .from("environment_readings")
-          .select("farm_id, reading_date")
+          .select("farm_id, reading_date, avg_temp_c, avg_humidity_pct")
           .order("reading_date", { ascending: false }),
       ]);
       const error = farms.error ?? bags.error ?? readings.error;
       if (error) throw error;
 
       const lastLog = new Map<string, string>();
+      const avgTempByFarm = new Map<string, number | null>();
+      const avgHumidityByFarm = new Map<string, number | null>();
+      for (const farm of farms.data ?? []) {
+        const farmReadings = (readings.data ?? []).filter((r) => r.farm_id === farm.id);
+        const temps = farmReadings
+          .map((r) => r.avg_temp_c)
+          .filter((v): v is number => v != null);
+        const humidities = farmReadings
+          .map((r) => r.avg_humidity_pct)
+          .filter((v): v is number => v != null);
+        avgTempByFarm.set(
+          farm.id,
+          temps.length ? temps.reduce((a, b) => a + b, 0) / temps.length : null,
+        );
+        avgHumidityByFarm.set(
+          farm.id,
+          humidities.length
+            ? humidities.reduce((a, b) => a + b, 0) / humidities.length
+            : null,
+        );
+      }
       for (const row of readings.data ?? []) {
         if (!lastLog.has(row.farm_id)) lastLog.set(row.farm_id, row.reading_date);
       }
@@ -60,6 +81,8 @@ function useFarms(orgId: string) {
             (bag) => bag.current_stage !== "harvested" && bag.current_stage !== "discarded",
           ).length,
           lastLog: lastLog.get(farm.id) ?? null,
+          avgTemp: avgTempByFarm.get(farm.id) ?? null,
+          avgHumidity: avgHumidityByFarm.get(farm.id) ?? null,
         };
       });
     },
@@ -106,7 +129,7 @@ function FarmsPage() {
         </Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {data.map(({ farm, totalBags, activeBags, lastLog }) => {
+          {data.map(({ farm, totalBags, activeBags, lastLog, avgTemp, avgHumidity }) => {
             const gap = daysSince(lastLog);
             return (
               <Card key={farm.id}>
@@ -166,30 +189,56 @@ function FarmsPage() {
                       </p>
                     </div>
                   </div>
-                  <dl className="grid grid-cols-1 gap-1 border-t border-border pt-3 text-xs text-muted-foreground sm:grid-cols-3">
+                  <div className="space-y-3 border-t border-border pt-3">
                     <div>
-                      <dt>Colonization</dt>
-                      <dd className="text-foreground">
-                        {range(
-                          farm.target_colonization_temp_min,
-                          farm.target_colonization_temp_max,
-                          "°C",
-                        )}
-                      </dd>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Targets
+                      </p>
+                      <dl className="mt-1 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <dt>Colonization</dt>
+                          <dd className="text-foreground">
+                            {range(
+                              farm.target_colonization_temp_min,
+                              farm.target_colonization_temp_max,
+                              "°C",
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Fruiting</dt>
+                          <dd className="text-foreground">
+                            {range(farm.target_fruiting_temp_min, farm.target_fruiting_temp_max, "°C")}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Humidity</dt>
+                          <dd className="text-foreground">
+                            {range(farm.target_humidity_min_pct, farm.target_humidity_max_pct, "%")}
+                          </dd>
+                        </div>
+                      </dl>
                     </div>
                     <div>
-                      <dt>Fruiting</dt>
-                      <dd className="text-foreground">
-                        {range(farm.target_fruiting_temp_min, farm.target_fruiting_temp_max, "°C")}
-                      </dd>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Actual averages
+                      </p>
+                      <dl className="mt-1 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <dt>Avg temp</dt>
+                          <dd className="text-foreground">
+                            {avgTemp === null ? "—" : `${num(avgTemp)}°C`}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Avg humidity</dt>
+                          <dd className="text-foreground">
+                            {avgHumidity === null ? "—" : `${num(avgHumidity)}%`}
+                          </dd>
+                        </div>
+                      </dl>
                     </div>
-                    <div>
-                      <dt>Humidity</dt>
-                      <dd className="text-foreground">
-                        {range(farm.target_humidity_min_pct, farm.target_humidity_max_pct, "%")}
-                      </dd>
-                    </div>
-                  </dl>
+                  </div>
                 </CardContent>
               </Card>
             );
