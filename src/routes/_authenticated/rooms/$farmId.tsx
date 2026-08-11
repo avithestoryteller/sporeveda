@@ -249,6 +249,13 @@ function FarmDetailPage() {
     }, new Map<string, Record<string, string | number>>()),
   ).map(([, row]) => row);
 
+  const temps = readings.map((r) => r.temp).filter((v): v is number => v != null);
+  const humidities = readings.map((r) => r.humidity).filter((v): v is number => v != null);
+  const avgTemp = temps.length ? temps.reduce((a, b) => a + b, 0) / temps.length : null;
+  const avgHumidity = humidities.length
+    ? humidities.reduce((a, b) => a + b, 0) / humidities.length
+    : null;
+
   return (
     <div>
       <PageHeader
