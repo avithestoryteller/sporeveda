@@ -189,30 +189,56 @@ function FarmsPage() {
                       </p>
                     </div>
                   </div>
-                  <dl className="grid grid-cols-1 gap-1 border-t border-border pt-3 text-xs text-muted-foreground sm:grid-cols-3">
+                  <div className="space-y-3 border-t border-border pt-3">
                     <div>
-                      <dt>Colonization</dt>
-                      <dd className="text-foreground">
-                        {range(
-                          farm.target_colonization_temp_min,
-                          farm.target_colonization_temp_max,
-                          "°C",
-                        )}
-                      </dd>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Targets
+                      </p>
+                      <dl className="mt-1 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <dt>Colonization</dt>
+                          <dd className="text-foreground">
+                            {range(
+                              farm.target_colonization_temp_min,
+                              farm.target_colonization_temp_max,
+                              "°C",
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Fruiting</dt>
+                          <dd className="text-foreground">
+                            {range(farm.target_fruiting_temp_min, farm.target_fruiting_temp_max, "°C")}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Humidity</dt>
+                          <dd className="text-foreground">
+                            {range(farm.target_humidity_min_pct, farm.target_humidity_max_pct, "%")}
+                          </dd>
+                        </div>
+                      </dl>
                     </div>
                     <div>
-                      <dt>Fruiting</dt>
-                      <dd className="text-foreground">
-                        {range(farm.target_fruiting_temp_min, farm.target_fruiting_temp_max, "°C")}
-                      </dd>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Actual averages
+                      </p>
+                      <dl className="mt-1 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <dt>Avg temp</dt>
+                          <dd className="text-foreground">
+                            {avgTemp === null ? "—" : `${num(avgTemp)}°C`}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Avg humidity</dt>
+                          <dd className="text-foreground">
+                            {avgHumidity === null ? "—" : `${num(avgHumidity)}%`}
+                          </dd>
+                        </div>
+                      </dl>
                     </div>
-                    <div>
-                      <dt>Humidity</dt>
-                      <dd className="text-foreground">
-                        {range(farm.target_humidity_min_pct, farm.target_humidity_max_pct, "%")}
-                      </dd>
-                    </div>
-                  </dl>
+                  </div>
                 </CardContent>
               </Card>
             );
