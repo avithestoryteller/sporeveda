@@ -130,6 +130,27 @@ function useDashboardData(orgId: string) {
         string,
         { date: string; temp: string | number | null; humidity: string | number | null }
       >();
+      const avgByFarm = new Map<
+        string,
+        { temp: number | null; humidity: number | null }
+      >();
+      for (const farm of farms.data ?? []) {
+        const farmReadings = (readings.data ?? []).filter((r) => r.farm_id === farm.id);
+        const farmTemps = farmReadings
+          .map((r) => r.avg_temp_c)
+          .filter((v): v is number => v != null);
+        const farmHumidities = farmReadings
+          .map((r) => r.avg_humidity_pct)
+          .filter((v): v is number => v != null);
+        avgByFarm.set(farm.id, {
+          temp: farmTemps.length
+            ? farmTemps.reduce((a, b) => a + b, 0) / farmTemps.length
+            : null,
+          humidity: farmHumidities.length
+            ? farmHumidities.reduce((a, b) => a + b, 0) / farmHumidities.length
+            : null,
+        });
+      }
       for (const reading of readings.data ?? []) {
         if (!latestReadingByFarm.has(reading.farm_id)) {
           latestReadingByFarm.set(reading.farm_id, {
@@ -140,6 +161,18 @@ function useDashboardData(orgId: string) {
         }
       }
 
+      const allTemps = (readings.data ?? [])
+        .map((r) => r.avg_temp_c)
+        .filter((v): v is number => v != null);
+      const allHumidities = (readings.data ?? [])
+        .map((r) => r.avg_humidity_pct)
+        .filter((v): v is number => v != null);
+      const overallAvgTemp = allTemps.length
+        ? allTemps.reduce((a, b) => a + b, 0) / allTemps.length
+        : null;
+      const overallAvgHumidity = allHumidities.length
+        ? allHumidities.reduce((a, b) => a + b, 0) / allHumidities.length
+        : null;
 
       const contaminatedBagIdsByFarm = new Map<string, Set<string>>();
       for (const event of contamination.data ?? []) {
@@ -159,6 +192,7 @@ function useDashboardData(orgId: string) {
         const discarded = farmBags.filter((bag) => bag.current_stage === "discarded").length;
         const contaminatedThisMonth = contaminatedBagIdsByFarm.get(farm.id)?.size ?? 0;
         const latest = latestReadingByFarm.get(farm.id);
+        const averages = avgByFarm.get(farm.id);
 
         return {
           id: farm.id,
@@ -174,7 +208,8 @@ function useDashboardData(orgId: string) {
           daysSinceReading: latest ? daysSince(latest.date) : null,
           lastTemp: latest?.temp ?? null,
           lastHumidity: latest?.humidity ?? null,
-
+          overallAvgTemp: averages?.temp ?? null,
+          overallAvgHumidity: averages?.humidity ?? null,
         };
       });
 
@@ -187,6 +222,8 @@ function useDashboardData(orgId: string) {
         staleRooms: farmCards.filter(
           (farm) => farm.daysSinceReading === null || farm.daysSinceReading >= 2,
         ).length,
+        overallAvgTemp,
+        overallAvgHumidity,
       };
 
       return { farmCards, activity, totals };
@@ -202,8 +239,8 @@ function DashboardPage() {
     return (
       <div className="space-y-4">
         <Skeleton className="h-9 w-52" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((index) => (
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+          {[0, 1, 2, 3, 4, 5].map((index) => (
             <Skeleton key={index} className="h-24" />
           ))}
         </div>
@@ -230,7 +267,7 @@ function DashboardPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
         <StatTile
           label="Active rooms"
           value={totals.farms}
@@ -248,6 +285,26 @@ function DashboardPage() {
           value={totals.staleRooms}
           tone={totals.staleRooms > 0 ? "destructive" : "success"}
           icon={<Thermometer className="size-5" />}
+        />
+        <StatTile
+          label="Avg temp (all time)"
+          value={
+            <span className="flex items-center gap-1">
+              {num(totals.overallAvgTemp)}
+              <span className="text-sm font-normal text-muted-foreground">°C</span>
+            </span>
+          }
+          icon={<Thermometer className="size-5" />}
+        />
+        <StatTile
+          label="Avg humidity (all time)"
+          value={
+            <span className="flex items-center gap-1">
+              {num(totals.overallAvgHumidity)}
+              <span className="text-sm font-normal text-muted-foreground">%</span>
+            </span>
+          }
+          icon={<Droplets className="size-5" />}
         />
       </div>
 
@@ -321,8 +378,8 @@ function DashboardPage() {
                   ) : null}
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 border-t border-border pt-3 text-sm">
-                  <div>
+                <div className="grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
+                  <div className="col-span-2">
                     <p className="text-xs text-muted-foreground">Contamination (month)</p>
                     <p className="stat-value text-base">
                       {farm.contaminationRate === null
@@ -339,6 +396,14 @@ function DashboardPage() {
                     </p>
                   </div>
                   <div>
+                    <p className="text-xs text-muted-foreground">Overall avg temp</p>
+                    <p className="stat-value flex items-center gap-1 text-base">
+                      <Thermometer className="size-3.5 text-muted-foreground" />
+                      {num(farm.overallAvgTemp)}
+                      <span className="text-xs font-normal text-muted-foreground">°C</span>
+                    </p>
+                  </div>
+                  <div>
                     <p className="text-xs text-muted-foreground">Last avg humidity</p>
                     <p className="stat-value flex items-center gap-1 text-base">
                       <Droplets className="size-3.5 text-muted-foreground" />
@@ -346,7 +411,14 @@ function DashboardPage() {
                       <span className="text-xs font-normal text-muted-foreground">%</span>
                     </p>
                   </div>
-
+                  <div>
+                    <p className="text-xs text-muted-foreground">Overall avg humidity</p>
+                    <p className="stat-value flex items-center gap-1 text-base">
+                      <Droplets className="size-3.5 text-muted-foreground" />
+                      {num(farm.overallAvgHumidity)}
+                      <span className="text-xs font-normal text-muted-foreground">%</span>
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
