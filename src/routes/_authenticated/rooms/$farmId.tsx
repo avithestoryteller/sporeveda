@@ -408,7 +408,9 @@ function FarmDetailPage() {
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base">Climate — last 30 days</CardTitle>
+            <CardTitle className="font-display text-base">
+              Actual climate trend — last 30 days
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {readings.length === 0 ? (
@@ -416,58 +418,54 @@ function FarmDetailPage() {
                 No environment readings logged in the last 30 days.
               </p>
             ) : (
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={readings} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    {fruitMin !== null && fruitMax !== null ? (
-                      <ReferenceArea
-                        y1={fruitMin}
-                        y2={fruitMax}
-                        yAxisId="temp"
-                        fill="var(--color-primary)"
-                        fillOpacity={0.08}
-                      />
-                    ) : null}
-                    <XAxis dataKey="label" tick={{ fontSize: 11 }} tickLine={false} />
-                    <YAxis yAxisId="temp" tick={{ fontSize: 11 }} tickLine={false} width={38} />
-                    <YAxis
-                      yAxisId="hum"
-                      orientation="right"
-                      tick={{ fontSize: 11 }}
-                      tickLine={false}
-                      width={38}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: 8,
-                        border: "1px solid var(--color-border)",
-                        background: "var(--color-card)",
-                        fontSize: 12,
-                      }}
-                    />
-                    <Line
-                      yAxisId="temp"
-                      type="monotone"
-                      dataKey="temp"
-                      name="Temp °C"
-                      stroke="var(--color-primary)"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      yAxisId="hum"
-                      type="monotone"
-                      dataKey="humidity"
-                      name="Humidity %"
-                      stroke="var(--color-accent)"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="grid gap-4 xl:grid-cols-2">
+                <div>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Temperature (°C)
+                  </p>
+                  <ClimateTrendChart
+                    data={readings}
+                    dataKey="temp"
+                    rangeKey="tempRange"
+                    name="Avg temp °C"
+                    unit="°"
+                    color="var(--color-primary)"
+                    average={avgTemp}
+                    bands={[
+                      {
+                        name: "Colonisation",
+                        min: toNumber(farm.target_colonization_temp_min),
+                        max: toNumber(farm.target_colonization_temp_max),
+                      },
+                      { name: "Fruiting", min: fruitMin, max: fruitMax },
+                    ]}
+                  />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Humidity (%)
+                  </p>
+                  <ClimateTrendChart
+                    data={readings}
+                    dataKey="humidity"
+                    rangeKey="humidityRange"
+                    name="Avg humidity %"
+                    unit="%"
+                    color="var(--color-accent)"
+                    average={avgHumidity}
+                    bands={[
+                      {
+                        name: "Colonisation",
+                        min: toNumber(farm.target_colonization_humidity_min_pct),
+                        max: toNumber(farm.target_colonization_humidity_max_pct),
+                      },
+                      { name: "Fruiting", min: humMin, max: humMax },
+                    ]}
+                  />
+                </div>
               </div>
             )}
+
             <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs text-muted-foreground sm:grid-cols-4">
               <div>
                 <dt>Colonization temp</dt>
