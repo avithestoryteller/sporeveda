@@ -40,13 +40,34 @@ function useFarms(orgId: string) {
         supabase.from("bags").select("id, farm_id, current_stage"),
         supabase
           .from("environment_readings")
-          .select("farm_id, reading_date")
+          .select("farm_id, reading_date, avg_temp_c, avg_humidity_pct")
           .order("reading_date", { ascending: false }),
       ]);
       const error = farms.error ?? bags.error ?? readings.error;
       if (error) throw error;
 
       const lastLog = new Map<string, string>();
+      const avgTempByFarm = new Map<string, number | null>();
+      const avgHumidityByFarm = new Map<string, number | null>();
+      for (const farm of farms.data ?? []) {
+        const farmReadings = (readings.data ?? []).filter((r) => r.farm_id === farm.id);
+        const temps = farmReadings
+          .map((r) => r.avg_temp_c)
+          .filter((v): v is number => v != null);
+        const humidities = farmReadings
+          .map((r) => r.avg_humidity_pct)
+          .filter((v): v is number => v != null);
+        avgTempByFarm.set(
+          farm.id,
+          temps.length ? temps.reduce((a, b) => a + b, 0) / temps.length : null,
+        );
+        avgHumidityByFarm.set(
+          farm.id,
+          humidities.length
+            ? humidities.reduce((a, b) => a + b, 0) / humidities.length
+            : null,
+        );
+      }
       for (const row of readings.data ?? []) {
         if (!lastLog.has(row.farm_id)) lastLog.set(row.farm_id, row.reading_date);
       }
