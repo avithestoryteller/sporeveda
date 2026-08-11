@@ -129,7 +129,7 @@ function FarmsPage() {
         </Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {data.map(({ farm, totalBags, activeBags, lastLog }) => {
+          {data.map(({ farm, totalBags, activeBags, lastLog, avgTemp, avgHumidity }) => {
             const gap = daysSince(lastLog);
             return (
               <Card key={farm.id}>
