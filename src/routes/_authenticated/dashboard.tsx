@@ -239,8 +239,8 @@ function DashboardPage() {
     return (
       <div className="space-y-4">
         <Skeleton className="h-9 w-52" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((index) => (
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+          {[0, 1, 2, 3, 4, 5].map((index) => (
             <Skeleton key={index} className="h-24" />
           ))}
         </div>
