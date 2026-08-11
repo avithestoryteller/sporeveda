@@ -22,6 +22,7 @@ import { useOrg, useOrgId } from "@/hooks/use-org";
 import { PageHeader } from "@/components/AppShell";
 import { RoomFormDialog } from "@/components/RoomFormDialog";
 import { StatTile } from "@/components/StatTile";
+import { DeltaBadge } from "@/components/DeltaBadge";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,12 +32,6 @@ import { daysAgoISO, fmtDate, num, range, toNumber } from "@/lib/format";
 
 type TargetRange = { name: string; min: number | null; max: number | null };
 
-function rangeStatus(actual: number | null, r: TargetRange) {
-  const hasTarget = r.min !== null || r.max !== null;
-  if (actual === null || !hasTarget) return "unknown" as const;
-  if ((r.min !== null && actual < r.min) || (r.max !== null && actual > r.max)) return "out" as const;
-  return "in" as const;
-}
 
 function TargetVsActual({
   label,
@@ -96,34 +91,21 @@ function TargetVsActual({
       </div>
 
       <div className="mt-2 space-y-1">
-        {ranges.map((r, index) => {
-          const status = rangeStatus(actual, r);
-          return (
-            <div key={r.name} className="flex items-center justify-between gap-2 text-xs">
-              <span className="flex items-center gap-2 text-muted-foreground">
-                <span
-                  className={
-                    index === 0
-                      ? "h-2 w-3 rounded-full bg-primary/30"
-                      : "h-2 w-3 rounded-full bg-accent/40"
-                  }
-                />
-                {r.name} {fmtRange(r)}
-              </span>
+        {ranges.map((r, index) => (
+          <div key={r.name} className="flex items-center justify-between gap-2 text-xs">
+            <span className="flex items-center gap-2 text-muted-foreground">
               <span
                 className={
-                  status === "out"
-                    ? "rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive"
-                    : status === "in"
-                      ? "rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"
-                      : "rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                  index === 0
+                    ? "h-2 w-3 rounded-full bg-primary/30"
+                    : "h-2 w-3 rounded-full bg-accent/40"
                 }
-              >
-                {status === "out" ? "Out of range" : status === "in" ? "In range" : "No data"}
-              </span>
-            </div>
-          );
-        })}
+              />
+              {r.name} {fmtRange(r)}
+            </span>
+            <DeltaBadge actual={actual} min={r.min} max={r.max} unit={unit} />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -385,7 +367,18 @@ function FarmDetailPage() {
         <StatTile
           label="Last avg temp"
           value={latest ? `${num(latest.temp)}°C` : "—"}
-          hint={latest ? fmtDate(latest.date) : "No logs yet"}
+          hint={
+            <span className="flex flex-wrap items-center gap-1">
+              <DeltaBadge
+                actual={latest?.temp ?? null}
+                min={fruitMin}
+                max={fruitMax}
+                unit="°C"
+                label="Fruiting"
+              />
+              {latest ? fmtDate(latest.date) : "No logs yet"}
+            </span>
+          }
         />
         <StatTile
           label="Avg temp (30d)"
@@ -395,8 +388,20 @@ function FarmDetailPage() {
         <StatTile
           label="Last avg humidity"
           value={latest ? `${num(latest.humidity)}%` : "—"}
-          hint={latest ? fmtDate(latest.date) : "No logs yet"}
+          hint={
+            <span className="flex flex-wrap items-center gap-1">
+              <DeltaBadge
+                actual={latest?.humidity ?? null}
+                min={humMin}
+                max={humMax}
+                unit="%"
+                label="Fruiting"
+              />
+              {latest ? fmtDate(latest.date) : "No logs yet"}
+            </span>
+          }
         />
+
         <StatTile
           label="Avg humidity (30d)"
           value={avgHumidity !== null ? `${num(avgHumidity)}%` : "—"}
