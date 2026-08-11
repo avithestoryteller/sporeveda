@@ -81,6 +81,8 @@ function useFarms(orgId: string) {
             (bag) => bag.current_stage !== "harvested" && bag.current_stage !== "discarded",
           ).length,
           lastLog: lastLog.get(farm.id) ?? null,
+          avgTemp: avgTempByFarm.get(farm.id) ?? null,
+          avgHumidity: avgHumidityByFarm.get(farm.id) ?? null,
         };
       });
     },
