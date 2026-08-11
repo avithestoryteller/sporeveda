@@ -267,7 +267,7 @@ function DashboardPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
         <StatTile
           label="Active rooms"
           value={totals.farms}
@@ -285,6 +285,26 @@ function DashboardPage() {
           value={totals.staleRooms}
           tone={totals.staleRooms > 0 ? "destructive" : "success"}
           icon={<Thermometer className="size-5" />}
+        />
+        <StatTile
+          label="Avg temp (all time)"
+          value={
+            <span className="flex items-center gap-1">
+              {num(totals.overallAvgTemp)}
+              <span className="text-sm font-normal text-muted-foreground">°C</span>
+            </span>
+          }
+          icon={<Thermometer className="size-5" />}
+        />
+        <StatTile
+          label="Avg humidity (all time)"
+          value={
+            <span className="flex items-center gap-1">
+              {num(totals.overallAvgHumidity)}
+              <span className="text-sm font-normal text-muted-foreground">%</span>
+            </span>
+          }
+          icon={<Droplets className="size-5" />}
         />
       </div>
 
