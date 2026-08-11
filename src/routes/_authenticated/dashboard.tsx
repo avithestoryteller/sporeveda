@@ -192,6 +192,7 @@ function useDashboardData(orgId: string) {
         const discarded = farmBags.filter((bag) => bag.current_stage === "discarded").length;
         const contaminatedThisMonth = contaminatedBagIdsByFarm.get(farm.id)?.size ?? 0;
         const latest = latestReadingByFarm.get(farm.id);
+        const averages = avgByFarm.get(farm.id);
 
         return {
           id: farm.id,
@@ -207,7 +208,8 @@ function useDashboardData(orgId: string) {
           daysSinceReading: latest ? daysSince(latest.date) : null,
           lastTemp: latest?.temp ?? null,
           lastHumidity: latest?.humidity ?? null,
-
+          overallAvgTemp: averages?.temp ?? null,
+          overallAvgHumidity: averages?.humidity ?? null,
         };
       });
 
@@ -220,6 +222,8 @@ function useDashboardData(orgId: string) {
         staleRooms: farmCards.filter(
           (farm) => farm.daysSinceReading === null || farm.daysSinceReading >= 2,
         ).length,
+        overallAvgTemp,
+        overallAvgHumidity,
       };
 
       return { farmCards, activity, totals };
