@@ -1,13 +1,15 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Area,
   Bar,
   BarChart,
   CartesianGrid,
+  ComposedChart,
   Legend,
   Line,
-  LineChart,
   ReferenceArea,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -127,6 +129,88 @@ function TargetVsActual({
   );
 }
 
+type TrendRow = Record<string, unknown> & { label: string };
+
+function ClimateTrendChart({
+  data,
+  dataKey,
+  rangeKey,
+  name,
+  unit,
+  color,
+  bands,
+  average,
+}: {
+  data: TrendRow[];
+  dataKey: string;
+  rangeKey: string;
+  name: string;
+  unit: string;
+  color: string;
+  bands: TargetRange[];
+  average: number | null;
+}) {
+  return (
+    <div className="h-56 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+          {bands.map((band, index) =>
+            band.min !== null && band.max !== null ? (
+              <ReferenceArea
+                key={band.name}
+                y1={band.min}
+                y2={band.max}
+                fill={index === 0 ? "var(--color-primary)" : "var(--color-accent)"}
+                fillOpacity={0.08}
+              />
+            ) : null,
+          )}
+          <XAxis dataKey="label" tick={{ fontSize: 11 }} tickLine={false} />
+          <YAxis
+            tick={{ fontSize: 11 }}
+            tickLine={false}
+            width={38}
+            domain={["auto", "auto"]}
+            unit={unit}
+          />
+          <Tooltip
+            contentStyle={{
+              borderRadius: 8,
+              border: "1px solid var(--color-border)",
+              background: "var(--color-card)",
+              fontSize: 12,
+            }}
+          />
+          <Area
+            dataKey={rangeKey}
+            name="Min–max"
+            stroke="none"
+            fill={color}
+            fillOpacity={0.12}
+            connectNulls
+          />
+          {average !== null ? (
+            <ReferenceLine
+              y={average}
+              stroke="var(--color-muted-foreground)"
+              strokeDasharray="4 4"
+            />
+          ) : null}
+          <Line
+            type="monotone"
+            dataKey={dataKey}
+            name={name}
+            stroke={color}
+            strokeWidth={2}
+            dot={false}
+            connectNulls
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
 
 
 export const Route = createFileRoute("/_authenticated/rooms/$farmId")({
@@ -191,12 +275,20 @@ function useFarmDetail(farmId: string) {
       return {
         farm: farm.data,
         bags: bags.data ?? [],
-        readings: (readings.data ?? []).map((row) => ({
-          date: row.reading_date,
-          label: fmtDate(row.reading_date).slice(0, 6),
-          temp: toNumber(row.avg_temp_c),
-          humidity: toNumber(row.avg_humidity_pct),
-        })),
+        readings: (readings.data ?? []).map((row) => {
+          const minTemp = toNumber(row.min_temp_c);
+          const maxTemp = toNumber(row.max_temp_c);
+          const minHum = toNumber(row.min_humidity_pct);
+          const maxHum = toNumber(row.max_humidity_pct);
+          return {
+            date: row.reading_date,
+            label: fmtDate(row.reading_date).slice(0, 6),
+            temp: toNumber(row.avg_temp_c),
+            humidity: toNumber(row.avg_humidity_pct),
+            tempRange: minTemp !== null && maxTemp !== null ? [minTemp, maxTemp] : null,
+            humidityRange: minHum !== null && maxHum !== null ? [minHum, maxHum] : null,
+          };
+        }),
         batches: batches.data ?? [],
         contamination: contamination.data ?? [],
       };
