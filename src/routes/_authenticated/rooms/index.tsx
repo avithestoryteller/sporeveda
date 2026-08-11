@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
 import { PageHeader } from "@/components/AppShell";
 import { RoomFormDialog } from "@/components/RoomFormDialog";
+import { DeltaBadge } from "@/components/DeltaBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -226,16 +227,37 @@ function FarmsPage() {
                       <dl className="mt-1 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                         <div>
                           <dt>Avg temp</dt>
-                          <dd className="text-foreground">
+                          <dd className="flex flex-wrap items-center gap-1 text-foreground">
                             {avgTemp === null ? "—" : `${num(avgTemp)}°C`}
+                            <DeltaBadge
+                              actual={avgTemp}
+                              min={farm.target_fruiting_temp_min}
+                              max={farm.target_fruiting_temp_max}
+                              unit="°C"
+                              label="vs fruiting"
+                            />
                           </dd>
                         </div>
                         <div>
                           <dt>Avg humidity</dt>
-                          <dd className="text-foreground">
+                          <dd className="flex flex-wrap items-center gap-1 text-foreground">
                             {avgHumidity === null ? "—" : `${num(avgHumidity)}%`}
+                            <DeltaBadge
+                              actual={avgHumidity}
+                              min={
+                                farm.target_fruiting_humidity_min_pct ??
+                                farm.target_humidity_min_pct
+                              }
+                              max={
+                                farm.target_fruiting_humidity_max_pct ??
+                                farm.target_humidity_max_pct
+                              }
+                              unit="%"
+                              label="vs fruiting"
+                            />
                           </dd>
                         </div>
+
                       </dl>
                     </div>
                   </div>
