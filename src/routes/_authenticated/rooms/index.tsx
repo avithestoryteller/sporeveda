@@ -9,7 +9,7 @@ import { RoomFormDialog } from "@/components/RoomFormDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { daysSince, range } from "@/lib/format";
+import { daysSince, num, range } from "@/lib/format";
 
 
 export const Route = createFileRoute("/_authenticated/rooms/")({
