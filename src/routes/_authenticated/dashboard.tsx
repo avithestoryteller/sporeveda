@@ -378,8 +378,8 @@ function DashboardPage() {
                   ) : null}
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 border-t border-border pt-3 text-sm">
-                  <div>
+                <div className="grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
+                  <div className="col-span-2">
                     <p className="text-xs text-muted-foreground">Contamination (month)</p>
                     <p className="stat-value text-base">
                       {farm.contaminationRate === null
@@ -396,6 +396,14 @@ function DashboardPage() {
                     </p>
                   </div>
                   <div>
+                    <p className="text-xs text-muted-foreground">Overall avg temp</p>
+                    <p className="stat-value flex items-center gap-1 text-base">
+                      <Thermometer className="size-3.5 text-muted-foreground" />
+                      {num(farm.overallAvgTemp)}
+                      <span className="text-xs font-normal text-muted-foreground">°C</span>
+                    </p>
+                  </div>
+                  <div>
                     <p className="text-xs text-muted-foreground">Last avg humidity</p>
                     <p className="stat-value flex items-center gap-1 text-base">
                       <Droplets className="size-3.5 text-muted-foreground" />
@@ -403,7 +411,14 @@ function DashboardPage() {
                       <span className="text-xs font-normal text-muted-foreground">%</span>
                     </p>
                   </div>
-
+                  <div>
+                    <p className="text-xs text-muted-foreground">Overall avg humidity</p>
+                    <p className="stat-value flex items-center gap-1 text-base">
+                      <Droplets className="size-3.5 text-muted-foreground" />
+                      {num(farm.overallAvgHumidity)}
+                      <span className="text-xs font-normal text-muted-foreground">%</span>
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
