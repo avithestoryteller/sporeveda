@@ -800,22 +800,41 @@ function InventoryPage() {
 
       <div className="mb-3 mt-8 flex flex-wrap items-end justify-between gap-3">
         <h2 className="font-display text-lg font-semibold">Stock on hand</h2>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="spawn-per-bag" className="text-xs text-muted-foreground">
-            Spawn used per bag (g)
-          </Label>
-          <Input
-            id="spawn-per-bag"
-            className="h-8 w-24"
-            inputMode="decimal"
-            value={Math.round(spawnPerBagKg * 1000)}
-            onChange={(event) => {
-              const grams = Number(event.target.value);
-              if (!Number.isFinite(grams) || grams < 0) return;
-              setSpawnPerBagKg(grams / 1000);
-              window.localStorage.setItem(SPAWN_PER_BAG_STORAGE_KEY, String(grams / 1000));
-            }}
-          />
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="spawn-per-bag" className="text-xs text-muted-foreground">
+              Spawn per bag (g)
+            </Label>
+            <Input
+              id="spawn-per-bag"
+              className="h-8 w-24"
+              inputMode="decimal"
+              value={Math.round(spawnPerBagKg * 1000)}
+              onChange={(event) => {
+                const grams = Number(event.target.value);
+                if (!Number.isFinite(grams) || grams < 0) return;
+                setSpawnPerBagKg(grams / 1000);
+                window.localStorage.setItem(SPAWN_PER_BAG_STORAGE_KEY, String(grams / 1000));
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="substrate-per-bag" className="text-xs text-muted-foreground">
+              Dry substrate per bag (kg)
+            </Label>
+            <Input
+              id="substrate-per-bag"
+              className="h-8 w-24"
+              inputMode="decimal"
+              value={substratePerBagKg}
+              onChange={(event) => {
+                const kg = Number(event.target.value);
+                if (!Number.isFinite(kg) || kg < 0) return;
+                setSubstratePerBagKg(kg);
+                window.localStorage.setItem(SUBSTRATE_PER_BAG_STORAGE_KEY, String(kg));
+              }}
+            />
+          </div>
         </div>
       </div>
       {isLoading ? (
