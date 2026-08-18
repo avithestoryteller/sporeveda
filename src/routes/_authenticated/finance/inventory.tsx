@@ -328,11 +328,11 @@ function InventoryPage() {
     return deriveUsageByItem({
       costRows: consumption.links,
       bagsPerBatch: consumption.bagsPerBatch,
-      substrateKgPerBatch: consumption.substrateKgPerBatch,
       categoryByItem,
       spawnPerBagKg,
+      substratePerBagKg,
     });
-  }, [consumption, stock, spawnPerBagKg]);
+  }, [consumption, stock, spawnPerBagKg, substratePerBagKg]);
 
   /** Stock rows adjusted for production consumption derived from bags and batches. */
   const stockRows = useMemo(
