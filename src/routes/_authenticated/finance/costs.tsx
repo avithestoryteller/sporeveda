@@ -314,6 +314,22 @@ function CostsPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const deleteCost = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("costs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Cost deleted");
+      queryClient.invalidateQueries({ queryKey: ["costs"] });
+      queryClient.invalidateQueries({ queryKey: ["financials"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-consumption"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+
   type CostRow = NonNullable<typeof costs>[number];
 
   function lineFromRow(row: CostRow): MaterialLine {
@@ -836,6 +852,21 @@ function CostsPage() {
                               aria-label="Edit cost"
                             >
                               <Pencil className="size-4" />
+                            </Button>
+                          ) : null}
+                          {canEdit ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => {
+                                if (confirm("Delete this cost entry?")) {
+                                  deleteCost.mutate(row.id);
+                                }
+                              }}
+                              aria-label="Delete cost"
+                            >
+                              <Trash2 className="size-4" />
                             </Button>
                           ) : null}
                         </div>
