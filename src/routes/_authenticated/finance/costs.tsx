@@ -622,9 +622,9 @@ function CostsPage() {
                         checked={form.splitAmount}
                         onCheckedChange={(value) => set("splitAmount", Boolean(value))}
                       />
-                      Split amount evenly across {form.batchIds.length} batches
-                      {form.splitAmount && Number(form.amount) > 0
-                        ? ` (~${fmtMoney(Number(form.amount) / form.batchIds.length)} each)`
+                      Split amount and quantity evenly across {form.batchIds.length} batches
+                      {form.splitAmount && linesTotal > 0
+                        ? ` (~${fmtMoney(linesTotal / form.batchIds.length)} each)`
                         : " (full amount on each)"}
                     </label>
                   ) : null}
