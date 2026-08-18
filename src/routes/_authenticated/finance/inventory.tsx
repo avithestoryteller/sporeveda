@@ -306,6 +306,7 @@ function InventoryPage() {
     notes: string | null;
     category?: string | null;
     vendor?: string | null;
+    status?: string | null;
     inventory_items?: { name: string | null; unit: string | null } | null;
   }) => {
     const linked = allItems.find((item) => item.id === row.inventory_item_id);
