@@ -913,18 +913,20 @@ function InventoryPage() {
       </div>
       {isLoading ? (
         <Skeleton className="h-48" />
-      ) : stockRows.length === 0 ? (
+      ) : activeStockRows.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 p-8 text-center">
             <Package className="size-6 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              No inventory items yet. Add an item, then record your first purchase.
+              {stockRows.length === 0
+                ? "No inventory items yet. Add an item, then record your first purchase."
+                : "Everything is used up — see the depleted items log below."}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {stockRows.map((row) => {
+          {activeStockRows.map((row) => {
             const remaining = row.remaining;
             const threshold = toNumber(row.reorder_threshold);
             const low = threshold !== null && remaining <= threshold;
