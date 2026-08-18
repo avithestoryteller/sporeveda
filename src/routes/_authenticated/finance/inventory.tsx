@@ -336,6 +336,34 @@ function InventoryPage() {
     return all.filter((batch) => batch.farm_id === purchaseForm.farmId);
   }, [refs?.batches, purchaseForm.farmId]);
 
+  /** Every inventory item, including ones with no purchases yet. */
+  const allItems = useMemo(
+    () =>
+      (itemRows ?? []).map((row) => ({
+        id: row.id,
+        name: row.name ?? "Item",
+        unit: row.unit ?? "kg",
+        category: row.category ?? "other",
+      })),
+    [itemRows],
+  );
+
+  const categoryItems = useMemo(
+    () => allItems.filter((item) => item.category === purchaseForm.category),
+    [allItems, purchaseForm.category],
+  );
+
+  const vendorOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const row of purchases ?? []) {
+      const vendor = (row as { vendor?: string | null }).vendor;
+      if (vendor && vendor.trim()) set.add(vendor.trim());
+    }
+    return [...set].sort();
+  }, [purchases]);
+
+
+
   const derivedUsage = useMemo(() => {
     if (!consumption) return {} as Record<string, number>;
     const categoryByItem: Record<string, string> = {};
