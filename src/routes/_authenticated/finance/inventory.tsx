@@ -272,21 +272,32 @@ function InventoryPage() {
       const name = itemForm.name.trim();
       if (name.length < 2) throw new Error("Enter an item name");
       const threshold = itemForm.threshold.trim() ? Number(itemForm.threshold) : null;
-      const { error } = await supabase.from("inventory_items").insert({
-        org_id: orgId,
+      const payload = {
         name,
         category: itemForm.category,
         unit: itemForm.unit,
         reorder_threshold: threshold !== null && Number.isFinite(threshold) ? threshold : null,
         notes: itemForm.notes.trim() || null,
-      });
+      };
+      if (editingItemId) {
+        const { error } = await supabase
+          .from("inventory_items")
+          .update(payload)
+          .eq("id", editingItemId);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await supabase
+        .from("inventory_items")
+        .insert({ org_id: orgId, ...payload });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Item added");
-      setItemForm(EMPTY_ITEM);
-      setOpenForm(null);
+      toast.success(editingItemId ? "Item updated" : "Item added");
+      resetItemForm();
       queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
