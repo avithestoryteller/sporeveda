@@ -30,6 +30,7 @@ import {
   SPAWN_PER_BAG_STORAGE_KEY,
   SUBSTRATE_PER_BAG_STORAGE_KEY,
   deriveUsageByItem,
+  ensureInventoryItem,
 } from "@/lib/materials";
 
 export const Route = createFileRoute("/_authenticated/finance/inventory")({
@@ -77,7 +78,11 @@ const EMPTY_ITEM: ItemForm = {
 };
 
 type PurchaseForm = {
+  category: string;
   itemId: string;
+  itemName: string;
+  unit: string;
+  vendor: string;
   quantity: string;
   amount: string;
   incurredDate: string;
@@ -87,7 +92,11 @@ type PurchaseForm = {
   notes: string;
 };
 const EMPTY_PURCHASE: PurchaseForm = {
+  category: "substrate",
   itemId: "",
+  itemName: "",
+  unit: "kg",
+  vendor: "",
   quantity: "",
   amount: "",
   incurredDate: todayISO(),
@@ -251,9 +260,17 @@ function InventoryPage() {
     batch_id: string | null;
     description: string | null;
     notes: string | null;
+    category?: string | null;
+    vendor?: string | null;
+    inventory_items?: { name: string | null; unit: string | null } | null;
   }) => {
+    const linked = allItems.find((item) => item.id === row.inventory_item_id);
     setPurchaseForm({
+      category: linked?.category ?? row.category ?? "other",
       itemId: row.inventory_item_id ?? "",
+      itemName: row.inventory_items?.name ?? linked?.name ?? "",
+      unit: row.inventory_items?.unit ?? linked?.unit ?? "kg",
+      vendor: row.vendor ?? "",
       quantity: row.quantity_purchased === null ? "" : String(row.quantity_purchased),
       amount: String(row.amount ?? ""),
       incurredDate: row.incurred_date ?? todayISO(),
@@ -318,6 +335,34 @@ function InventoryPage() {
     if (purchaseForm.farmId === NONE) return all;
     return all.filter((batch) => batch.farm_id === purchaseForm.farmId);
   }, [refs?.batches, purchaseForm.farmId]);
+
+  /** Every inventory item, including ones with no purchases yet. */
+  const allItems = useMemo(
+    () =>
+      (itemRows ?? []).map((row) => ({
+        id: row.id,
+        name: row.name ?? "Item",
+        unit: row.unit ?? "kg",
+        category: row.category ?? "other",
+      })),
+    [itemRows],
+  );
+
+  const categoryItems = useMemo(
+    () => allItems.filter((item) => item.category === purchaseForm.category),
+    [allItems, purchaseForm.category],
+  );
+
+  const vendorOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const row of purchases ?? []) {
+      const vendor = (row as { vendor?: string | null }).vendor;
+      if (vendor && vendor.trim()) set.add(vendor.trim());
+    }
+    return [...set].sort();
+  }, [purchases]);
+
+
 
   const derivedUsage = useMemo(() => {
     if (!consumption) return {} as Record<string, number>;
@@ -480,21 +525,39 @@ function InventoryPage() {
 
   const addPurchase = useMutation({
     mutationFn: async () => {
-      if (!purchaseForm.itemId) throw new Error("Pick an item");
+      const typedName = purchaseForm.itemName.trim();
+      if (typedName.length < 2) throw new Error("Enter an item name");
       const quantity = Number(purchaseForm.quantity);
       const amount = Number(purchaseForm.amount);
       if (!Number.isFinite(quantity) || quantity <= 0) throw new Error("Enter a valid quantity");
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
-      const item = items.find((row) => row.id === purchaseForm.itemId);
+
+      const matched = allItems.find(
+        (row) =>
+          row.category === purchaseForm.category &&
+          row.name.toLowerCase() === typedName.toLowerCase(),
+      );
+      const itemId =
+        matched?.id ??
+        (await ensureInventoryItem({
+          orgId,
+          name: typedName,
+          category: purchaseForm.category,
+          unit: purchaseForm.unit,
+        }));
+      const unit = matched?.unit || purchaseForm.unit;
+      const vendor = purchaseForm.vendor.trim() || null;
+
       const payload = {
-        category: item?.category ?? "other",
+        category: purchaseForm.category,
+        vendor,
         description:
           purchaseForm.description.trim() ||
-          `${item?.name ?? "Inventory"} purchase — ${quantity} ${item?.unit ?? ""}`.trim(),
+          `${typedName} purchase — ${quantity} ${unit}${vendor ? ` from ${vendor}` : ""}`.trim(),
         amount,
         cost_type: "one_time",
         incurred_date: purchaseForm.incurredDate,
-        inventory_item_id: purchaseForm.itemId,
+        inventory_item_id: itemId,
         quantity_purchased: quantity,
         farm_id: purchaseForm.farmId === NONE ? null : purchaseForm.farmId,
         batch_id: purchaseForm.batchId === NONE ? null : purchaseForm.batchId,
@@ -720,23 +783,91 @@ function InventoryPage() {
               }}
             >
               <div className="space-y-1.5">
-                <Label>Item</Label>
+                <Label>Category</Label>
                 <Select
-                  value={purchaseForm.itemId}
-                  onValueChange={(value) => setPurchase("itemId", value)}
+                  value={purchaseForm.category}
+                  onValueChange={(value) => {
+                    setPurchase("category", value);
+                    setPurchase("itemId", "");
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select item" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {items.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name} ({item.unit})
+                    {ITEM_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {titleCase(category)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="purchase-item">Item name</Label>
+                <Input
+                  id="purchase-item"
+                  list="purchase-item-options"
+                  value={purchaseForm.itemName}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setPurchase("itemName", value);
+                    const match = categoryItems.find(
+                      (item) => item.name.toLowerCase() === value.trim().toLowerCase(),
+                    );
+                    setPurchase("itemId", match?.id ?? "");
+                    if (match?.unit) setPurchase("unit", match.unit);
+                  }}
+                  placeholder="Paddy straw"
+                  required
+                />
+                <datalist id="purchase-item-options">
+                  {categoryItems.map((item) => (
+                    <option key={item.id} value={item.name} />
+                  ))}
+                </datalist>
+                {purchaseForm.itemName.trim().length >= 2 && !purchaseForm.itemId ? (
+                  <p className="text-xs text-muted-foreground">
+                    New {titleCase(purchaseForm.category).toLowerCase()} item — it will be created
+                    on save.
+                  </p>
+                ) : null}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="purchase-vendor">Vendor (optional)</Label>
+                <Input
+                  id="purchase-vendor"
+                  list="purchase-vendor-options"
+                  value={purchaseForm.vendor}
+                  onChange={(event) => setPurchase("vendor", event.target.value)}
+                  placeholder="Sharma Traders"
+                />
+                <datalist id="purchase-vendor-options">
+                  {vendorOptions.map((vendor) => (
+                    <option key={vendor} value={vendor} />
+                  ))}
+                </datalist>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Unit</Label>
+                <Select
+                  value={purchaseForm.unit}
+                  onValueChange={(value) => setPurchase("unit", value)}
+                  disabled={Boolean(purchaseForm.itemId)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNITS.map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {unit}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="purchase-date">Purchase date</Label>
                 <Input
@@ -771,7 +902,7 @@ function InventoryPage() {
                 {Number(purchaseForm.quantity) > 0 && Number(purchaseForm.amount) > 0 ? (
                   <p className="text-xs text-muted-foreground">
                     {fmtMoney(Number(purchaseForm.amount) / Number(purchaseForm.quantity), true)} per{" "}
-                    {items.find((item) => item.id === purchaseForm.itemId)?.unit ?? "unit"}
+                    {purchaseForm.unit}
                   </p>
                 ) : null}
               </div>
@@ -1176,7 +1307,8 @@ function InventoryPage() {
                         {row.inventory_items?.name ?? "Item"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {fmtDate(row.incurred_date)}
+                        {titleCase(row.category)}
+                        {row.vendor ? ` · ${row.vendor}` : ""} · {fmtDate(row.incurred_date)}
                         {qty ? ` · ${qty} ${unit}` : ""}
                         {row.batches?.batch_code ? ` · ${row.batches.batch_code}` : ""}
                         {row.farms?.name ? ` · ${row.farms.name}` : ""}

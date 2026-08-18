@@ -305,6 +305,7 @@ export type Database = {
           quantity_purchased: number | null
           recurrence_interval: string | null
           updated_at: string
+          vendor: string | null
         }
         Insert: {
           amount: number
@@ -323,6 +324,7 @@ export type Database = {
           quantity_purchased?: number | null
           recurrence_interval?: string | null
           updated_at?: string
+          vendor?: string | null
         }
         Update: {
           amount?: number
@@ -341,6 +343,7 @@ export type Database = {
           quantity_purchased?: number | null
           recurrence_interval?: string | null
           updated_at?: string
+          vendor?: string | null
         }
         Relationships: [
           {

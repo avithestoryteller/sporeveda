@@ -1,0 +1,1 @@
+ALTER TABLE public.costs ADD COLUMN IF NOT EXISTS vendor text;
