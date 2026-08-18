@@ -867,6 +867,29 @@ function InventoryPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5">
+                <Label>Delivery status</Label>
+                <Select
+                  value={purchaseForm.status}
+                  onValueChange={(value) => setPurchase("status", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PURCHASE_STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Only received purchases count towards stock on hand — ordered and in-transit show
+                  as incoming.
+                </p>
+              </div>
+
 
               <div className="space-y-1.5">
                 <Label htmlFor="purchase-date">Purchase date</Label>
