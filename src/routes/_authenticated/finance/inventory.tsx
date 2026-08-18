@@ -915,8 +915,19 @@ function InventoryPage() {
                           <span className="text-muted-foreground">
                             {row.category === "spawn"
                               ? `(${(spawnPerBagKg * 1000).toFixed(0)} g per bag)`
-                              : "(batch substrate weight)"}
+                              : `(${substratePerBagKg} kg per bag)`}
                           </span>
+                        </dd>
+                      </div>
+                    ) : null}
+                    {(toNumber(row.total_used_qty) ?? 0) > 0 ? (
+                      <div className="col-span-2">
+                        <dt>Wastage / manual usage</dt>
+                        <dd className="text-foreground">
+                          {(toNumber(row.total_used_qty) ?? 0).toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          {row.unit}
                         </dd>
                       </div>
                     ) : null}
