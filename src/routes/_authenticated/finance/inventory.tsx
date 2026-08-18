@@ -316,6 +316,7 @@ function InventoryPage() {
       itemName: row.inventory_items?.name ?? linked?.name ?? "",
       unit: row.inventory_items?.unit ?? linked?.unit ?? "kg",
       vendor: row.vendor ?? "",
+      status: row.status ?? "received",
       quantity: row.quantity_purchased === null ? "" : String(row.quantity_purchased),
       amount: String(row.amount ?? ""),
       incurredDate: row.incurred_date ?? todayISO(),
