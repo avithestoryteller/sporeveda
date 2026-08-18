@@ -162,10 +162,101 @@ function CostsPage() {
   const total = (costs ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
 
   const isMultiBatch = MULTI_BATCH_CATEGORIES.includes(form.category);
+  const isMaterial = isMultiBatch;
+
+  const setLine = (index: number, key: keyof MaterialLine, value: string) =>
+    setForm((prev) => ({
+      ...prev,
+      lines: prev.lines.map((line, i) => (i === index ? { ...line, [key]: value } : line)),
+    }));
+  const addLine = () => setForm((prev) => ({ ...prev, lines: [...prev.lines, { ...EMPTY_LINE }] }));
+  const removeLine = (index: number) =>
+    setForm((prev) => ({
+      ...prev,
+      lines: prev.lines.length > 1 ? prev.lines.filter((_, i) => i !== index) : prev.lines,
+    }));
+
+  const linesTotal = form.lines.reduce((sum, line) => sum + (Number(line.amount) || 0), 0);
 
   const addCost = useMutation({
     mutationFn: async () => {
       const category = form.category === "other" ? form.otherCategory.trim() || "other" : form.category;
+
+      if (isMaterial) {
+        const lines = form.lines.filter(
+          (line) => line.name.trim() || line.amount.trim() || line.quantity.trim(),
+        );
+        if (lines.length === 0) throw new Error("Add at least one line item");
+        for (const line of lines) {
+          if (!line.name.trim()) throw new Error("Every line item needs a name");
+          const lineAmount = Number(line.amount);
+          if (!Number.isFinite(lineAmount) || lineAmount <= 0)
+            throw new Error(`Enter a valid amount for ${line.name.trim()}`);
+          const qty = Number(line.quantity);
+          if (!Number.isFinite(qty) || qty <= 0)
+            throw new Error(`Enter the quantity (kg) for ${line.name.trim()}`);
+        }
+
+        const targets = form.batchIds.length > 0 ? form.batchIds : [null];
+        const split = form.splitAmount && targets.length > 1;
+        const base = {
+          org_id: orgId,
+          category,
+          cost_type: form.costType,
+          recurrence_interval: form.costType === "recurring" ? form.recurrence : null,
+          incurred_date: form.incurredDate,
+          farm_id: form.farmId === NONE ? null : form.farmId,
+          notes: form.notes.trim() || null,
+        };
+
+        const rows: Record<string, unknown>[] = [];
+        for (const line of lines) {
+          const itemName = materialItemName(line.name, line.variety);
+          const itemId = await ensureInventoryItem({
+            orgId: orgId!,
+            name: itemName,
+            category,
+          });
+          const lineAmount = Number(line.amount);
+          const lineQty = Number(line.quantity);
+          targets.forEach((batchId, index) => {
+            const divisor = split ? targets.length : 1;
+            const isLast = index === targets.length - 1;
+            const amountShare = split
+              ? isLast
+                ? Math.round((lineAmount - Math.round((lineAmount / divisor) * 100) / 100 * (targets.length - 1)) * 100) / 100
+                : Math.round((lineAmount / divisor) * 100) / 100
+              : lineAmount;
+            const qtyShare = split ? Math.round((lineQty / divisor) * 1000) / 1000 : lineQty;
+            rows.push({
+              ...base,
+              batch_id: batchId,
+              inventory_item_id: itemId,
+              quantity_purchased: qtyShare,
+              amount: amountShare,
+              description:
+                form.description.trim() ||
+                `${itemName} — ${qtyShare} kg`,
+            });
+          });
+        }
+
+        if (editingId) {
+          const [first, ...rest] = rows;
+          const { org_id: _omit, ...update } = first!;
+          const { error } = await supabase.from("costs").update(update).eq("id", editingId);
+          if (error) throw error;
+          if (rest.length > 0) {
+            const { error: insertError } = await supabase.from("costs").insert(rest);
+            if (insertError) throw insertError;
+          }
+          return "updated" as const;
+        }
+        const { error } = await supabase.from("costs").insert(rows);
+        if (error) throw error;
+        return "created" as const;
+      }
+
       const amount = Number(form.amount);
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
       const targets = isMultiBatch && form.batchIds.length > 0 ? form.batchIds : [null];
