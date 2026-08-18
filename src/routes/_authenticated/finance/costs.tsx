@@ -314,6 +314,22 @@ function CostsPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const deleteCost = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("costs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Cost deleted");
+      queryClient.invalidateQueries({ queryKey: ["costs"] });
+      queryClient.invalidateQueries({ queryKey: ["financials"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-consumption"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+
   type CostRow = NonNullable<typeof costs>[number];
 
   function lineFromRow(row: CostRow): MaterialLine {
