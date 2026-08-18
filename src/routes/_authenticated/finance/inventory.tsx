@@ -58,10 +58,50 @@ const NONE = "__none__";
 const ITEM_CATEGORIES = ["substrate", "spawn", "packaging", "supplement", "equipment", "other"];
 const UNITS = ["kg", "g", "litre", "bag", "block", "piece", "box"];
 
+const PURCHASE_STATUSES = [
+  { value: "ordered", label: "Ordered" },
+  { value: "in_transit", label: "In transit" },
+  { value: "received", label: "Received" },
+  { value: "cancelled", label: "Cancelled" },
+];
+const ITEM_STATUSES = [
+  { value: "in_stock", label: "In stock" },
+  { value: "on_order", label: "On order" },
+  { value: "depleted", label: "Depleted" },
+  { value: "discontinued", label: "Discontinued" },
+];
+
+function labelFor(list: { value: string; label: string }[], value: string | null | undefined) {
+  return list.find((entry) => entry.value === value)?.label ?? null;
+}
+
+function PurchaseStatusBadge({ status }: { status: string | null | undefined }) {
+  const label = labelFor(PURCHASE_STATUSES, status);
+  if (!label) return null;
+  const variant =
+    status === "received" ? "default" : status === "cancelled" ? "destructive" : "secondary";
+  return (
+    <Badge variant={variant} className="text-[10px]">
+      {label}
+    </Badge>
+  );
+}
+
+function ItemStatusBadge({ status }: { status: string | null | undefined }) {
+  const label = labelFor(ITEM_STATUSES, status);
+  if (!label || status === "in_stock") return null;
+  return (
+    <Badge variant="outline" className="text-[10px]">
+      {label}
+    </Badge>
+  );
+}
+
 type ItemForm = {
   name: string;
   category: string;
   unit: string;
+  status: string;
   threshold: string;
   notes: string;
   wastage: string;
@@ -71,6 +111,7 @@ const EMPTY_ITEM: ItemForm = {
   name: "",
   category: "substrate",
   unit: "kg",
+  status: "in_stock",
   threshold: "",
   notes: "",
   wastage: "",
@@ -83,6 +124,7 @@ type PurchaseForm = {
   itemName: string;
   unit: string;
   vendor: string;
+  status: string;
   quantity: string;
   amount: string;
   incurredDate: string;
@@ -97,6 +139,7 @@ const EMPTY_PURCHASE: PurchaseForm = {
   itemName: "",
   unit: "kg",
   vendor: "",
+  status: "received",
   quantity: "",
   amount: "",
   incurredDate: todayISO(),
@@ -241,6 +284,7 @@ function InventoryPage() {
       name: row.name ?? "",
       category: row.category ?? "other",
       unit: row.unit ?? "kg",
+      status: (row as { status?: string | null }).status ?? "in_stock",
       threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
       notes: row.notes ?? "",
       wastage: "",
@@ -262,6 +306,7 @@ function InventoryPage() {
     notes: string | null;
     category?: string | null;
     vendor?: string | null;
+    status?: string | null;
     inventory_items?: { name: string | null; unit: string | null } | null;
   }) => {
     const linked = allItems.find((item) => item.id === row.inventory_item_id);
@@ -271,6 +316,7 @@ function InventoryPage() {
       itemName: row.inventory_items?.name ?? linked?.name ?? "",
       unit: row.inventory_items?.unit ?? linked?.unit ?? "kg",
       vendor: row.vendor ?? "",
+      status: row.status ?? "received",
       quantity: row.quantity_purchased === null ? "" : String(row.quantity_purchased),
       amount: String(row.amount ?? ""),
       incurredDate: row.incurred_date ?? todayISO(),
@@ -408,6 +454,19 @@ function InventoryPage() {
     [stockRows, depletedRows],
   );
 
+  /** Items with ordered / in-transit purchases that have not landed in stock yet. */
+  const incomingItems = useMemo(
+    () =>
+      stockRows
+        .map((row) => ({
+          name: row.name ?? "Item",
+          unit: row.unit ?? "",
+          qty: toNumber((row as { incoming_qty?: number | null }).incoming_qty) ?? 0,
+        }))
+        .filter((row) => row.qty > 0),
+    [stockRows],
+  );
+
   const lowStock = activeStockRows.filter((row) => {
     const threshold = toNumber(row.reorder_threshold);
     return threshold !== null && row.remaining <= threshold;
@@ -482,6 +541,7 @@ function InventoryPage() {
         name,
         category: itemForm.category,
         unit: itemForm.unit,
+        status: itemForm.status,
         reorder_threshold: threshold !== null && Number.isFinite(threshold) ? threshold : null,
         notes: itemForm.notes.trim() || null,
       };
@@ -551,6 +611,7 @@ function InventoryPage() {
       const payload = {
         category: purchaseForm.category,
         vendor,
+        status: purchaseForm.status,
         description:
           purchaseForm.description.trim() ||
           `${typedName} purchase — ${quantity} ${unit}${vendor ? ` from ${vendor}` : ""}`.trim(),
@@ -624,9 +685,18 @@ function InventoryPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Items tracked" value={stock?.length ?? 0} />
         <StatTile label="Stock value" value={fmtMoney(stockValue)} hint="Weighted average cost" />
+        <StatTile
+          label="Incoming"
+          value={incomingItems.length}
+          hint={
+            incomingItems.length
+              ? incomingItems.map((row) => `${row.name} (${row.qty} ${row.unit})`).join(", ")
+              : "Nothing on order or in transit"
+          }
+        />
         <StatTile
           label="Low stock"
           value={lowStock.length}
@@ -688,6 +758,21 @@ function InventoryPage() {
                     {UNITS.map((unit) => (
                       <SelectItem key={unit} value={unit}>
                         {unit}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select value={itemForm.status} onValueChange={(value) => setItem("status", value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEM_STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -867,6 +952,29 @@ function InventoryPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5">
+                <Label>Delivery status</Label>
+                <Select
+                  value={purchaseForm.status}
+                  onValueChange={(value) => setPurchase("status", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PURCHASE_STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Only received purchases count towards stock on hand — ordered and in-transit show
+                  as incoming.
+                </p>
+              </div>
+
 
               <div className="space-y-1.5">
                 <Label htmlFor="purchase-date">Purchase date</Label>
@@ -1064,10 +1172,13 @@ function InventoryPage() {
             return (
               <Card key={row.inventory_item_id ?? row.name}>
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{row.name}</p>
                       <p className="text-xs text-muted-foreground">{titleCase(row.category)}</p>
+                      <div className="mt-1">
+                        <ItemStatusBadge status={row.item_status} />
+                      </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       {low ? <Badge variant="destructive">Low</Badge> : null}
@@ -1104,6 +1215,17 @@ function InventoryPage() {
                         {toNumber(row.total_purchased_qty) ?? 0} {row.unit}
                       </dd>
                     </div>
+                    {(toNumber(row.incoming_qty) ?? 0) > 0 ? (
+                      <div>
+                        <dt>Incoming</dt>
+                        <dd className="text-accent-foreground">
+                          {(toNumber(row.incoming_qty) ?? 0).toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          {row.unit}
+                        </dd>
+                      </div>
+                    ) : null}
                     <div>
                       <dt>Used</dt>
                       <dd className="text-foreground">
@@ -1313,6 +1435,9 @@ function InventoryPage() {
                         {row.batches?.batch_code ? ` · ${row.batches.batch_code}` : ""}
                         {row.farms?.name ? ` · ${row.farms.name}` : ""}
                       </p>
+                      <div className="mt-1">
+                        <PurchaseStatusBadge status={row.status} />
+                      </div>
                       {row.description ? (
                         <p className="mt-1 truncate text-xs text-muted-foreground">
                           {row.description}

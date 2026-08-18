@@ -304,6 +304,7 @@ export type Database = {
           org_id: string
           quantity_purchased: number | null
           recurrence_interval: string | null
+          status: string
           updated_at: string
           vendor: string | null
         }
@@ -323,6 +324,7 @@ export type Database = {
           org_id: string
           quantity_purchased?: number | null
           recurrence_interval?: string | null
+          status?: string
           updated_at?: string
           vendor?: string | null
         }
@@ -342,6 +344,7 @@ export type Database = {
           org_id?: string
           quantity_purchased?: number | null
           recurrence_interval?: string | null
+          status?: string
           updated_at?: string
           vendor?: string | null
         }
@@ -616,6 +619,7 @@ export type Database = {
           notes: string | null
           org_id: string
           reorder_threshold: number | null
+          status: string
           unit: string
           updated_at: string
         }
@@ -627,6 +631,7 @@ export type Database = {
           notes?: string | null
           org_id: string
           reorder_threshold?: number | null
+          status?: string
           unit: string
           updated_at?: string
         }
@@ -638,6 +643,7 @@ export type Database = {
           notes?: string | null
           org_id?: string
           reorder_threshold?: number | null
+          status?: string
           unit?: string
           updated_at?: string
         }
@@ -1126,7 +1132,9 @@ export type Database = {
         Row: {
           avg_unit_cost: number | null
           category: string | null
+          incoming_qty: number | null
           inventory_item_id: string | null
+          item_status: string | null
           name: string | null
           org_id: string | null
           remaining_qty: number | null
