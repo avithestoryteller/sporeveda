@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Package, Pencil, Plus, ShoppingCart, Trash2, X } from "lucide-react";
 
@@ -24,6 +24,11 @@ import {
 } from "@/components/ui/select";
 import { fmtDate, todayISO, toNumber } from "@/lib/format";
 import { fmtMoney, titleCase } from "@/lib/money";
+import {
+  DEFAULT_SPAWN_PER_BAG_KG,
+  SPAWN_PER_BAG_STORAGE_KEY,
+  deriveUsageByItem,
+} from "@/lib/materials";
 
 export const Route = createFileRoute("/_authenticated/finance/inventory")({
   head: () => ({
@@ -88,6 +93,13 @@ function InventoryPage() {
   const [itemForm, setItemForm] = useState<ItemForm>(EMPTY_ITEM);
   const [purchaseForm, setPurchaseForm] = useState<PurchaseForm>(EMPTY_PURCHASE);
   const [openForm, setOpenForm] = useState<"item" | "purchase" | null>(null);
+  const [spawnPerBagKg, setSpawnPerBagKg] = useState(DEFAULT_SPAWN_PER_BAG_KG);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(SPAWN_PER_BAG_STORAGE_KEY);
+    const parsed = stored === null ? NaN : Number(stored);
+    if (Number.isFinite(parsed) && parsed > 0) setSpawnPerBagKg(parsed);
+  }, []);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
 
@@ -126,6 +138,37 @@ function InventoryPage() {
       if (farms.error) throw farms.error;
       if (batches.error) throw batches.error;
       return { farms: farms.data ?? [], batches: batches.data ?? [] };
+    },
+  });
+
+  const { data: consumption } = useQuery({
+    queryKey: ["inventory-consumption", orgId],
+    enabled: Boolean(orgId),
+    queryFn: async () => {
+      const [links, bags, batchRows] = await Promise.all([
+        supabase
+          .from("costs")
+          .select("inventory_item_id, batch_id, quantity_purchased")
+          .eq("org_id", orgId)
+          .not("inventory_item_id", "is", null)
+          .not("batch_id", "is", null),
+        supabase.from("bags").select("batch_id").eq("org_id", orgId),
+        supabase.from("batches").select("id, dry_substrate_weight_kg").eq("org_id", orgId),
+      ]);
+      if (links.error) throw links.error;
+      if (bags.error) throw bags.error;
+      if (batchRows.error) throw batchRows.error;
+
+      const bagsPerBatch: Record<string, number> = {};
+      for (const bag of bags.data ?? []) {
+        if (!bag.batch_id) continue;
+        bagsPerBatch[bag.batch_id] = (bagsPerBatch[bag.batch_id] ?? 0) + 1;
+      }
+      const substrateKgPerBatch: Record<string, number> = {};
+      for (const batch of batchRows.data ?? []) {
+        substrateKgPerBatch[batch.id] = Number(batch.dry_substrate_weight_kg ?? 0) || 0;
+      }
+      return { links: links.data ?? [], bagsPerBatch, substrateKgPerBatch };
     },
   });
 
@@ -237,6 +280,7 @@ function InventoryPage() {
       if (editingPurchaseId) resetPurchaseForm();
       queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-consumption"] });
       queryClient.invalidateQueries({ queryKey: ["costs"] });
       queryClient.invalidateQueries({ queryKey: ["financials"] });
     },
@@ -260,11 +304,39 @@ function InventoryPage() {
     return all.filter((batch) => batch.farm_id === purchaseForm.farmId);
   }, [refs?.batches, purchaseForm.farmId]);
 
-  const stockValue = (stock ?? []).reduce((sum, row) => sum + (toNumber(row.remaining_value) ?? 0), 0);
-  const lowStock = (stock ?? []).filter((row) => {
+  const derivedUsage = useMemo(() => {
+    if (!consumption) return {} as Record<string, number>;
+    const categoryByItem: Record<string, string> = {};
+    for (const row of stock ?? []) {
+      if (row.inventory_item_id) categoryByItem[row.inventory_item_id] = row.category ?? "other";
+    }
+    return deriveUsageByItem({
+      costRows: consumption.links,
+      bagsPerBatch: consumption.bagsPerBatch,
+      substrateKgPerBatch: consumption.substrateKgPerBatch,
+      categoryByItem,
+      spawnPerBagKg,
+    });
+  }, [consumption, stock, spawnPerBagKg]);
+
+  /** Stock rows adjusted for production consumption derived from bags and batches. */
+  const stockRows = useMemo(
+    () =>
+      (stock ?? []).map((row) => {
+        const derived = row.inventory_item_id ? (derivedUsage[row.inventory_item_id] ?? 0) : 0;
+        const purchased = toNumber(row.total_purchased_qty) ?? 0;
+        const logged = toNumber(row.total_used_qty) ?? 0;
+        const avgCost = toNumber(row.avg_unit_cost) ?? 0;
+        const remaining = Math.max(purchased - logged - derived, 0);
+        return { ...row, derivedUsed: derived, remaining, remainingValue: remaining * avgCost };
+      }),
+    [stock, derivedUsage],
+  );
+
+  const stockValue = stockRows.reduce((sum, row) => sum + row.remainingValue, 0);
+  const lowStock = stockRows.filter((row) => {
     const threshold = toNumber(row.reorder_threshold);
-    const remaining = toNumber(row.remaining_qty) ?? 0;
-    return threshold !== null && remaining <= threshold;
+    return threshold !== null && row.remaining <= threshold;
   });
 
   const addItem = useMutation({
@@ -298,6 +370,7 @@ function InventoryPage() {
       queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-consumption"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -337,6 +410,7 @@ function InventoryPage() {
       resetPurchaseForm();
       queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-consumption"] });
       queryClient.invalidateQueries({ queryKey: ["costs"] });
       queryClient.invalidateQueries({ queryKey: ["financials"] });
     },
@@ -669,10 +743,29 @@ function InventoryPage() {
         </Card>
       ) : null}
 
-      <h2 className="mb-3 mt-8 font-display text-lg font-semibold">Stock on hand</h2>
+      <div className="mb-3 mt-8 flex flex-wrap items-end justify-between gap-3">
+        <h2 className="font-display text-lg font-semibold">Stock on hand</h2>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="spawn-per-bag" className="text-xs text-muted-foreground">
+            Spawn used per bag (g)
+          </Label>
+          <Input
+            id="spawn-per-bag"
+            className="h-8 w-24"
+            inputMode="decimal"
+            value={Math.round(spawnPerBagKg * 1000)}
+            onChange={(event) => {
+              const grams = Number(event.target.value);
+              if (!Number.isFinite(grams) || grams < 0) return;
+              setSpawnPerBagKg(grams / 1000);
+              window.localStorage.setItem(SPAWN_PER_BAG_STORAGE_KEY, String(grams / 1000));
+            }}
+          />
+        </div>
+      </div>
       {isLoading ? (
         <Skeleton className="h-48" />
-      ) : (stock ?? []).length === 0 ? (
+      ) : stockRows.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 p-8 text-center">
             <Package className="size-6 text-muted-foreground" />
@@ -683,8 +776,8 @@ function InventoryPage() {
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {(stock ?? []).map((row) => {
-            const remaining = toNumber(row.remaining_qty) ?? 0;
+          {stockRows.map((row) => {
+            const remaining = row.remaining;
             const threshold = toNumber(row.reorder_threshold);
             const low = threshold !== null && remaining <= threshold;
             return (
@@ -722,7 +815,7 @@ function InventoryPage() {
                     </div>
                     <div>
                       <dt>Stock value</dt>
-                      <dd className="text-foreground">{fmtMoney(row.remaining_value)}</dd>
+                      <dd className="text-foreground">{fmtMoney(row.remainingValue)}</dd>
                     </div>
                     <div>
                       <dt>Purchased</dt>
@@ -733,9 +826,26 @@ function InventoryPage() {
                     <div>
                       <dt>Used</dt>
                       <dd className="text-foreground">
-                        {toNumber(row.total_used_qty) ?? 0} {row.unit}
+                        {(
+                          (toNumber(row.total_used_qty) ?? 0) + row.derivedUsed
+                        ).toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                        {row.unit}
                       </dd>
                     </div>
+                    {row.derivedUsed > 0 ? (
+                      <div className="col-span-2">
+                        <dt>Consumed in production</dt>
+                        <dd className="text-foreground">
+                          {row.derivedUsed.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                          {row.unit}{" "}
+                          <span className="text-muted-foreground">
+                            {row.category === "spawn"
+                              ? `(${(spawnPerBagKg * 1000).toFixed(0)} g per bag)`
+                              : "(batch substrate weight)"}
+                          </span>
+                        </dd>
+                      </div>
+                    ) : null}
                   </dl>
                 </CardContent>
               </Card>

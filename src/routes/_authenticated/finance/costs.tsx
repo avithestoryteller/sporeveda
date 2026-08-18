@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Pencil, Plus } from "lucide-react";
+import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { useOrg, useOrgId } from "@/hooks/use-org";
 import { PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,15 @@ import {
   presetRange,
   titleCase,
 } from "@/lib/money";
+import {
+  EMPTY_LINE,
+  MATERIAL_CATEGORIES,
+  VARIETY_SUGGESTIONS,
+  ensureInventoryItem,
+  materialItemName,
+  type MaterialCategory,
+  type MaterialLine,
+} from "@/lib/materials";
 
 export const Route = createFileRoute("/_authenticated/finance/costs")({
   head: () => ({
@@ -53,7 +63,7 @@ export const Route = createFileRoute("/_authenticated/finance/costs")({
 const ALL = "__all__";
 const NONE = "__none__";
 
-const MULTI_BATCH_CATEGORIES = ["substrate", "spawn"];
+const MULTI_BATCH_CATEGORIES = MATERIAL_CATEGORIES as readonly string[];
 
 type FormState = {
   category: string;
@@ -68,6 +78,7 @@ type FormState = {
   batchIds: string[];
   splitAmount: boolean;
   notes: string;
+  lines: MaterialLine[];
 };
 
 const EMPTY: FormState = {
@@ -83,6 +94,7 @@ const EMPTY: FormState = {
   batchIds: [],
   splitAmount: true,
   notes: "",
+  lines: [{ ...EMPTY_LINE }],
 };
 
 function CostsPage() {
@@ -128,7 +140,7 @@ function CostsPage() {
     queryFn: async () => {
       let query = supabase
         .from("costs")
-        .select("*, farms(name), batches(batch_code)")
+        .select("*, farms(name), batches(batch_code), inventory_items(name, unit)")
         .eq("org_id", orgId)
         .gte("incurred_date", filters.from)
         .lte("incurred_date", filters.to)
@@ -151,10 +163,101 @@ function CostsPage() {
   const total = (costs ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
 
   const isMultiBatch = MULTI_BATCH_CATEGORIES.includes(form.category);
+  const isMaterial = isMultiBatch;
+
+  const setLine = (index: number, key: keyof MaterialLine, value: string) =>
+    setForm((prev) => ({
+      ...prev,
+      lines: prev.lines.map((line, i) => (i === index ? { ...line, [key]: value } : line)),
+    }));
+  const addLine = () => setForm((prev) => ({ ...prev, lines: [...prev.lines, { ...EMPTY_LINE }] }));
+  const removeLine = (index: number) =>
+    setForm((prev) => ({
+      ...prev,
+      lines: prev.lines.length > 1 ? prev.lines.filter((_, i) => i !== index) : prev.lines,
+    }));
+
+  const linesTotal = form.lines.reduce((sum, line) => sum + (Number(line.amount) || 0), 0);
 
   const addCost = useMutation({
     mutationFn: async () => {
       const category = form.category === "other" ? form.otherCategory.trim() || "other" : form.category;
+
+      if (isMaterial) {
+        const lines = form.lines.filter(
+          (line) => line.name.trim() || line.amount.trim() || line.quantity.trim(),
+        );
+        if (lines.length === 0) throw new Error("Add at least one line item");
+        for (const line of lines) {
+          if (!line.name.trim()) throw new Error("Every line item needs a name");
+          const lineAmount = Number(line.amount);
+          if (!Number.isFinite(lineAmount) || lineAmount <= 0)
+            throw new Error(`Enter a valid amount for ${line.name.trim()}`);
+          const qty = Number(line.quantity);
+          if (!Number.isFinite(qty) || qty <= 0)
+            throw new Error(`Enter the quantity (kg) for ${line.name.trim()}`);
+        }
+
+        const targets = form.batchIds.length > 0 ? form.batchIds : [null];
+        const split = form.splitAmount && targets.length > 1;
+        const base = {
+          org_id: orgId,
+          category,
+          cost_type: form.costType,
+          recurrence_interval: form.costType === "recurring" ? form.recurrence : null,
+          incurred_date: form.incurredDate,
+          farm_id: form.farmId === NONE ? null : form.farmId,
+          notes: form.notes.trim() || null,
+        };
+
+        const rows: TablesInsert<"costs">[] = [];
+        for (const line of lines) {
+          const itemName = materialItemName(line.name, line.variety);
+          const itemId = await ensureInventoryItem({
+            orgId: orgId!,
+            name: itemName,
+            category,
+          });
+          const lineAmount = Number(line.amount);
+          const lineQty = Number(line.quantity);
+          targets.forEach((batchId, index) => {
+            const divisor = split ? targets.length : 1;
+            const isLast = index === targets.length - 1;
+            const amountShare = split
+              ? isLast
+                ? Math.round((lineAmount - Math.round((lineAmount / divisor) * 100) / 100 * (targets.length - 1)) * 100) / 100
+                : Math.round((lineAmount / divisor) * 100) / 100
+              : lineAmount;
+            const qtyShare = split ? Math.round((lineQty / divisor) * 1000) / 1000 : lineQty;
+            rows.push({
+              ...base,
+              batch_id: batchId,
+              inventory_item_id: itemId,
+              quantity_purchased: qtyShare,
+              amount: amountShare,
+              description:
+                form.description.trim() ||
+                `${itemName} — ${qtyShare} kg`,
+            });
+          });
+        }
+
+        if (editingId) {
+          const [first, ...rest] = rows;
+          const { org_id: _omit, ...update } = first!;
+          const { error } = await supabase.from("costs").update(update).eq("id", editingId);
+          if (error) throw error;
+          if (rest.length > 0) {
+            const { error: insertError } = await supabase.from("costs").insert(rest);
+            if (insertError) throw insertError;
+          }
+          return "updated" as const;
+        }
+        const { error } = await supabase.from("costs").insert(rows);
+        if (error) throw error;
+        return "created" as const;
+      }
+
       const amount = Number(form.amount);
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
       const targets = isMultiBatch && form.batchIds.length > 0 ? form.batchIds : [null];
@@ -205,11 +308,24 @@ function CostsPage() {
       setShowForm(false);
       queryClient.invalidateQueries({ queryKey: ["costs"] });
       queryClient.invalidateQueries({ queryKey: ["financials"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-consumption"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
   type CostRow = NonNullable<typeof costs>[number];
+
+  function lineFromRow(row: CostRow): MaterialLine {
+    const itemName = row.inventory_items?.name ?? "";
+    const [name, variety] = itemName.split(" — ");
+    return {
+      name: name ?? "",
+      variety: variety ?? "",
+      quantity: row.quantity_purchased === null ? "" : String(row.quantity_purchased),
+      amount: String(row.amount ?? ""),
+    };
+  }
 
   function fillFrom(row: CostRow, mode: "edit" | "duplicate") {
     const known = (COST_CATEGORIES as readonly string[]).includes(row.category);
@@ -226,6 +342,7 @@ function CostsPage() {
       batchIds: row.batch_id ? [row.batch_id] : [],
       splitAmount: false,
       notes: row.notes ?? "",
+      lines: [lineFromRow(row)],
     });
     setEditingId(mode === "edit" ? row.id : null);
     setShowForm(true);
@@ -300,17 +417,88 @@ function CostsPage() {
                 ) : null}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="cost-amount">Amount (₹)</Label>
-                <Input
-                  id="cost-amount"
-                  inputMode="decimal"
-                  value={form.amount}
-                  onChange={(event) => set("amount", event.target.value)}
-                  placeholder="1500"
-                  required
-                />
-              </div>
+              {isMaterial ? (
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>
+                    {titleCase(form.category)} line items — name, variety, quantity and amount
+                  </Label>
+                  <datalist id={`variety-${form.category}`}>
+                    {(VARIETY_SUGGESTIONS[form.category as MaterialCategory] ?? []).map((v) => (
+                      <option key={v} value={v} />
+                    ))}
+                  </datalist>
+                  <div className="space-y-2">
+                    {form.lines.map((line, index) => (
+                      <div
+                        key={index}
+                        className="grid gap-2 rounded-md border border-border p-2 sm:grid-cols-[1.2fr_1.2fr_0.8fr_0.9fr_auto]"
+                      >
+                        <Input
+                          aria-label="Material name"
+                          placeholder={form.category === "spawn" ? "Spawn supplier / lot" : "Straw bales"}
+                          value={line.name}
+                          onChange={(event) => setLine(index, "name", event.target.value)}
+                        />
+                        <Input
+                          aria-label="Species or variety"
+                          list={`variety-${form.category}`}
+                          placeholder={form.category === "spawn" ? "White Oyster" : "Paddy"}
+                          value={line.variety}
+                          onChange={(event) => setLine(index, "variety", event.target.value)}
+                        />
+                        <Input
+                          aria-label="Quantity in kg"
+                          inputMode="decimal"
+                          placeholder="kg"
+                          value={line.quantity}
+                          onChange={(event) => setLine(index, "quantity", event.target.value)}
+                        />
+                        <Input
+                          aria-label="Line amount"
+                          inputMode="decimal"
+                          placeholder="₹"
+                          value={line.amount}
+                          onChange={(event) => setLine(index, "amount", event.target.value)}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Remove line item"
+                          disabled={form.lines.length === 1}
+                          onClick={() => removeLine(index)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Button type="button" variant="outline" size="sm" onClick={addLine}>
+                      <Plus className="size-4" /> Line item
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Total <span className="stat-value">{fmtMoney(linesTotal)}</span>
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Each line becomes an inventory item, so stock and average cost per kg update
+                    automatically.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label htmlFor="cost-amount">Amount (₹)</Label>
+                  <Input
+                    id="cost-amount"
+                    inputMode="decimal"
+                    value={form.amount}
+                    onChange={(event) => set("amount", event.target.value)}
+                    placeholder="1500"
+                    required
+                  />
+                </div>
+              )}
 
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="cost-description">Description</Label>
@@ -436,9 +624,9 @@ function CostsPage() {
                         checked={form.splitAmount}
                         onCheckedChange={(value) => set("splitAmount", Boolean(value))}
                       />
-                      Split amount evenly across {form.batchIds.length} batches
-                      {form.splitAmount && Number(form.amount) > 0
-                        ? ` (~${fmtMoney(Number(form.amount) / form.batchIds.length)} each)`
+                      Split amount and quantity evenly across {form.batchIds.length} batches
+                      {form.splitAmount && linesTotal > 0
+                        ? ` (~${fmtMoney(linesTotal / form.batchIds.length)} each)`
                         : " (full amount on each)"}
                     </label>
                   ) : null}
