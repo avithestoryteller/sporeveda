@@ -366,12 +366,26 @@ function InventoryPage() {
         reorder_threshold: threshold !== null && Number.isFinite(threshold) ? threshold : null,
         notes: itemForm.notes.trim() || null,
       };
+      const wastage = itemForm.wastage.trim() ? Number(itemForm.wastage) : 0;
+      if (itemForm.wastage.trim() && (!Number.isFinite(wastage) || wastage <= 0))
+        throw new Error("Enter a valid wastage quantity");
+
       if (editingItemId) {
         const { error } = await supabase
           .from("inventory_items")
           .update(payload)
           .eq("id", editingItemId);
         if (error) throw error;
+        if (wastage > 0) {
+          const usage = await supabase.from("inventory_usage").insert({
+            org_id: orgId,
+            inventory_item_id: editingItemId,
+            quantity_used: wastage,
+            used_date: todayISO(),
+            notes: `Wastage${itemForm.wastageNotes.trim() ? ` — ${itemForm.wastageNotes.trim()}` : ""}`,
+          });
+          if (usage.error) throw usage.error;
+        }
         return;
       }
       const { error } = await supabase
