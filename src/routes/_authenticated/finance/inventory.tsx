@@ -284,6 +284,7 @@ function InventoryPage() {
       name: row.name ?? "",
       category: row.category ?? "other",
       unit: row.unit ?? "kg",
+      status: (row as { status?: string | null }).status ?? "in_stock",
       threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
       notes: row.notes ?? "",
       wastage: "",
