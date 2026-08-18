@@ -53,7 +53,7 @@ export const Route = createFileRoute("/_authenticated/finance/costs")({
 const ALL = "__all__";
 const NONE = "__none__";
 
-const MULTI_BATCH_CATEGORIES = ["substrate", "spawn"];
+const MULTI_BATCH_CATEGORIES = MATERIAL_CATEGORIES as readonly string[];
 
 type FormState = {
   category: string;
@@ -68,6 +68,7 @@ type FormState = {
   batchIds: string[];
   splitAmount: boolean;
   notes: string;
+  lines: MaterialLine[];
 };
 
 const EMPTY: FormState = {
@@ -83,6 +84,7 @@ const EMPTY: FormState = {
   batchIds: [],
   splitAmount: true,
   notes: "",
+  lines: [{ ...EMPTY_LINE }],
 };
 
 function CostsPage() {
