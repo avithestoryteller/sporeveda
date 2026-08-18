@@ -234,6 +234,8 @@ function InventoryPage() {
       unit: row.unit ?? "kg",
       threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
       notes: row.notes ?? "",
+      wastage: "",
+      wastageNotes: "",
     });
     setEditingItemId(id);
     setOpenForm("item");
