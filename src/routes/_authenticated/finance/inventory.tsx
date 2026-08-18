@@ -454,6 +454,19 @@ function InventoryPage() {
     [stockRows, depletedRows],
   );
 
+  /** Items with ordered / in-transit purchases that have not landed in stock yet. */
+  const incomingItems = useMemo(
+    () =>
+      stockRows
+        .map((row) => ({
+          name: row.name ?? "Item",
+          unit: row.unit ?? "",
+          qty: toNumber((row as { incoming_qty?: number | null }).incoming_qty) ?? 0,
+        }))
+        .filter((row) => row.qty > 0),
+    [stockRows],
+  );
+
   const lowStock = activeStockRows.filter((row) => {
     const threshold = toNumber(row.reorder_threshold);
     return threshold !== null && row.remaining <= threshold;
