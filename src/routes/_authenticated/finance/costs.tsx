@@ -415,17 +415,88 @@ function CostsPage() {
                 ) : null}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="cost-amount">Amount (₹)</Label>
-                <Input
-                  id="cost-amount"
-                  inputMode="decimal"
-                  value={form.amount}
-                  onChange={(event) => set("amount", event.target.value)}
-                  placeholder="1500"
-                  required
-                />
-              </div>
+              {isMaterial ? (
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>
+                    {titleCase(form.category)} line items — name, variety, quantity and amount
+                  </Label>
+                  <datalist id={`variety-${form.category}`}>
+                    {(VARIETY_SUGGESTIONS[form.category as MaterialCategory] ?? []).map((v) => (
+                      <option key={v} value={v} />
+                    ))}
+                  </datalist>
+                  <div className="space-y-2">
+                    {form.lines.map((line, index) => (
+                      <div
+                        key={index}
+                        className="grid gap-2 rounded-md border border-border p-2 sm:grid-cols-[1.2fr_1.2fr_0.8fr_0.9fr_auto]"
+                      >
+                        <Input
+                          aria-label="Material name"
+                          placeholder={form.category === "spawn" ? "Spawn supplier / lot" : "Straw bales"}
+                          value={line.name}
+                          onChange={(event) => setLine(index, "name", event.target.value)}
+                        />
+                        <Input
+                          aria-label="Species or variety"
+                          list={`variety-${form.category}`}
+                          placeholder={form.category === "spawn" ? "White Oyster" : "Paddy"}
+                          value={line.variety}
+                          onChange={(event) => setLine(index, "variety", event.target.value)}
+                        />
+                        <Input
+                          aria-label="Quantity in kg"
+                          inputMode="decimal"
+                          placeholder="kg"
+                          value={line.quantity}
+                          onChange={(event) => setLine(index, "quantity", event.target.value)}
+                        />
+                        <Input
+                          aria-label="Line amount"
+                          inputMode="decimal"
+                          placeholder="₹"
+                          value={line.amount}
+                          onChange={(event) => setLine(index, "amount", event.target.value)}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Remove line item"
+                          disabled={form.lines.length === 1}
+                          onClick={() => removeLine(index)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Button type="button" variant="outline" size="sm" onClick={addLine}>
+                      <Plus className="size-4" /> Line item
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Total <span className="stat-value">{fmtMoney(linesTotal)}</span>
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Each line becomes an inventory item, so stock and average cost per kg update
+                    automatically.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label htmlFor="cost-amount">Amount (₹)</Label>
+                  <Input
+                    id="cost-amount"
+                    inputMode="decimal"
+                    value={form.amount}
+                    onChange={(event) => set("amount", event.target.value)}
+                    placeholder="1500"
+                    required
+                  />
+                </div>
+              )}
 
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="cost-description">Description</Label>
