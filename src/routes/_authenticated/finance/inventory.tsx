@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Package, Pencil, Plus, ShoppingCart, Trash2, X } from "lucide-react";
 
@@ -24,6 +24,11 @@ import {
 } from "@/components/ui/select";
 import { fmtDate, todayISO, toNumber } from "@/lib/format";
 import { fmtMoney, titleCase } from "@/lib/money";
+import {
+  DEFAULT_SPAWN_PER_BAG_KG,
+  SPAWN_PER_BAG_STORAGE_KEY,
+  deriveUsageByItem,
+} from "@/lib/materials";
 
 export const Route = createFileRoute("/_authenticated/finance/inventory")({
   head: () => ({
@@ -88,6 +93,13 @@ function InventoryPage() {
   const [itemForm, setItemForm] = useState<ItemForm>(EMPTY_ITEM);
   const [purchaseForm, setPurchaseForm] = useState<PurchaseForm>(EMPTY_PURCHASE);
   const [openForm, setOpenForm] = useState<"item" | "purchase" | null>(null);
+  const [spawnPerBagKg, setSpawnPerBagKg] = useState(DEFAULT_SPAWN_PER_BAG_KG);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(SPAWN_PER_BAG_STORAGE_KEY);
+    const parsed = stored === null ? NaN : Number(stored);
+    if (Number.isFinite(parsed) && parsed > 0) setSpawnPerBagKg(parsed);
+  }, []);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
 
