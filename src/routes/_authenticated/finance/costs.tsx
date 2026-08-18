@@ -140,7 +140,7 @@ function CostsPage() {
     queryFn: async () => {
       let query = supabase
         .from("costs")
-        .select("*, farms(name), batches(batch_code)")
+        .select("*, farms(name), batches(batch_code), inventory_items(name, unit)")
         .eq("org_id", orgId)
         .gte("incurred_date", filters.from)
         .lte("incurred_date", filters.to)
@@ -313,6 +313,17 @@ function CostsPage() {
   });
 
   type CostRow = NonNullable<typeof costs>[number];
+
+  function lineFromRow(row: CostRow): MaterialLine {
+    const itemName = row.inventory_items?.name ?? "";
+    const [name, variety] = itemName.split(" — ");
+    return {
+      name: name ?? "",
+      variety: variety ?? "",
+      quantity: row.quantity_purchased === null ? "" : String(row.quantity_purchased),
+      amount: String(row.amount ?? ""),
+    };
+  }
 
   function fillFrom(row: CostRow, mode: "edit" | "duplicate") {
     const known = (COST_CATEGORIES as readonly string[]).includes(row.category);
