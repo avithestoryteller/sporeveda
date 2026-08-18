@@ -30,6 +30,7 @@ import {
   SPAWN_PER_BAG_STORAGE_KEY,
   SUBSTRATE_PER_BAG_STORAGE_KEY,
   deriveUsageByItem,
+  ensureInventoryItem,
 } from "@/lib/materials";
 
 export const Route = createFileRoute("/_authenticated/finance/inventory")({
