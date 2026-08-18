@@ -264,7 +264,7 @@ function InventoryPage() {
     vendor?: string | null;
     inventory_items?: { name: string | null; unit: string | null } | null;
   }) => {
-    const linked = items.find((item) => item.id === row.inventory_item_id);
+    const linked = allItems.find((item) => item.id === row.inventory_item_id);
     setPurchaseForm({
       category: linked?.category ?? row.category ?? "other",
       itemId: row.inventory_item_id ?? "",
@@ -532,7 +532,7 @@ function InventoryPage() {
       if (!Number.isFinite(quantity) || quantity <= 0) throw new Error("Enter a valid quantity");
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
 
-      const matched = items.find(
+      const matched = allItems.find(
         (row) =>
           row.category === purchaseForm.category &&
           row.name.toLowerCase() === typedName.toLowerCase(),
@@ -902,7 +902,7 @@ function InventoryPage() {
                 {Number(purchaseForm.quantity) > 0 && Number(purchaseForm.amount) > 0 ? (
                   <p className="text-xs text-muted-foreground">
                     {fmtMoney(Number(purchaseForm.amount) / Number(purchaseForm.quantity), true)} per{" "}
-                    {items.find((item) => item.id === purchaseForm.itemId)?.unit ?? "unit"}
+                    {purchaseForm.unit}
                   </p>
                 ) : null}
               </div>
