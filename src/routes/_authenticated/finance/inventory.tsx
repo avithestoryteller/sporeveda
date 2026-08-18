@@ -1307,7 +1307,8 @@ function InventoryPage() {
                         {row.inventory_items?.name ?? "Item"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {fmtDate(row.incurred_date)}
+                        {titleCase(row.category)}
+                        {row.vendor ? ` · ${row.vendor}` : ""} · {fmtDate(row.incurred_date)}
                         {qty ? ` · ${qty} ${unit}` : ""}
                         {row.batches?.batch_code ? ` · ${row.batches.batch_code}` : ""}
                         {row.farms?.name ? ` · ${row.farms.name}` : ""}
