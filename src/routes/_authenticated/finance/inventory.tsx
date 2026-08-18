@@ -504,7 +504,9 @@ function InventoryPage() {
       {openForm === "purchase" && canEdit ? (
         <Card className="mt-5">
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base">Record purchase</CardTitle>
+            <CardTitle className="font-display text-base">
+              {editingPurchaseId ? "Edit purchase" : "Record purchase"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form
