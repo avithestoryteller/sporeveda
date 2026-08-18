@@ -854,6 +854,21 @@ function CostsPage() {
                               <Pencil className="size-4" />
                             </Button>
                           ) : null}
+                          {canEdit ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => {
+                                if (confirm("Delete this cost entry?")) {
+                                  deleteCost.mutate(row.id);
+                                }
+                              }}
+                              aria-label="Delete cost"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
