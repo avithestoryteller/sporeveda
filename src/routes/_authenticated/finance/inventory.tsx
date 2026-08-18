@@ -291,11 +291,39 @@ function InventoryPage() {
     return all.filter((batch) => batch.farm_id === purchaseForm.farmId);
   }, [refs?.batches, purchaseForm.farmId]);
 
-  const stockValue = (stock ?? []).reduce((sum, row) => sum + (toNumber(row.remaining_value) ?? 0), 0);
-  const lowStock = (stock ?? []).filter((row) => {
+  const derivedUsage = useMemo(() => {
+    if (!consumption) return {} as Record<string, number>;
+    const categoryByItem: Record<string, string> = {};
+    for (const row of stock ?? []) {
+      if (row.inventory_item_id) categoryByItem[row.inventory_item_id] = row.category ?? "other";
+    }
+    return deriveUsageByItem({
+      costRows: consumption.links,
+      bagsPerBatch: consumption.bagsPerBatch,
+      substrateKgPerBatch: consumption.substrateKgPerBatch,
+      categoryByItem,
+      spawnPerBagKg,
+    });
+  }, [consumption, stock, spawnPerBagKg]);
+
+  /** Stock rows adjusted for production consumption derived from bags and batches. */
+  const stockRows = useMemo(
+    () =>
+      (stock ?? []).map((row) => {
+        const derived = row.inventory_item_id ? (derivedUsage[row.inventory_item_id] ?? 0) : 0;
+        const purchased = toNumber(row.total_purchased_qty) ?? 0;
+        const logged = toNumber(row.total_used_qty) ?? 0;
+        const avgCost = toNumber(row.avg_unit_cost) ?? 0;
+        const remaining = Math.max(purchased - logged - derived, 0);
+        return { ...row, derivedUsed: derived, remaining, remainingValue: remaining * avgCost };
+      }),
+    [stock, derivedUsage],
+  );
+
+  const stockValue = stockRows.reduce((sum, row) => sum + row.remainingValue, 0);
+  const lowStock = stockRows.filter((row) => {
     const threshold = toNumber(row.reorder_threshold);
-    const remaining = toNumber(row.remaining_qty) ?? 0;
-    return threshold !== null && remaining <= threshold;
+    return threshold !== null && row.remaining <= threshold;
   });
 
   const addItem = useMutation({
