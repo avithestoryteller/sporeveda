@@ -755,23 +755,91 @@ function InventoryPage() {
               }}
             >
               <div className="space-y-1.5">
-                <Label>Item</Label>
+                <Label>Category</Label>
                 <Select
-                  value={purchaseForm.itemId}
-                  onValueChange={(value) => setPurchase("itemId", value)}
+                  value={purchaseForm.category}
+                  onValueChange={(value) => {
+                    setPurchase("category", value);
+                    setPurchase("itemId", "");
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select item" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {items.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name} ({item.unit})
+                    {ITEM_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {titleCase(category)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="purchase-item">Item name</Label>
+                <Input
+                  id="purchase-item"
+                  list="purchase-item-options"
+                  value={purchaseForm.itemName}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setPurchase("itemName", value);
+                    const match = categoryItems.find(
+                      (item) => item.name.toLowerCase() === value.trim().toLowerCase(),
+                    );
+                    setPurchase("itemId", match?.id ?? "");
+                    if (match?.unit) setPurchase("unit", match.unit);
+                  }}
+                  placeholder="Paddy straw"
+                  required
+                />
+                <datalist id="purchase-item-options">
+                  {categoryItems.map((item) => (
+                    <option key={item.id} value={item.name} />
+                  ))}
+                </datalist>
+                {purchaseForm.itemName.trim().length >= 2 && !purchaseForm.itemId ? (
+                  <p className="text-xs text-muted-foreground">
+                    New {titleCase(purchaseForm.category).toLowerCase()} item — it will be created
+                    on save.
+                  </p>
+                ) : null}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="purchase-vendor">Vendor (optional)</Label>
+                <Input
+                  id="purchase-vendor"
+                  list="purchase-vendor-options"
+                  value={purchaseForm.vendor}
+                  onChange={(event) => setPurchase("vendor", event.target.value)}
+                  placeholder="Sharma Traders"
+                />
+                <datalist id="purchase-vendor-options">
+                  {vendorOptions.map((vendor) => (
+                    <option key={vendor} value={vendor} />
+                  ))}
+                </datalist>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Unit</Label>
+                <Select
+                  value={purchaseForm.unit}
+                  onValueChange={(value) => setPurchase("unit", value)}
+                  disabled={Boolean(purchaseForm.itemId)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNITS.map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {unit}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="purchase-date">Purchase date</Label>
                 <Input
