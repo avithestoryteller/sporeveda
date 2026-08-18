@@ -575,6 +575,32 @@ function InventoryPage() {
                   rows={2}
                 />
               </div>
+              {editingItemId ? (
+                <div className="grid gap-4 rounded-lg border border-dashed border-border p-3 sm:col-span-2 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="item-wastage">Add wastage ({itemForm.unit})</Label>
+                    <Input
+                      id="item-wastage"
+                      inputMode="decimal"
+                      value={itemForm.wastage}
+                      onChange={(event) => setItem("wastage", event.target.value)}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Spoiled or discarded stock — subtracted from stock on hand.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="item-wastage-notes">Wastage reason</Label>
+                    <Input
+                      id="item-wastage-notes"
+                      value={itemForm.wastageNotes}
+                      onChange={(event) => setItem("wastageNotes", event.target.value)}
+                      placeholder="Contaminated spawn bag"
+                    />
+                  </div>
+                </div>
+              ) : null}
               <div className="flex gap-2 sm:col-span-2">
                 <Button type="submit" disabled={addItem.isPending}>
                   {addItem.isPending ? "Saving…" : editingItemId ? "Save changes" : "Add item"}
