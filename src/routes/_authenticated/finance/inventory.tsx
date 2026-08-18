@@ -57,13 +57,23 @@ const NONE = "__none__";
 const ITEM_CATEGORIES = ["substrate", "spawn", "packaging", "supplement", "equipment", "other"];
 const UNITS = ["kg", "g", "litre", "bag", "block", "piece", "box"];
 
-type ItemForm = { name: string; category: string; unit: string; threshold: string; notes: string };
+type ItemForm = {
+  name: string;
+  category: string;
+  unit: string;
+  threshold: string;
+  notes: string;
+  wastage: string;
+  wastageNotes: string;
+};
 const EMPTY_ITEM: ItemForm = {
   name: "",
   category: "substrate",
   unit: "kg",
   threshold: "",
   notes: "",
+  wastage: "",
+  wastageNotes: "",
 };
 
 type PurchaseForm = {
