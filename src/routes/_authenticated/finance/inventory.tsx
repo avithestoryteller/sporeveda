@@ -310,8 +310,7 @@ function InventoryPage() {
       if (!Number.isFinite(quantity) || quantity <= 0) throw new Error("Enter a valid quantity");
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
       const item = items.find((row) => row.id === purchaseForm.itemId);
-      const { error } = await supabase.from("costs").insert({
-        org_id: orgId,
+      const payload = {
         category: item?.category ?? "other",
         description:
           purchaseForm.description.trim() ||
@@ -324,13 +323,18 @@ function InventoryPage() {
         farm_id: purchaseForm.farmId === NONE ? null : purchaseForm.farmId,
         batch_id: purchaseForm.batchId === NONE ? null : purchaseForm.batchId,
         notes: purchaseForm.notes.trim() || null,
-      });
+      };
+      if (editingPurchaseId) {
+        const { error } = await supabase.from("costs").update(payload).eq("id", editingPurchaseId);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await supabase.from("costs").insert({ org_id: orgId, ...payload });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Purchase recorded");
-      setPurchaseForm({ ...EMPTY_PURCHASE, incurredDate: todayISO() });
-      setOpenForm(null);
+      toast.success(editingPurchaseId ? "Purchase updated" : "Purchase recorded");
+      resetPurchaseForm();
       queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
       queryClient.invalidateQueries({ queryKey: ["costs"] });
