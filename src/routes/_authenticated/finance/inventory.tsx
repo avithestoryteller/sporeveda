@@ -672,9 +672,18 @@ function InventoryPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Items tracked" value={stock?.length ?? 0} />
         <StatTile label="Stock value" value={fmtMoney(stockValue)} hint="Weighted average cost" />
+        <StatTile
+          label="Incoming"
+          value={incomingItems.length}
+          hint={
+            incomingItems.length
+              ? incomingItems.map((row) => `${row.name} (${row.qty} ${row.unit})`).join(", ")
+              : "Nothing on order or in transit"
+          }
+        />
         <StatTile
           label="Low stock"
           value={lowStock.length}
