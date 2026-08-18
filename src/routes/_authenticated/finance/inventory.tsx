@@ -1064,10 +1064,13 @@ function InventoryPage() {
             return (
               <Card key={row.inventory_item_id ?? row.name}>
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{row.name}</p>
                       <p className="text-xs text-muted-foreground">{titleCase(row.category)}</p>
+                      <div className="mt-1">
+                        <ItemStatusBadge status={row.item_status} />
+                      </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       {low ? <Badge variant="destructive">Low</Badge> : null}
