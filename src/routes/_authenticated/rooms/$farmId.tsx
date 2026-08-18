@@ -135,7 +135,7 @@ function ClimateTrendChart({
   return (
     <div className="h-56 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+        <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           {bands.map((band, index) =>
             band.min !== null && band.max !== null ? (
@@ -152,9 +152,14 @@ function ClimateTrendChart({
           <YAxis
             tick={{ fontSize: 11 }}
             tickLine={false}
-            width={38}
-            domain={["auto", "auto"]}
-            unit={unit}
+            width={56}
+            tickCount={6}
+            domain={([min, max]: [number, number]) => {
+              if (!Number.isFinite(min) || !Number.isFinite(max)) return [0, 1];
+              const pad = Math.max((max - min) * 0.1, 1);
+              return [Math.floor(min - pad), Math.ceil(max + pad)];
+            }}
+            tickFormatter={(value: number) => `${Math.round(value * 10) / 10}${unit}`}
           />
           <Tooltip
             contentStyle={{
