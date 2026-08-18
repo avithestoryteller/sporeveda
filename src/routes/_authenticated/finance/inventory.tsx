@@ -349,10 +349,84 @@ function InventoryPage() {
   );
 
   const stockValue = stockRows.reduce((sum, row) => sum + row.remainingValue, 0);
-  const lowStock = stockRows.filter((row) => {
+
+  /** Items whose stock is fully consumed drop out of the tiles and into the depleted log. */
+  const depletedRows = useMemo(
+    () =>
+      stockRows.filter(
+        (row) => (toNumber(row.total_purchased_qty) ?? 0) > 0 && row.remaining <= 0.0001,
+      ),
+    [stockRows],
+  );
+  const activeStockRows = useMemo(
+    () => stockRows.filter((row) => !depletedRows.includes(row)),
+    [stockRows, depletedRows],
+  );
+
+  const lowStock = activeStockRows.filter((row) => {
     const threshold = toNumber(row.reorder_threshold);
     return threshold !== null && row.remaining <= threshold;
   });
+
+  /** Per-item purchase analytics derived from the inventory-linked cost rows. */
+  const purchaseAnalytics = useMemo(() => {
+    type Stat = {
+      itemId: string;
+      name: string;
+      unit: string;
+      category: string;
+      orders: number;
+      qty: number;
+      spend: number;
+      minRate: number | null;
+      maxRate: number | null;
+      lastRate: number | null;
+      lastDate: string | null;
+    };
+    const byItem = new Map<string, Stat>();
+    for (const row of purchases ?? []) {
+      const itemId = row.inventory_item_id;
+      if (!itemId) continue;
+      const qty = toNumber(row.quantity_purchased) ?? 0;
+      const amount = Number(row.amount) || 0;
+      const rate = qty > 0 ? amount / qty : null;
+      const stat =
+        byItem.get(itemId) ??
+        ({
+          itemId,
+          name: row.inventory_items?.name ?? "Item",
+          unit: row.inventory_items?.unit ?? "",
+          category: row.category ?? "other",
+          orders: 0,
+          qty: 0,
+          spend: 0,
+          minRate: null,
+          maxRate: null,
+          lastRate: null,
+          lastDate: null,
+        } satisfies Stat);
+      stat.orders += 1;
+      stat.qty += qty;
+      stat.spend += amount;
+      if (rate !== null) {
+        stat.minRate = stat.minRate === null ? rate : Math.min(stat.minRate, rate);
+        stat.maxRate = stat.maxRate === null ? rate : Math.max(stat.maxRate, rate);
+        // purchases are ordered newest first, so the first rate seen is the latest
+        if (stat.lastRate === null) {
+          stat.lastRate = rate;
+          stat.lastDate = row.incurred_date ?? null;
+        }
+      }
+      if (!stat.lastDate) stat.lastDate = row.incurred_date ?? null;
+      byItem.set(itemId, stat);
+    }
+    const rows = [...byItem.values()]
+      .map((stat) => ({ ...stat, avgRate: stat.qty > 0 ? stat.spend / stat.qty : null }))
+      .sort((a, b) => b.spend - a.spend);
+    const totalSpend = rows.reduce((sum, row) => sum + row.spend, 0);
+    const totalOrders = rows.reduce((sum, row) => sum + row.orders, 0);
+    return { rows, totalSpend, totalOrders };
+  }, [purchases]);
 
   const addItem = useMutation({
     mutationFn: async () => {
@@ -839,18 +913,20 @@ function InventoryPage() {
       </div>
       {isLoading ? (
         <Skeleton className="h-48" />
-      ) : stockRows.length === 0 ? (
+      ) : activeStockRows.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 p-8 text-center">
             <Package className="size-6 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              No inventory items yet. Add an item, then record your first purchase.
+              {stockRows.length === 0
+                ? "No inventory items yet. Add an item, then record your first purchase."
+                : "Everything is used up — see the depleted items log below."}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {stockRows.map((row) => {
+          {activeStockRows.map((row) => {
             const remaining = row.remaining;
             const threshold = toNumber(row.reorder_threshold);
             const low = threshold !== null && remaining <= threshold;
@@ -938,6 +1014,150 @@ function InventoryPage() {
           })}
         </div>
       )}
+
+      {depletedRows.length > 0 ? (
+        <>
+          <h2 className="mb-3 mt-8 font-display text-lg font-semibold">
+            Depleted items{" "}
+            <span className="text-sm font-normal text-muted-foreground">
+              ({depletedRows.length} fully used)
+            </span>
+          </h2>
+          <Card>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border">
+                {depletedRows.map((row) => {
+                  const purchased = toNumber(row.total_purchased_qty) ?? 0;
+                  const logged = toNumber(row.total_used_qty) ?? 0;
+                  return (
+                    <div
+                      key={row.inventory_item_id ?? row.name}
+                      className="flex items-start justify-between gap-3 p-4"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{row.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {titleCase(row.category)} · purchased{" "}
+                          {purchased.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                          {row.unit} · production use{" "}
+                          {row.derivedUsed.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                          {row.unit}
+                          {logged > 0
+                            ? ` · wastage ${logged.toLocaleString("en-IN", { maximumFractionDigits: 2 })} ${row.unit}`
+                            : ""}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <div className="text-right">
+                          <Badge variant="outline">Out of stock</Badge>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {fmtMoney(row.avg_unit_cost, true)} / {row.unit} avg
+                          </p>
+                        </div>
+                        {canEdit && row.inventory_item_id ? (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label={`Edit ${row.name}`}
+                            onClick={() => startEditItem(row.inventory_item_id!)}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      ) : null}
+
+      {purchaseAnalytics.rows.length > 0 ? (
+        <>
+          <div className="mb-3 mt-8 flex flex-wrap items-end justify-between gap-2">
+            <h2 className="font-display text-lg font-semibold">Purchase analytics</h2>
+            <p className="text-xs text-muted-foreground">
+              {purchaseAnalytics.totalOrders} purchases · {fmtMoney(purchaseAnalytics.totalSpend)}{" "}
+              spent
+            </p>
+          </div>
+          <Card>
+            <CardContent className="overflow-x-auto p-0">
+              <table className="w-full text-sm">
+                <thead className="border-b border-border text-xs text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium">Item</th>
+                    <th className="px-4 py-2 text-right font-medium">Orders</th>
+                    <th className="px-4 py-2 text-right font-medium">Qty</th>
+                    <th className="px-4 py-2 text-right font-medium">Spend</th>
+                    <th className="px-4 py-2 text-right font-medium">Avg rate</th>
+                    <th className="px-4 py-2 text-right font-medium">Low / high</th>
+                    <th className="px-4 py-2 text-right font-medium">Last rate</th>
+                    <th className="px-4 py-2 text-right font-medium">Share</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {purchaseAnalytics.rows.map((row) => {
+                    const share =
+                      purchaseAnalytics.totalSpend > 0
+                        ? (row.spend / purchaseAnalytics.totalSpend) * 100
+                        : 0;
+                    const delta =
+                      row.lastRate !== null && row.avgRate ? row.lastRate - row.avgRate : null;
+                    return (
+                      <tr key={row.itemId}>
+                        <td className="px-4 py-2">
+                          <p className="font-medium">{row.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {titleCase(row.category)}
+                            {row.lastDate ? ` · last ${fmtDate(row.lastDate)}` : ""}
+                          </p>
+                        </td>
+                        <td className="px-4 py-2 text-right">{row.orders}</td>
+                        <td className="px-4 py-2 text-right">
+                          {row.qty.toLocaleString("en-IN", { maximumFractionDigits: 2 })} {row.unit}
+                        </td>
+                        <td className="px-4 py-2 text-right">{fmtMoney(row.spend)}</td>
+                        <td className="px-4 py-2 text-right">
+                          {row.avgRate === null ? "—" : `${fmtMoney(row.avgRate, true)}/${row.unit}`}
+                        </td>
+                        <td className="px-4 py-2 text-right text-xs text-muted-foreground">
+                          {row.minRate === null
+                            ? "—"
+                            : `${fmtMoney(row.minRate, true)} – ${fmtMoney(row.maxRate, true)}`}
+                        </td>
+                        <td className="px-4 py-2 text-right">
+                          {row.lastRate === null ? (
+                            "—"
+                          ) : (
+                            <>
+                              {fmtMoney(row.lastRate, true)}
+                              {delta !== null && Math.abs(delta) > 0.005 ? (
+                                <span
+                                  className={
+                                    delta > 0
+                                      ? "ml-1 text-xs text-destructive"
+                                      : "ml-1 text-xs text-primary"
+                                  }
+                                >
+                                  {delta > 0 ? "▲" : "▼"} {fmtMoney(Math.abs(delta), true)}
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-right">{share.toFixed(0)}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </>
+      ) : null}
 
       <h2 className="mb-3 mt-8 font-display text-lg font-semibold">Recent purchases</h2>
       <Card>
