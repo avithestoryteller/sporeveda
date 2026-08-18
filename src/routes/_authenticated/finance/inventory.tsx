@@ -183,11 +183,21 @@ function InventoryPage() {
     setOpenForm("item");
   };
 
-  const startEditPurchase = (row: { id: string } & Record<string, any>) => {
+  const startEditPurchase = (row: {
+    id: string;
+    inventory_item_id: string | null;
+    quantity_purchased: number | null;
+    amount: number;
+    incurred_date: string;
+    farm_id: string | null;
+    batch_id: string | null;
+    description: string | null;
+    notes: string | null;
+  }) => {
     setPurchaseForm({
       itemId: row.inventory_item_id ?? "",
       quantity: row.quantity_purchased === null ? "" : String(row.quantity_purchased),
-      amount: row.amount === null ? "" : String(row.amount),
+      amount: String(row.amount ?? ""),
       incurredDate: row.incurred_date ?? todayISO(),
       farmId: row.farm_id ?? NONE,
       batchId: row.batch_id ?? NONE,
