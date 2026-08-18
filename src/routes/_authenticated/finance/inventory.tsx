@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Package, Plus, ShoppingCart } from "lucide-react";
+import { Package, Pencil, Plus, ShoppingCart, Trash2, X } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
@@ -88,6 +88,8 @@ function InventoryPage() {
   const [itemForm, setItemForm] = useState<ItemForm>(EMPTY_ITEM);
   const [purchaseForm, setPurchaseForm] = useState<PurchaseForm>(EMPTY_PURCHASE);
   const [openForm, setOpenForm] = useState<"item" | "purchase" | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
 
   const setItem = <K extends keyof ItemForm>(key: K, value: ItemForm[K]) =>
     setItemForm((prev) => ({ ...prev, [key]: value }));
@@ -143,6 +145,104 @@ function InventoryPage() {
     },
   });
 
+  const { data: itemRows } = useQuery({
+    queryKey: ["inventory-items", orgId],
+    enabled: Boolean(orgId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .select("*")
+        .eq("org_id", orgId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const resetItemForm = () => {
+    setItemForm(EMPTY_ITEM);
+    setEditingItemId(null);
+    setOpenForm(null);
+  };
+  const resetPurchaseForm = () => {
+    setPurchaseForm({ ...EMPTY_PURCHASE, incurredDate: todayISO() });
+    setEditingPurchaseId(null);
+    setOpenForm(null);
+  };
+
+  const startEditItem = (id: string) => {
+    const row = (itemRows ?? []).find((item) => item.id === id);
+    if (!row) return;
+    setItemForm({
+      name: row.name ?? "",
+      category: row.category ?? "other",
+      unit: row.unit ?? "kg",
+      threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
+      notes: row.notes ?? "",
+    });
+    setEditingItemId(id);
+    setOpenForm("item");
+  };
+
+  const startEditPurchase = (row: {
+    id: string;
+    inventory_item_id: string | null;
+    quantity_purchased: number | null;
+    amount: number;
+    incurred_date: string;
+    farm_id: string | null;
+    batch_id: string | null;
+    description: string | null;
+    notes: string | null;
+  }) => {
+    setPurchaseForm({
+      itemId: row.inventory_item_id ?? "",
+      quantity: row.quantity_purchased === null ? "" : String(row.quantity_purchased),
+      amount: String(row.amount ?? ""),
+      incurredDate: row.incurred_date ?? todayISO(),
+      farmId: row.farm_id ?? NONE,
+      batchId: row.batch_id ?? NONE,
+      description: row.description ?? "",
+      notes: row.notes ?? "",
+    });
+    setEditingPurchaseId(row.id);
+    setOpenForm("purchase");
+  };
+
+  const deleteItem = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("inventory_items").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Item deleted");
+      if (editingItemId) resetItemForm();
+      queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
+    },
+    onError: (error: Error) =>
+      toast.error(
+        error.message.includes("foreign key")
+          ? "Delete the purchases for this item first"
+          : error.message,
+      ),
+  });
+
+  const deletePurchase = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("costs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Purchase deleted");
+      if (editingPurchaseId) resetPurchaseForm();
+      queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["costs"] });
+      queryClient.invalidateQueries({ queryKey: ["financials"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const items = useMemo(
     () =>
       (stock ?? []).map((row) => ({
@@ -172,21 +272,32 @@ function InventoryPage() {
       const name = itemForm.name.trim();
       if (name.length < 2) throw new Error("Enter an item name");
       const threshold = itemForm.threshold.trim() ? Number(itemForm.threshold) : null;
-      const { error } = await supabase.from("inventory_items").insert({
-        org_id: orgId,
+      const payload = {
         name,
         category: itemForm.category,
         unit: itemForm.unit,
         reorder_threshold: threshold !== null && Number.isFinite(threshold) ? threshold : null,
         notes: itemForm.notes.trim() || null,
-      });
+      };
+      if (editingItemId) {
+        const { error } = await supabase
+          .from("inventory_items")
+          .update(payload)
+          .eq("id", editingItemId);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await supabase
+        .from("inventory_items")
+        .insert({ org_id: orgId, ...payload });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Item added");
-      setItemForm(EMPTY_ITEM);
-      setOpenForm(null);
+      toast.success(editingItemId ? "Item updated" : "Item added");
+      resetItemForm();
       queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -199,8 +310,7 @@ function InventoryPage() {
       if (!Number.isFinite(quantity) || quantity <= 0) throw new Error("Enter a valid quantity");
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
       const item = items.find((row) => row.id === purchaseForm.itemId);
-      const { error } = await supabase.from("costs").insert({
-        org_id: orgId,
+      const payload = {
         category: item?.category ?? "other",
         description:
           purchaseForm.description.trim() ||
@@ -213,13 +323,18 @@ function InventoryPage() {
         farm_id: purchaseForm.farmId === NONE ? null : purchaseForm.farmId,
         batch_id: purchaseForm.batchId === NONE ? null : purchaseForm.batchId,
         notes: purchaseForm.notes.trim() || null,
-      });
+      };
+      if (editingPurchaseId) {
+        const { error } = await supabase.from("costs").update(payload).eq("id", editingPurchaseId);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await supabase.from("costs").insert({ org_id: orgId, ...payload });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Purchase recorded");
-      setPurchaseForm({ ...EMPTY_PURCHASE, incurredDate: todayISO() });
-      setOpenForm(null);
+      toast.success(editingPurchaseId ? "Purchase updated" : "Purchase recorded");
+      resetPurchaseForm();
       queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
       queryClient.invalidateQueries({ queryKey: ["costs"] });
@@ -238,12 +353,28 @@ function InventoryPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setOpenForm((value) => (value === "item" ? null : "item"))}
+                onClick={() => {
+                  if (openForm === "item" && !editingItemId) {
+                    setOpenForm(null);
+                    return;
+                  }
+                  setItemForm(EMPTY_ITEM);
+                  setEditingItemId(null);
+                  setOpenForm("item");
+                }}
               >
                 <Plus className="size-4" /> Item
               </Button>
               <Button
-                onClick={() => setOpenForm((value) => (value === "purchase" ? null : "purchase"))}
+                onClick={() => {
+                  if (openForm === "purchase" && !editingPurchaseId) {
+                    setOpenForm(null);
+                    return;
+                  }
+                  setPurchaseForm({ ...EMPTY_PURCHASE, incurredDate: todayISO() });
+                  setEditingPurchaseId(null);
+                  setOpenForm("purchase");
+                }}
                 disabled={items.length === 0}
               >
                 <ShoppingCart className="size-4" /> Purchase
@@ -267,7 +398,9 @@ function InventoryPage() {
       {openForm === "item" && canEdit ? (
         <Card className="mt-5">
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base">New inventory item</CardTitle>
+            <CardTitle className="font-display text-base">
+              {editingItemId ? "Edit inventory item" : "New inventory item"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form
@@ -339,10 +472,29 @@ function InventoryPage() {
                   rows={2}
                 />
               </div>
-              <div className="sm:col-span-2">
+              <div className="flex gap-2 sm:col-span-2">
                 <Button type="submit" disabled={addItem.isPending}>
-                  {addItem.isPending ? "Saving…" : "Add item"}
+                  {addItem.isPending ? "Saving…" : editingItemId ? "Save changes" : "Add item"}
                 </Button>
+                {editingItemId ? (
+                  <>
+                    <Button type="button" variant="ghost" onClick={resetItemForm}>
+                      <X className="size-4" /> Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="ml-auto"
+                      disabled={deleteItem.isPending}
+                      onClick={() => {
+                        if (window.confirm("Delete this item? Purchases must be removed first."))
+                          deleteItem.mutate(editingItemId);
+                      }}
+                    >
+                      <Trash2 className="size-4" /> Delete item
+                    </Button>
+                  </>
+                ) : null}
               </div>
             </form>
           </CardContent>
@@ -352,7 +504,9 @@ function InventoryPage() {
       {openForm === "purchase" && canEdit ? (
         <Card className="mt-5">
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base">Record purchase</CardTitle>
+            <CardTitle className="font-display text-base">
+              {editingPurchaseId ? "Edit purchase" : "Record purchase"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form
@@ -478,9 +632,34 @@ function InventoryPage() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <Button type="submit" disabled={addPurchase.isPending}>
-                  {addPurchase.isPending ? "Saving…" : "Record purchase"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={addPurchase.isPending}>
+                    {addPurchase.isPending
+                      ? "Saving…"
+                      : editingPurchaseId
+                        ? "Save changes"
+                        : "Record purchase"}
+                  </Button>
+                  {editingPurchaseId ? (
+                    <>
+                      <Button type="button" variant="ghost" onClick={resetPurchaseForm}>
+                        <X className="size-4" /> Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        className="ml-auto"
+                        disabled={deletePurchase.isPending}
+                        onClick={() => {
+                          if (window.confirm("Delete this purchase?"))
+                            deletePurchase.mutate(editingPurchaseId);
+                        }}
+                      >
+                        <Trash2 className="size-4" /> Delete
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Purchases are also logged in the Costs ledger, so financials stay in sync.
                 </p>
@@ -516,7 +695,19 @@ function InventoryPage() {
                       <p className="truncate font-medium">{row.name}</p>
                       <p className="text-xs text-muted-foreground">{titleCase(row.category)}</p>
                     </div>
-                    {low ? <Badge variant="destructive">Low</Badge> : null}
+                    <div className="flex shrink-0 items-center gap-1">
+                      {low ? <Badge variant="destructive">Low</Badge> : null}
+                      {canEdit && row.inventory_item_id ? (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={`Edit ${row.name}`}
+                          onClick={() => startEditItem(row.inventory_item_id!)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
                   <p className="stat-value mt-3 text-2xl">
                     {remaining.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
@@ -581,12 +772,38 @@ function InventoryPage() {
                         </p>
                       ) : null}
                     </div>
-                    <div className="text-right">
-                      <p className="stat-value text-sm">{fmtMoney(row.amount)}</p>
-                      {qty ? (
-                        <p className="text-xs text-muted-foreground">
-                          {fmtMoney(Number(row.amount) / qty, true)}/{unit}
-                        </p>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <div className="text-right">
+                        <p className="stat-value text-sm">{fmtMoney(row.amount)}</p>
+                        {qty ? (
+                          <p className="text-xs text-muted-foreground">
+                            {fmtMoney(Number(row.amount) / qty, true)}/{unit}
+                          </p>
+                        ) : null}
+                      </div>
+                      {canEdit ? (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Edit purchase"
+                            onClick={() => startEditPurchase(row)}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Delete purchase"
+                            disabled={deletePurchase.isPending}
+                            onClick={() => {
+                              if (window.confirm("Delete this purchase?"))
+                                deletePurchase.mutate(row.id);
+                            }}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </>
                       ) : null}
                     </div>
                   </div>
