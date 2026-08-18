@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { useOrg, useOrgId } from "@/hooks/use-org";
 import { PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -209,7 +210,7 @@ function CostsPage() {
           notes: form.notes.trim() || null,
         };
 
-        const rows: Record<string, unknown>[] = [];
+        const rows: TablesInsert<"costs">[] = [];
         for (const line of lines) {
           const itemName = materialItemName(line.name, line.variety);
           const itemId = await ensureInventoryItem({
@@ -328,6 +329,7 @@ function CostsPage() {
       batchIds: row.batch_id ? [row.batch_id] : [],
       splitAmount: false,
       notes: row.notes ?? "",
+      lines: [lineFromRow(row)],
     });
     setEditingId(mode === "edit" ? row.id : null);
     setShowForm(true);
