@@ -353,12 +353,28 @@ function InventoryPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setOpenForm((value) => (value === "item" ? null : "item"))}
+                onClick={() => {
+                  if (openForm === "item" && !editingItemId) {
+                    setOpenForm(null);
+                    return;
+                  }
+                  setItemForm(EMPTY_ITEM);
+                  setEditingItemId(null);
+                  setOpenForm("item");
+                }}
               >
                 <Plus className="size-4" /> Item
               </Button>
               <Button
-                onClick={() => setOpenForm((value) => (value === "purchase" ? null : "purchase"))}
+                onClick={() => {
+                  if (openForm === "purchase" && !editingPurchaseId) {
+                    setOpenForm(null);
+                    return;
+                  }
+                  setPurchaseForm({ ...EMPTY_PURCHASE, incurredDate: todayISO() });
+                  setEditingPurchaseId(null);
+                  setOpenForm("purchase");
+                }}
                 disabled={items.length === 0}
               >
                 <ShoppingCart className="size-4" /> Purchase
