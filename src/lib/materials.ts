@@ -22,6 +22,10 @@ export const VARIETY_SUGGESTIONS: Record<MaterialCategory, string[]> = {
 export const DEFAULT_SPAWN_PER_BAG_KG = 0.2;
 export const SPAWN_PER_BAG_STORAGE_KEY = "sporeveda.spawnPerBagKg";
 
+/** Default dry substrate used per bag, in kg. */
+export const DEFAULT_SUBSTRATE_PER_BAG_KG = 1.2;
+export const SUBSTRATE_PER_BAG_STORAGE_KEY = "sporeveda.substratePerBagKg";
+
 export type MaterialLine = {
   name: string;
   variety: string;
