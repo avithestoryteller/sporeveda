@@ -259,9 +259,17 @@ function InventoryPage() {
     batch_id: string | null;
     description: string | null;
     notes: string | null;
+    category?: string | null;
+    vendor?: string | null;
+    inventory_items?: { name: string | null; unit: string | null } | null;
   }) => {
+    const linked = items.find((item) => item.id === row.inventory_item_id);
     setPurchaseForm({
+      category: linked?.category ?? row.category ?? "other",
       itemId: row.inventory_item_id ?? "",
+      itemName: row.inventory_items?.name ?? linked?.name ?? "",
+      unit: row.inventory_items?.unit ?? linked?.unit ?? "kg",
+      vendor: row.vendor ?? "",
       quantity: row.quantity_purchased === null ? "" : String(row.quantity_purchased),
       amount: String(row.amount ?? ""),
       incurredDate: row.incurred_date ?? todayISO(),
