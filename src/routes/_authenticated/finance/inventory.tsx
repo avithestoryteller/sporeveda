@@ -77,7 +77,11 @@ const EMPTY_ITEM: ItemForm = {
 };
 
 type PurchaseForm = {
+  category: string;
   itemId: string;
+  itemName: string;
+  unit: string;
+  vendor: string;
   quantity: string;
   amount: string;
   incurredDate: string;
@@ -87,7 +91,11 @@ type PurchaseForm = {
   notes: string;
 };
 const EMPTY_PURCHASE: PurchaseForm = {
+  category: "substrate",
   itemId: "",
+  itemName: "",
+  unit: "kg",
+  vendor: "",
   quantity: "",
   amount: "",
   incurredDate: todayISO(),
