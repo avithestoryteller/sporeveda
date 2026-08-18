@@ -632,9 +632,34 @@ function InventoryPage() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <Button type="submit" disabled={addPurchase.isPending}>
-                  {addPurchase.isPending ? "Saving…" : "Record purchase"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={addPurchase.isPending}>
+                    {addPurchase.isPending
+                      ? "Saving…"
+                      : editingPurchaseId
+                        ? "Save changes"
+                        : "Record purchase"}
+                  </Button>
+                  {editingPurchaseId ? (
+                    <>
+                      <Button type="button" variant="ghost" onClick={resetPurchaseForm}>
+                        <X className="size-4" /> Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        className="ml-auto"
+                        disabled={deletePurchase.isPending}
+                        onClick={() => {
+                          if (window.confirm("Delete this purchase?"))
+                            deletePurchase.mutate(editingPurchaseId);
+                        }}
+                      >
+                        <Trash2 className="size-4" /> Delete
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Purchases are also logged in the Costs ledger, so financials stay in sync.
                 </p>
