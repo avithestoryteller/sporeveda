@@ -694,6 +694,21 @@ function InventoryPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select value={itemForm.status} onValueChange={(value) => setItem("status", value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEM_STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="item-threshold">Reorder threshold (optional)</Label>
                 <Input
                   id="item-threshold"
