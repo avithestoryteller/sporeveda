@@ -58,10 +58,50 @@ const NONE = "__none__";
 const ITEM_CATEGORIES = ["substrate", "spawn", "packaging", "supplement", "equipment", "other"];
 const UNITS = ["kg", "g", "litre", "bag", "block", "piece", "box"];
 
+const PURCHASE_STATUSES = [
+  { value: "ordered", label: "Ordered" },
+  { value: "in_transit", label: "In transit" },
+  { value: "received", label: "Received" },
+  { value: "cancelled", label: "Cancelled" },
+];
+const ITEM_STATUSES = [
+  { value: "in_stock", label: "In stock" },
+  { value: "on_order", label: "On order" },
+  { value: "depleted", label: "Depleted" },
+  { value: "discontinued", label: "Discontinued" },
+];
+
+function labelFor(list: { value: string; label: string }[], value: string | null | undefined) {
+  return list.find((entry) => entry.value === value)?.label ?? null;
+}
+
+function PurchaseStatusBadge({ status }: { status: string | null | undefined }) {
+  const label = labelFor(PURCHASE_STATUSES, status);
+  if (!label) return null;
+  const variant =
+    status === "received" ? "default" : status === "cancelled" ? "destructive" : "secondary";
+  return (
+    <Badge variant={variant} className="text-[10px]">
+      {label}
+    </Badge>
+  );
+}
+
+function ItemStatusBadge({ status }: { status: string | null | undefined }) {
+  const label = labelFor(ITEM_STATUSES, status);
+  if (!label || status === "in_stock") return null;
+  return (
+    <Badge variant="outline" className="text-[10px]">
+      {label}
+    </Badge>
+  );
+}
+
 type ItemForm = {
   name: string;
   category: string;
   unit: string;
+  status: string;
   threshold: string;
   notes: string;
   wastage: string;
@@ -71,6 +111,7 @@ const EMPTY_ITEM: ItemForm = {
   name: "",
   category: "substrate",
   unit: "kg",
+  status: "in_stock",
   threshold: "",
   notes: "",
   wastage: "",
@@ -83,6 +124,7 @@ type PurchaseForm = {
   itemName: string;
   unit: string;
   vendor: string;
+  status: string;
   quantity: string;
   amount: string;
   incurredDate: string;
@@ -97,6 +139,7 @@ const EMPTY_PURCHASE: PurchaseForm = {
   itemName: "",
   unit: "kg",
   vendor: "",
+  status: "received",
   quantity: "",
   amount: "",
   incurredDate: todayISO(),
