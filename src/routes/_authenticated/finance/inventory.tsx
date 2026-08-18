@@ -1313,6 +1313,9 @@ function InventoryPage() {
                         {row.batches?.batch_code ? ` · ${row.batches.batch_code}` : ""}
                         {row.farms?.name ? ` · ${row.farms.name}` : ""}
                       </p>
+                      <div className="mt-1">
+                        <PurchaseStatusBadge status={row.status} />
+                      </div>
                       {row.description ? (
                         <p className="mt-1 truncate text-xs text-muted-foreground">
                           {row.description}
