@@ -22,6 +22,10 @@ export const VARIETY_SUGGESTIONS: Record<MaterialCategory, string[]> = {
 export const DEFAULT_SPAWN_PER_BAG_KG = 0.2;
 export const SPAWN_PER_BAG_STORAGE_KEY = "sporeveda.spawnPerBagKg";
 
+/** Default dry substrate used per bag, in kg. */
+export const DEFAULT_SUBSTRATE_PER_BAG_KG = 1.2;
+export const SUBSTRATE_PER_BAG_STORAGE_KEY = "sporeveda.substratePerBagKg";
+
 export type MaterialLine = {
   name: string;
   variety: string;
@@ -77,18 +81,19 @@ type LinkRow = {
 
 /**
  * Derives material consumption per inventory item from production data:
- * spawn is consumed at `spawnPerBagKg` per bag of every linked batch, substrate at the
- * batch's recorded dry substrate weight. When several items supply the same batch, the
- * consumption is split in proportion to the quantity purchased for that batch.
+ * spawn is consumed at `spawnPerBagKg` per bag and substrate at `substratePerBagKg`
+ * per bag of every linked batch — every bag counts, including discarded ones. When
+ * several items supply the same batch, the consumption is split in proportion to the
+ * quantity purchased for that batch.
  */
 export function deriveUsageByItem(params: {
   costRows: LinkRow[];
   bagsPerBatch: Record<string, number>;
-  substrateKgPerBatch: Record<string, number>;
   categoryByItem: Record<string, string>;
   spawnPerBagKg: number;
+  substratePerBagKg: number;
 }): Record<string, number> {
-  const { costRows, bagsPerBatch, substrateKgPerBatch, categoryByItem, spawnPerBagKg } = params;
+  const { costRows, bagsPerBatch, categoryByItem, spawnPerBagKg, substratePerBagKg } = params;
 
   // batchId -> category -> itemId -> purchased qty
   const grouped = new Map<string, Map<string, Map<string, number>>>();
@@ -107,10 +112,8 @@ export function deriveUsageByItem(params: {
   const usage: Record<string, number> = {};
   for (const [batchId, byCategory] of grouped) {
     for (const [category, byItem] of byCategory) {
-      const consumed =
-        category === "spawn"
-          ? (bagsPerBatch[batchId] ?? 0) * spawnPerBagKg
-          : (substrateKgPerBatch[batchId] ?? 0);
+      const perBag = category === "spawn" ? spawnPerBagKg : substratePerBagKg;
+      const consumed = (bagsPerBatch[batchId] ?? 0) * perBag;
       if (consumed <= 0) continue;
       const totalQty = [...byItem.values()].reduce((sum, value) => sum + value, 0);
       const items = [...byItem.entries()];

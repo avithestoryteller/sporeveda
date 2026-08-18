@@ -26,7 +26,9 @@ import { fmtDate, todayISO, toNumber } from "@/lib/format";
 import { fmtMoney, titleCase } from "@/lib/money";
 import {
   DEFAULT_SPAWN_PER_BAG_KG,
+  DEFAULT_SUBSTRATE_PER_BAG_KG,
   SPAWN_PER_BAG_STORAGE_KEY,
+  SUBSTRATE_PER_BAG_STORAGE_KEY,
   deriveUsageByItem,
 } from "@/lib/materials";
 
@@ -55,13 +57,23 @@ const NONE = "__none__";
 const ITEM_CATEGORIES = ["substrate", "spawn", "packaging", "supplement", "equipment", "other"];
 const UNITS = ["kg", "g", "litre", "bag", "block", "piece", "box"];
 
-type ItemForm = { name: string; category: string; unit: string; threshold: string; notes: string };
+type ItemForm = {
+  name: string;
+  category: string;
+  unit: string;
+  threshold: string;
+  notes: string;
+  wastage: string;
+  wastageNotes: string;
+};
 const EMPTY_ITEM: ItemForm = {
   name: "",
   category: "substrate",
   unit: "kg",
   threshold: "",
   notes: "",
+  wastage: "",
+  wastageNotes: "",
 };
 
 type PurchaseForm = {
@@ -94,11 +106,18 @@ function InventoryPage() {
   const [purchaseForm, setPurchaseForm] = useState<PurchaseForm>(EMPTY_PURCHASE);
   const [openForm, setOpenForm] = useState<"item" | "purchase" | null>(null);
   const [spawnPerBagKg, setSpawnPerBagKg] = useState(DEFAULT_SPAWN_PER_BAG_KG);
+  const [substratePerBagKg, setSubstratePerBagKg] = useState(DEFAULT_SUBSTRATE_PER_BAG_KG);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(SPAWN_PER_BAG_STORAGE_KEY);
-    const parsed = stored === null ? NaN : Number(stored);
-    if (Number.isFinite(parsed) && parsed > 0) setSpawnPerBagKg(parsed);
+    const read = (key: string) => {
+      const stored = window.localStorage.getItem(key);
+      const parsed = stored === null ? NaN : Number(stored);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    };
+    const spawn = read(SPAWN_PER_BAG_STORAGE_KEY);
+    if (spawn) setSpawnPerBagKg(spawn);
+    const substrate = read(SUBSTRATE_PER_BAG_STORAGE_KEY);
+    if (substrate) setSubstratePerBagKg(substrate);
   }, []);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
@@ -145,7 +164,7 @@ function InventoryPage() {
     queryKey: ["inventory-consumption", orgId],
     enabled: Boolean(orgId),
     queryFn: async () => {
-      const [links, bags, batchRows] = await Promise.all([
+      const [links, bags] = await Promise.all([
         supabase
           .from("costs")
           .select("inventory_item_id, batch_id, quantity_purchased")
@@ -153,22 +172,16 @@ function InventoryPage() {
           .not("inventory_item_id", "is", null)
           .not("batch_id", "is", null),
         supabase.from("bags").select("batch_id").eq("org_id", orgId),
-        supabase.from("batches").select("id, dry_substrate_weight_kg").eq("org_id", orgId),
       ]);
       if (links.error) throw links.error;
       if (bags.error) throw bags.error;
-      if (batchRows.error) throw batchRows.error;
 
       const bagsPerBatch: Record<string, number> = {};
       for (const bag of bags.data ?? []) {
         if (!bag.batch_id) continue;
         bagsPerBatch[bag.batch_id] = (bagsPerBatch[bag.batch_id] ?? 0) + 1;
       }
-      const substrateKgPerBatch: Record<string, number> = {};
-      for (const batch of batchRows.data ?? []) {
-        substrateKgPerBatch[batch.id] = Number(batch.dry_substrate_weight_kg ?? 0) || 0;
-      }
-      return { links: links.data ?? [], bagsPerBatch, substrateKgPerBatch };
+      return { links: links.data ?? [], bagsPerBatch };
     },
   });
 
@@ -221,6 +234,8 @@ function InventoryPage() {
       unit: row.unit ?? "kg",
       threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
       notes: row.notes ?? "",
+      wastage: "",
+      wastageNotes: "",
     });
     setEditingItemId(id);
     setOpenForm("item");
@@ -313,11 +328,11 @@ function InventoryPage() {
     return deriveUsageByItem({
       costRows: consumption.links,
       bagsPerBatch: consumption.bagsPerBatch,
-      substrateKgPerBatch: consumption.substrateKgPerBatch,
       categoryByItem,
       spawnPerBagKg,
+      substratePerBagKg,
     });
-  }, [consumption, stock, spawnPerBagKg]);
+  }, [consumption, stock, spawnPerBagKg, substratePerBagKg]);
 
   /** Stock rows adjusted for production consumption derived from bags and batches. */
   const stockRows = useMemo(
@@ -351,12 +366,26 @@ function InventoryPage() {
         reorder_threshold: threshold !== null && Number.isFinite(threshold) ? threshold : null,
         notes: itemForm.notes.trim() || null,
       };
+      const wastage = itemForm.wastage.trim() ? Number(itemForm.wastage) : 0;
+      if (itemForm.wastage.trim() && (!Number.isFinite(wastage) || wastage <= 0))
+        throw new Error("Enter a valid wastage quantity");
+
       if (editingItemId) {
         const { error } = await supabase
           .from("inventory_items")
           .update(payload)
           .eq("id", editingItemId);
         if (error) throw error;
+        if (wastage > 0) {
+          const usage = await supabase.from("inventory_usage").insert({
+            org_id: orgId,
+            inventory_item_id: editingItemId,
+            quantity_used: wastage,
+            used_date: todayISO(),
+            notes: `Wastage${itemForm.wastageNotes.trim() ? ` — ${itemForm.wastageNotes.trim()}` : ""}`,
+          });
+          if (usage.error) throw usage.error;
+        }
         return;
       }
       const { error } = await supabase
@@ -546,6 +575,32 @@ function InventoryPage() {
                   rows={2}
                 />
               </div>
+              {editingItemId ? (
+                <div className="grid gap-4 rounded-lg border border-dashed border-border p-3 sm:col-span-2 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="item-wastage">Add wastage ({itemForm.unit})</Label>
+                    <Input
+                      id="item-wastage"
+                      inputMode="decimal"
+                      value={itemForm.wastage}
+                      onChange={(event) => setItem("wastage", event.target.value)}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Spoiled or discarded stock — subtracted from stock on hand.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="item-wastage-notes">Wastage reason</Label>
+                    <Input
+                      id="item-wastage-notes"
+                      value={itemForm.wastageNotes}
+                      onChange={(event) => setItem("wastageNotes", event.target.value)}
+                      placeholder="Contaminated spawn bag"
+                    />
+                  </div>
+                </div>
+              ) : null}
               <div className="flex gap-2 sm:col-span-2">
                 <Button type="submit" disabled={addItem.isPending}>
                   {addItem.isPending ? "Saving…" : editingItemId ? "Save changes" : "Add item"}
@@ -745,22 +800,41 @@ function InventoryPage() {
 
       <div className="mb-3 mt-8 flex flex-wrap items-end justify-between gap-3">
         <h2 className="font-display text-lg font-semibold">Stock on hand</h2>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="spawn-per-bag" className="text-xs text-muted-foreground">
-            Spawn used per bag (g)
-          </Label>
-          <Input
-            id="spawn-per-bag"
-            className="h-8 w-24"
-            inputMode="decimal"
-            value={Math.round(spawnPerBagKg * 1000)}
-            onChange={(event) => {
-              const grams = Number(event.target.value);
-              if (!Number.isFinite(grams) || grams < 0) return;
-              setSpawnPerBagKg(grams / 1000);
-              window.localStorage.setItem(SPAWN_PER_BAG_STORAGE_KEY, String(grams / 1000));
-            }}
-          />
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="spawn-per-bag" className="text-xs text-muted-foreground">
+              Spawn per bag (g)
+            </Label>
+            <Input
+              id="spawn-per-bag"
+              className="h-8 w-24"
+              inputMode="decimal"
+              value={Math.round(spawnPerBagKg * 1000)}
+              onChange={(event) => {
+                const grams = Number(event.target.value);
+                if (!Number.isFinite(grams) || grams < 0) return;
+                setSpawnPerBagKg(grams / 1000);
+                window.localStorage.setItem(SPAWN_PER_BAG_STORAGE_KEY, String(grams / 1000));
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="substrate-per-bag" className="text-xs text-muted-foreground">
+              Dry substrate per bag (kg)
+            </Label>
+            <Input
+              id="substrate-per-bag"
+              className="h-8 w-24"
+              inputMode="decimal"
+              value={substratePerBagKg}
+              onChange={(event) => {
+                const kg = Number(event.target.value);
+                if (!Number.isFinite(kg) || kg < 0) return;
+                setSubstratePerBagKg(kg);
+                window.localStorage.setItem(SUBSTRATE_PER_BAG_STORAGE_KEY, String(kg));
+              }}
+            />
+          </div>
         </div>
       </div>
       {isLoading ? (
@@ -841,8 +915,19 @@ function InventoryPage() {
                           <span className="text-muted-foreground">
                             {row.category === "spawn"
                               ? `(${(spawnPerBagKg * 1000).toFixed(0)} g per bag)`
-                              : "(batch substrate weight)"}
+                              : `(${substratePerBagKg} kg per bag)`}
                           </span>
+                        </dd>
+                      </div>
+                    ) : null}
+                    {(toNumber(row.total_used_qty) ?? 0) > 0 ? (
+                      <div className="col-span-2">
+                        <dt>Wastage / manual usage</dt>
+                        <dd className="text-foreground">
+                          {(toNumber(row.total_used_qty) ?? 0).toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          {row.unit}
                         </dd>
                       </div>
                     ) : null}
