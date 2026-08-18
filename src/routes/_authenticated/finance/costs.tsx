@@ -308,6 +308,8 @@ function CostsPage() {
       setShowForm(false);
       queryClient.invalidateQueries({ queryKey: ["costs"] });
       queryClient.invalidateQueries({ queryKey: ["financials"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-consumption"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });

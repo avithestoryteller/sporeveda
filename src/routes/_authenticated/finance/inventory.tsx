@@ -280,6 +280,7 @@ function InventoryPage() {
       if (editingPurchaseId) resetPurchaseForm();
       queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-consumption"] });
       queryClient.invalidateQueries({ queryKey: ["costs"] });
       queryClient.invalidateQueries({ queryKey: ["financials"] });
     },
@@ -369,6 +370,7 @@ function InventoryPage() {
       queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-consumption"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -408,6 +410,7 @@ function InventoryPage() {
       resetPurchaseForm();
       queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-consumption"] });
       queryClient.invalidateQueries({ queryKey: ["costs"] });
       queryClient.invalidateQueries({ queryKey: ["financials"] });
     },
