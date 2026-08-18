@@ -114,6 +114,13 @@ export type Database = {
             foreignKeyName: "bags_batch_id_fkey"
             columns: ["batch_id"]
             isOneToOne: false
+            referencedRelation: "v_batch_material_cost"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "bags_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
             referencedRelation: "v_batch_profitability"
             referencedColumns: ["batch_id"]
           },
@@ -292,8 +299,10 @@ export type Database = {
           farm_id: string | null
           id: string
           incurred_date: string
+          inventory_item_id: string | null
           notes: string | null
           org_id: string
+          quantity_purchased: number | null
           recurrence_interval: string | null
           updated_at: string
         }
@@ -308,8 +317,10 @@ export type Database = {
           farm_id?: string | null
           id?: string
           incurred_date?: string
+          inventory_item_id?: string | null
           notes?: string | null
           org_id: string
+          quantity_purchased?: number | null
           recurrence_interval?: string | null
           updated_at?: string
         }
@@ -324,8 +335,10 @@ export type Database = {
           farm_id?: string | null
           id?: string
           incurred_date?: string
+          inventory_item_id?: string | null
           notes?: string | null
           org_id?: string
+          quantity_purchased?: number | null
           recurrence_interval?: string | null
           updated_at?: string
         }
@@ -336,6 +349,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "batches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costs_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_batch_material_cost"
+            referencedColumns: ["batch_id"]
           },
           {
             foreignKeyName: "costs_batch_id_fkey"
@@ -371,6 +391,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_farm_species_performance"
             referencedColumns: ["farm_id"]
+          },
+          {
+            foreignKeyName: "costs_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costs_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "v_inventory_stock"
+            referencedColumns: ["inventory_item_id"]
           },
           {
             foreignKeyName: "costs_org_id_fkey"
@@ -570,6 +604,143 @@ export type Database = {
           },
         ]
       }
+      inventory_items: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          reorder_threshold: number | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          reorder_threshold?: number | null
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          reorder_threshold?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_usage: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          inventory_item_id: string
+          notes: string | null
+          org_id: string
+          quantity_used: number
+          used_date: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_item_id: string
+          notes?: string | null
+          org_id: string
+          quantity_used: number
+          used_date?: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_item_id?: string
+          notes?: string | null
+          org_id?: string
+          quantity_used?: number
+          used_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_usage_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_usage_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_batch_material_cost"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "inventory_usage_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_batch_profitability"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "inventory_usage_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_contamination_rate_by_batch"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "inventory_usage_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "v_yield_by_batch"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "inventory_usage_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_usage_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "v_inventory_stock"
+            referencedColumns: ["inventory_item_id"]
+          },
+          {
+            foreignKeyName: "inventory_usage_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           created_at: string
@@ -708,6 +879,13 @@ export type Database = {
             foreignKeyName: "revenue_batch_id_fkey"
             columns: ["batch_id"]
             isOneToOne: false
+            referencedRelation: "v_batch_material_cost"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "revenue_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
             referencedRelation: "v_batch_profitability"
             referencedColumns: ["batch_id"]
           },
@@ -807,13 +985,36 @@ export type Database = {
       }
     }
     Views: {
+      v_batch_material_cost: {
+        Row: {
+          bag_count: number | null
+          batch_code: string | null
+          batch_id: string | null
+          material_cost_per_bag: number | null
+          org_id: string | null
+          spawn_cost: number | null
+          substrate_cost: number | null
+          total_material_cost: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batches_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_batch_profitability: {
         Row: {
           batch_code: string | null
           batch_id: string | null
+          material_cost: number | null
           net_margin: number | null
           org_id: string | null
-          species_name: string | null
+          other_tagged_cost: number | null
+          species_id: string | null
           total_cost: number | null
           total_revenue: number | null
         }
@@ -823,6 +1024,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batches_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "species"
             referencedColumns: ["id"]
           },
         ]
@@ -903,6 +1111,31 @@ export type Database = {
           },
           {
             foreignKeyName: "farms_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_inventory_stock: {
+        Row: {
+          avg_unit_cost: number | null
+          category: string | null
+          inventory_item_id: string | null
+          name: string | null
+          org_id: string | null
+          remaining_qty: number | null
+          remaining_value: number | null
+          reorder_threshold: number | null
+          total_purchase_amount: number | null
+          total_purchased_qty: number | null
+          total_used_qty: number | null
+          unit: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
