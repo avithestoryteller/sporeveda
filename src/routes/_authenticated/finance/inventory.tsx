@@ -598,6 +598,7 @@ function InventoryPage() {
       const payload = {
         category: purchaseForm.category,
         vendor,
+        status: purchaseForm.status,
         description:
           purchaseForm.description.trim() ||
           `${typedName} purchase — ${quantity} ${unit}${vendor ? ` from ${vendor}` : ""}`.trim(),
