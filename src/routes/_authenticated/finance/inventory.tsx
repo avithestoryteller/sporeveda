@@ -528,6 +528,7 @@ function InventoryPage() {
         name,
         category: itemForm.category,
         unit: itemForm.unit,
+        status: itemForm.status,
         reorder_threshold: threshold !== null && Number.isFinite(threshold) ? threshold : null,
         notes: itemForm.notes.trim() || null,
       };
