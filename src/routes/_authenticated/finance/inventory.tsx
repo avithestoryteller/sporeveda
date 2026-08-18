@@ -772,12 +772,38 @@ function InventoryPage() {
                         </p>
                       ) : null}
                     </div>
-                    <div className="text-right">
-                      <p className="stat-value text-sm">{fmtMoney(row.amount)}</p>
-                      {qty ? (
-                        <p className="text-xs text-muted-foreground">
-                          {fmtMoney(Number(row.amount) / qty, true)}/{unit}
-                        </p>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <div className="text-right">
+                        <p className="stat-value text-sm">{fmtMoney(row.amount)}</p>
+                        {qty ? (
+                          <p className="text-xs text-muted-foreground">
+                            {fmtMoney(Number(row.amount) / qty, true)}/{unit}
+                          </p>
+                        ) : null}
+                      </div>
+                      {canEdit ? (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Edit purchase"
+                            onClick={() => startEditPurchase(row)}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Delete purchase"
+                            disabled={deletePurchase.isPending}
+                            onClick={() => {
+                              if (window.confirm("Delete this purchase?"))
+                                deletePurchase.mutate(row.id);
+                            }}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </>
                       ) : null}
                     </div>
                   </div>
