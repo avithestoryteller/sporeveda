@@ -695,7 +695,19 @@ function InventoryPage() {
                       <p className="truncate font-medium">{row.name}</p>
                       <p className="text-xs text-muted-foreground">{titleCase(row.category)}</p>
                     </div>
-                    {low ? <Badge variant="destructive">Low</Badge> : null}
+                    <div className="flex shrink-0 items-center gap-1">
+                      {low ? <Badge variant="destructive">Low</Badge> : null}
+                      {canEdit && row.inventory_item_id ? (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={`Edit ${row.name}`}
+                          onClick={() => startEditItem(row.inventory_item_id!)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
                   <p className="stat-value mt-3 text-2xl">
                     {remaining.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
