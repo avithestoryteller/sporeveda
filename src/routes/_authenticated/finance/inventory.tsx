@@ -496,21 +496,39 @@ function InventoryPage() {
 
   const addPurchase = useMutation({
     mutationFn: async () => {
-      if (!purchaseForm.itemId) throw new Error("Pick an item");
+      const typedName = purchaseForm.itemName.trim();
+      if (typedName.length < 2) throw new Error("Enter an item name");
       const quantity = Number(purchaseForm.quantity);
       const amount = Number(purchaseForm.amount);
       if (!Number.isFinite(quantity) || quantity <= 0) throw new Error("Enter a valid quantity");
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
-      const item = items.find((row) => row.id === purchaseForm.itemId);
+
+      const matched = items.find(
+        (row) =>
+          row.category === purchaseForm.category &&
+          row.name.toLowerCase() === typedName.toLowerCase(),
+      );
+      const itemId =
+        matched?.id ??
+        (await ensureInventoryItem({
+          orgId,
+          name: typedName,
+          category: purchaseForm.category,
+          unit: purchaseForm.unit,
+        }));
+      const unit = matched?.unit || purchaseForm.unit;
+      const vendor = purchaseForm.vendor.trim() || null;
+
       const payload = {
-        category: item?.category ?? "other",
+        category: purchaseForm.category,
+        vendor,
         description:
           purchaseForm.description.trim() ||
-          `${item?.name ?? "Inventory"} purchase — ${quantity} ${item?.unit ?? ""}`.trim(),
+          `${typedName} purchase — ${quantity} ${unit}${vendor ? ` from ${vendor}` : ""}`.trim(),
         amount,
         cost_type: "one_time",
         incurred_date: purchaseForm.incurredDate,
-        inventory_item_id: purchaseForm.itemId,
+        inventory_item_id: itemId,
         quantity_purchased: quantity,
         farm_id: purchaseForm.farmId === NONE ? null : purchaseForm.farmId,
         batch_id: purchaseForm.batchId === NONE ? null : purchaseForm.batchId,
