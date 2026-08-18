@@ -106,11 +106,18 @@ function InventoryPage() {
   const [purchaseForm, setPurchaseForm] = useState<PurchaseForm>(EMPTY_PURCHASE);
   const [openForm, setOpenForm] = useState<"item" | "purchase" | null>(null);
   const [spawnPerBagKg, setSpawnPerBagKg] = useState(DEFAULT_SPAWN_PER_BAG_KG);
+  const [substratePerBagKg, setSubstratePerBagKg] = useState(DEFAULT_SUBSTRATE_PER_BAG_KG);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(SPAWN_PER_BAG_STORAGE_KEY);
-    const parsed = stored === null ? NaN : Number(stored);
-    if (Number.isFinite(parsed) && parsed > 0) setSpawnPerBagKg(parsed);
+    const read = (key: string) => {
+      const stored = window.localStorage.getItem(key);
+      const parsed = stored === null ? NaN : Number(stored);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    };
+    const spawn = read(SPAWN_PER_BAG_STORAGE_KEY);
+    if (spawn) setSpawnPerBagKg(spawn);
+    const substrate = read(SUBSTRATE_PER_BAG_STORAGE_KEY);
+    if (substrate) setSubstratePerBagKg(substrate);
   }, []);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
