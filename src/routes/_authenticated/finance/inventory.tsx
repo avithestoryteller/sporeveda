@@ -145,6 +145,94 @@ function InventoryPage() {
     },
   });
 
+  const { data: itemRows } = useQuery({
+    queryKey: ["inventory-items", orgId],
+    enabled: Boolean(orgId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .select("*")
+        .eq("org_id", orgId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const resetItemForm = () => {
+    setItemForm(EMPTY_ITEM);
+    setEditingItemId(null);
+    setOpenForm(null);
+  };
+  const resetPurchaseForm = () => {
+    setPurchaseForm({ ...EMPTY_PURCHASE, incurredDate: todayISO() });
+    setEditingPurchaseId(null);
+    setOpenForm(null);
+  };
+
+  const startEditItem = (id: string) => {
+    const row = (itemRows ?? []).find((item) => item.id === id);
+    if (!row) return;
+    setItemForm({
+      name: row.name ?? "",
+      category: row.category ?? "other",
+      unit: row.unit ?? "kg",
+      threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
+      notes: row.notes ?? "",
+    });
+    setEditingItemId(id);
+    setOpenForm("item");
+  };
+
+  const startEditPurchase = (row: { id: string } & Record<string, any>) => {
+    setPurchaseForm({
+      itemId: row.inventory_item_id ?? "",
+      quantity: row.quantity_purchased === null ? "" : String(row.quantity_purchased),
+      amount: row.amount === null ? "" : String(row.amount),
+      incurredDate: row.incurred_date ?? todayISO(),
+      farmId: row.farm_id ?? NONE,
+      batchId: row.batch_id ?? NONE,
+      description: row.description ?? "",
+      notes: row.notes ?? "",
+    });
+    setEditingPurchaseId(row.id);
+    setOpenForm("purchase");
+  };
+
+  const deleteItem = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("inventory_items").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Item deleted");
+      if (editingItemId) resetItemForm();
+      queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
+    },
+    onError: (error: Error) =>
+      toast.error(
+        error.message.includes("foreign key")
+          ? "Delete the purchases for this item first"
+          : error.message,
+      ),
+  });
+
+  const deletePurchase = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("costs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Purchase deleted");
+      if (editingPurchaseId) resetPurchaseForm();
+      queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["costs"] });
+      queryClient.invalidateQueries({ queryKey: ["financials"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const items = useMemo(
     () =>
       (stock ?? []).map((row) => ({
