@@ -472,10 +472,29 @@ function InventoryPage() {
                   rows={2}
                 />
               </div>
-              <div className="sm:col-span-2">
+              <div className="flex gap-2 sm:col-span-2">
                 <Button type="submit" disabled={addItem.isPending}>
-                  {addItem.isPending ? "Saving…" : "Add item"}
+                  {addItem.isPending ? "Saving…" : editingItemId ? "Save changes" : "Add item"}
                 </Button>
+                {editingItemId ? (
+                  <>
+                    <Button type="button" variant="ghost" onClick={resetItemForm}>
+                      <X className="size-4" /> Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="ml-auto"
+                      disabled={deleteItem.isPending}
+                      onClick={() => {
+                        if (window.confirm("Delete this item? Purchases must be removed first."))
+                          deleteItem.mutate(editingItemId);
+                      }}
+                    >
+                      <Trash2 className="size-4" /> Delete item
+                    </Button>
+                  </>
+                ) : null}
               </div>
             </form>
           </CardContent>
