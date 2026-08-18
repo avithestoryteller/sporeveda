@@ -349,10 +349,84 @@ function InventoryPage() {
   );
 
   const stockValue = stockRows.reduce((sum, row) => sum + row.remainingValue, 0);
-  const lowStock = stockRows.filter((row) => {
+
+  /** Items whose stock is fully consumed drop out of the tiles and into the depleted log. */
+  const depletedRows = useMemo(
+    () =>
+      stockRows.filter(
+        (row) => (toNumber(row.total_purchased_qty) ?? 0) > 0 && row.remaining <= 0.0001,
+      ),
+    [stockRows],
+  );
+  const activeStockRows = useMemo(
+    () => stockRows.filter((row) => !depletedRows.includes(row)),
+    [stockRows, depletedRows],
+  );
+
+  const lowStock = activeStockRows.filter((row) => {
     const threshold = toNumber(row.reorder_threshold);
     return threshold !== null && row.remaining <= threshold;
   });
+
+  /** Per-item purchase analytics derived from the inventory-linked cost rows. */
+  const purchaseAnalytics = useMemo(() => {
+    type Stat = {
+      itemId: string;
+      name: string;
+      unit: string;
+      category: string;
+      orders: number;
+      qty: number;
+      spend: number;
+      minRate: number | null;
+      maxRate: number | null;
+      lastRate: number | null;
+      lastDate: string | null;
+    };
+    const byItem = new Map<string, Stat>();
+    for (const row of purchases ?? []) {
+      const itemId = row.inventory_item_id;
+      if (!itemId) continue;
+      const qty = toNumber(row.quantity_purchased) ?? 0;
+      const amount = Number(row.amount) || 0;
+      const rate = qty > 0 ? amount / qty : null;
+      const stat =
+        byItem.get(itemId) ??
+        ({
+          itemId,
+          name: row.inventory_items?.name ?? "Item",
+          unit: row.inventory_items?.unit ?? "",
+          category: row.category ?? "other",
+          orders: 0,
+          qty: 0,
+          spend: 0,
+          minRate: null,
+          maxRate: null,
+          lastRate: null,
+          lastDate: null,
+        } satisfies Stat);
+      stat.orders += 1;
+      stat.qty += qty;
+      stat.spend += amount;
+      if (rate !== null) {
+        stat.minRate = stat.minRate === null ? rate : Math.min(stat.minRate, rate);
+        stat.maxRate = stat.maxRate === null ? rate : Math.max(stat.maxRate, rate);
+        // purchases are ordered newest first, so the first rate seen is the latest
+        if (stat.lastRate === null) {
+          stat.lastRate = rate;
+          stat.lastDate = row.incurred_date ?? null;
+        }
+      }
+      if (!stat.lastDate) stat.lastDate = row.incurred_date ?? null;
+      byItem.set(itemId, stat);
+    }
+    const rows = [...byItem.values()]
+      .map((stat) => ({ ...stat, avgRate: stat.qty > 0 ? stat.spend / stat.qty : null }))
+      .sort((a, b) => b.spend - a.spend);
+    const totalSpend = rows.reduce((sum, row) => sum + row.spend, 0);
+    const totalOrders = rows.reduce((sum, row) => sum + row.orders, 0);
+    return { rows, totalSpend, totalOrders };
+  }, [purchases]);
 
   const addItem = useMutation({
     mutationFn: async () => {
