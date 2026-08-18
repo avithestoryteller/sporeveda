@@ -1015,6 +1015,7 @@ export type Database = {
           org_id: string | null
           other_tagged_cost: number | null
           species_id: string | null
+          species_name: string | null
           total_cost: number | null
           total_revenue: number | null
         }
