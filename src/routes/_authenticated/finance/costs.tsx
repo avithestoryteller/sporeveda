@@ -31,6 +31,15 @@ import {
   presetRange,
   titleCase,
 } from "@/lib/money";
+import {
+  EMPTY_LINE,
+  MATERIAL_CATEGORIES,
+  VARIETY_SUGGESTIONS,
+  ensureInventoryItem,
+  materialItemName,
+  type MaterialCategory,
+  type MaterialLine,
+} from "@/lib/materials";
 
 export const Route = createFileRoute("/_authenticated/finance/costs")({
   head: () => ({
