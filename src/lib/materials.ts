@@ -125,10 +125,3 @@ export function deriveUsageByItem(params: {
   }
   return usage;
 }
-        const share = totalQty > 0 ? qty / totalQty : 1 / items.length;
-        usage[itemId] = (usage[itemId] ?? 0) + consumed * share;
-      }
-    }
-  }
-  return usage;
-}
