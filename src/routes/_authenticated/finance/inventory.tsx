@@ -740,10 +740,29 @@ function InventoryPage() {
         </Card>
       ) : null}
 
-      <h2 className="mb-3 mt-8 font-display text-lg font-semibold">Stock on hand</h2>
+      <div className="mb-3 mt-8 flex flex-wrap items-end justify-between gap-3">
+        <h2 className="font-display text-lg font-semibold">Stock on hand</h2>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="spawn-per-bag" className="text-xs text-muted-foreground">
+            Spawn used per bag (g)
+          </Label>
+          <Input
+            id="spawn-per-bag"
+            className="h-8 w-24"
+            inputMode="decimal"
+            value={Math.round(spawnPerBagKg * 1000)}
+            onChange={(event) => {
+              const grams = Number(event.target.value);
+              if (!Number.isFinite(grams) || grams < 0) return;
+              setSpawnPerBagKg(grams / 1000);
+              window.localStorage.setItem(SPAWN_PER_BAG_STORAGE_KEY, String(grams / 1000));
+            }}
+          />
+        </div>
+      </div>
       {isLoading ? (
         <Skeleton className="h-48" />
-      ) : (stock ?? []).length === 0 ? (
+      ) : stockRows.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 p-8 text-center">
             <Package className="size-6 text-muted-foreground" />
@@ -754,8 +773,8 @@ function InventoryPage() {
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {(stock ?? []).map((row) => {
-            const remaining = toNumber(row.remaining_qty) ?? 0;
+          {stockRows.map((row) => {
+            const remaining = row.remaining;
             const threshold = toNumber(row.reorder_threshold);
             const low = threshold !== null && remaining <= threshold;
             return (
@@ -793,7 +812,7 @@ function InventoryPage() {
                     </div>
                     <div>
                       <dt>Stock value</dt>
-                      <dd className="text-foreground">{fmtMoney(row.remaining_value)}</dd>
+                      <dd className="text-foreground">{fmtMoney(row.remainingValue)}</dd>
                     </div>
                     <div>
                       <dt>Purchased</dt>
@@ -804,9 +823,26 @@ function InventoryPage() {
                     <div>
                       <dt>Used</dt>
                       <dd className="text-foreground">
-                        {toNumber(row.total_used_qty) ?? 0} {row.unit}
+                        {(
+                          (toNumber(row.total_used_qty) ?? 0) + row.derivedUsed
+                        ).toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                        {row.unit}
                       </dd>
                     </div>
+                    {row.derivedUsed > 0 ? (
+                      <div className="col-span-2">
+                        <dt>Consumed in production</dt>
+                        <dd className="text-foreground">
+                          {row.derivedUsed.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                          {row.unit}{" "}
+                          <span className="text-muted-foreground">
+                            {row.category === "spawn"
+                              ? `(${(spawnPerBagKg * 1000).toFixed(0)} g per bag)`
+                              : "(batch substrate weight)"}
+                          </span>
+                        </dd>
+                      </div>
+                    ) : null}
                   </dl>
                 </CardContent>
               </Card>
