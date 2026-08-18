@@ -1107,6 +1107,17 @@ function InventoryPage() {
                         {toNumber(row.total_purchased_qty) ?? 0} {row.unit}
                       </dd>
                     </div>
+                    {(toNumber(row.incoming_qty) ?? 0) > 0 ? (
+                      <div>
+                        <dt>Incoming</dt>
+                        <dd className="text-accent-foreground">
+                          {(toNumber(row.incoming_qty) ?? 0).toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          {row.unit}
+                        </dd>
+                      </div>
+                    ) : null}
                     <div>
                       <dt>Used</dt>
                       <dd className="text-foreground">
