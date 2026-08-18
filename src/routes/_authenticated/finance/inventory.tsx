@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Package, Plus, ShoppingCart } from "lucide-react";
+import { Package, Pencil, Plus, ShoppingCart, Trash2, X } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
@@ -88,6 +88,8 @@ function InventoryPage() {
   const [itemForm, setItemForm] = useState<ItemForm>(EMPTY_ITEM);
   const [purchaseForm, setPurchaseForm] = useState<PurchaseForm>(EMPTY_PURCHASE);
   const [openForm, setOpenForm] = useState<"item" | "purchase" | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
 
   const setItem = <K extends keyof ItemForm>(key: K, value: ItemForm[K]) =>
     setItemForm((prev) => ({ ...prev, [key]: value }));
