@@ -26,7 +26,9 @@ import { fmtDate, todayISO, toNumber } from "@/lib/format";
 import { fmtMoney, titleCase } from "@/lib/money";
 import {
   DEFAULT_SPAWN_PER_BAG_KG,
+  DEFAULT_SUBSTRATE_PER_BAG_KG,
   SPAWN_PER_BAG_STORAGE_KEY,
+  SUBSTRATE_PER_BAG_STORAGE_KEY,
   deriveUsageByItem,
 } from "@/lib/materials";
 
