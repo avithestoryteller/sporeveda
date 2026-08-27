@@ -16,6 +16,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { useMemo } from "react";
 import { Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
@@ -113,6 +114,41 @@ function TargetVsActual({
 
 type TrendRow = Record<string, unknown> & { label: string };
 
+function niceStep(rawStep: number): number {
+  if (rawStep <= 0 || !Number.isFinite(rawStep)) return 1;
+  const pow10 = 10 ** Math.floor(Math.log10(rawStep));
+  const frac = rawStep / pow10;
+  const nice = frac <= 1 ? 1 : frac <= 2 ? 2 : frac <= 5 ? 5 : 10;
+  return nice * pow10;
+}
+
+function niceTicks(
+  minValue: number,
+  maxValue: number,
+  targetCount = 5,
+): { domain: [number, number]; ticks: number[] } {
+  if (!Number.isFinite(minValue) || !Number.isFinite(maxValue)) {
+    return { domain: [0, 1], ticks: [0, 0.2, 0.4, 0.6, 0.8, 1] };
+  }
+  if (minValue === maxValue) {
+    const min = minValue - 1;
+    const max = maxValue + 1;
+    return { domain: [min, max], ticks: [min, minValue, max] };
+  }
+  const span = maxValue - minValue;
+  const pad = Math.max(span * 0.08, 0.5);
+  let min = minValue - pad;
+  let max = maxValue + pad;
+  const step = niceStep((max - min) / targetCount);
+  min = Math.floor(min / step) * step;
+  max = Math.ceil(max / step) * step;
+  const ticks: number[] = [];
+  for (let v = min; v <= max + 1e-9; v += step) {
+    ticks.push(Math.round(v * 1e9) / 1e9);
+  }
+  return { domain: [min, max], ticks };
+}
+
 function ClimateTrendChart({
   data,
   dataKey,
@@ -132,6 +168,32 @@ function ClimateTrendChart({
   bands: TargetRange[];
   average: number | null;
 }) {
+  const { domain, ticks } = useMemo(() => {
+    const values: number[] = [];
+    for (const row of data) {
+      const value = row[dataKey];
+      if (typeof value === "number" && Number.isFinite(value)) {
+        values.push(value);
+      }
+      const range = row[rangeKey];
+      if (Array.isArray(range)) {
+        for (const v of range) {
+          if (typeof v === "number" && Number.isFinite(v)) {
+            values.push(v);
+          }
+        }
+      }
+    }
+    for (const band of bands) {
+      if (band.min !== null) values.push(band.min);
+      if (band.max !== null) values.push(band.max);
+    }
+    if (average !== null) values.push(average);
+
+    if (values.length === 0) return { domain: [0, 1] as [number, number], ticks: [0, 0.2, 0.4, 0.6, 0.8, 1] };
+    return niceTicks(Math.min(...values), Math.max(...values));
+  }, [data, dataKey, rangeKey, bands, average]);
+
   return (
     <div className="h-56 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -153,13 +215,8 @@ function ClimateTrendChart({
             tick={{ fontSize: 11 }}
             tickLine={false}
             width={80}
-            tickCount={6}
-            allowDecimals
-            domain={([min, max]: [number, number]) => {
-              if (!Number.isFinite(min) || !Number.isFinite(max)) return [0, 1];
-              const pad = Math.max((max - min) * 0.1, 1);
-              return [Math.floor(min - pad), Math.ceil(max + pad)];
-            }}
+            domain={domain}
+            ticks={ticks}
             tickFormatter={(value: number) => `${Math.round(value * 10) / 10}${unit}`}
           />
           <Tooltip
