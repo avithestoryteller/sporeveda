@@ -438,7 +438,7 @@ function FarmDetailPage() {
                     dataKey="temp"
                     rangeKey="tempRange"
                     name="Avg temp °C"
-                    unit="°"
+                    unit="°C"
                     color="var(--color-primary)"
                     average={avgTemp}
                     bands={[
