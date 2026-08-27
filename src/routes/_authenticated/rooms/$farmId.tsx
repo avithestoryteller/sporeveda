@@ -16,6 +16,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { useMemo } from "react";
 import { Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
