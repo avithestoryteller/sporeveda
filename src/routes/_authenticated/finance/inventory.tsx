@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Package, Pencil, Plus, ShoppingCart, Trash2, X } from "lucide-react";
+import { AlertTriangle, Package, Pencil, Plus, ShoppingCart, Trash2, X } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
@@ -1289,6 +1289,14 @@ function InventoryPage() {
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
+                      {needsReviewItems.has(row.inventory_item_id ?? "") ? (
+                        <AlertTriangle
+                          className="size-4 shrink-0 text-amber-500"
+                          aria-label="Auto-created from a batch — add vendor, quantity and amount"
+                        >
+                          <title>Auto-created from a batch — add vendor, quantity and amount</title>
+                        </AlertTriangle>
+                      ) : null}
                       {low ? <Badge variant="destructive">Low</Badge> : null}
                       {canEdit && row.inventory_item_id ? (
                         <Button
