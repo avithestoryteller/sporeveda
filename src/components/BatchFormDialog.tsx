@@ -130,6 +130,11 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
         return batch.id;
       }
 
+      const numeric = (value: string) => (value.trim() ? Number(value) : null);
+      const rows = bagRows;
+      const firstDate = rows.find((row) => row.inoculationDate)?.inoculationDate;
+      const totalDry = rows.reduce((sum, row) => sum + (numeric(row.dryWeight) ?? 0), 0);
+
       const { data, error } = await supabase
         .from("batches")
         .insert({
@@ -137,11 +142,35 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           farm_id: form.farmId,
           species_id: speciesId,
           batch_code: code,
-          inoculation_date: todayISO(),
+          inoculation_date: firstDate || todayISO(),
+          dry_substrate_weight_kg: totalDry > 0 ? totalDry : null,
         })
         .select("id")
         .single();
       if (error) throw error;
+
+      if (rows.length) {
+        const bags = rows.map((row, index) => ({
+          org_id: orgId,
+          batch_id: data.id,
+          farm_id: form.farmId,
+          species_id: speciesId,
+          bag_number: index + 1,
+          bag_code: `${code}-${String(index + 1).padStart(3, "0")}`,
+          net_weight_kg: numeric(row.netWeight),
+          dry_weight_kg: numeric(row.dryWeight),
+          spawn_weight_kg: numeric(row.spawnWeight),
+          inoculation_date: row.inoculationDate || null,
+        }));
+        const inserted = await supabase.from("bags").insert(bags);
+        if (inserted.error) throw inserted.error;
+
+        const last = rows[rows.length - 1];
+        const dry = numeric(last.dryWeight);
+        const spawn = numeric(last.spawnWeight);
+        if (dry && dry > 0) window.localStorage.setItem(SUBSTRATE_PER_BAG_STORAGE_KEY, String(dry));
+        if (spawn && spawn > 0) window.localStorage.setItem(SPAWN_PER_BAG_STORAGE_KEY, String(spawn));
+      }
       return data.id;
     },
     onSuccess: async () => {
