@@ -23,8 +23,8 @@ export const DEFAULT_SPAWN_PER_BAG_KG = 0.25;
 export const SPAWN_PER_BAG_STORAGE_KEY = "sporeveda.spawnPerBagKg.v2";
 
 /** Default dry substrate used per bag, in kg. */
-export const DEFAULT_SUBSTRATE_PER_BAG_KG = 1.2;
-export const SUBSTRATE_PER_BAG_STORAGE_KEY = "sporeveda.substratePerBagKg";
+export const DEFAULT_SUBSTRATE_PER_BAG_KG = 1.25;
+export const SUBSTRATE_PER_BAG_STORAGE_KEY = "sporeveda.substratePerBagKg.v2";
 
 export type MaterialLine = {
   name: string;
