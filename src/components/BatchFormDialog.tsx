@@ -102,7 +102,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       speciesId: batch?.species_id ?? "",
       newSpecies: "",
       batchCode: batch?.batch_code ?? "",
-      startDate: todayISO(),
+      startDate: batch?.inoculation_date ?? todayISO(),
       targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
       targetHumidity:
         batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
