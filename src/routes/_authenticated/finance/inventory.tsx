@@ -614,6 +614,7 @@ function InventoryPage() {
           row.category === purchaseForm.category &&
           row.name.toLowerCase() === typedName.toLowerCase(),
       );
+      const vendor = purchaseForm.vendor.trim() || null;
       const itemId =
         matched?.id ??
         (await ensureInventoryItem({
@@ -621,9 +622,10 @@ function InventoryPage() {
           name: typedName,
           category: purchaseForm.category,
           unit: purchaseForm.unit,
+          vendor,
         }));
       const unit = matched?.unit || purchaseForm.unit;
-      const vendor = purchaseForm.vendor.trim() || null;
+
 
       const payload = {
         category: purchaseForm.category,
