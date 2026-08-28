@@ -289,9 +289,65 @@ function BatchDetailPage() {
                 <div className="mt-2">
                   <StageBadge stage={bag.current_stage as BagStage} size="sm" />
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {wet > 0 ? `${(wet / 1000).toFixed(2)} kg harvested` : "No harvest yet"}
-                </p>
+
+                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                  <div>
+                    <dt className="text-muted-foreground">Substrate</dt>
+                    <dd className="truncate font-medium">
+                      {batch.substrate_type ?? "—"}
+                      {batch.substrate_vendor ? (
+                        <span className="font-normal text-muted-foreground">
+                          {" "}
+                          · {batch.substrate_vendor}
+                        </span>
+                      ) : null}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Spawn vendor</dt>
+                    <dd className="truncate font-medium">{batch.spawn_vendor ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Days to colonise</dt>
+                    <dd className="font-medium">
+                      {daysToColonise === null ? "—" : `${daysToColonise} d`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Fruiting day</dt>
+                    <dd className="font-medium">
+                      {fruitingDay === null ? "—" : `Day ${fruitingDay}`}
+                      {pinningDay !== null ? (
+                        <span className="font-normal text-muted-foreground">
+                          {" "}
+                          · pinned d{pinningDay}
+                        </span>
+                      ) : null}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="mt-3">
+                  <p className="text-xs text-muted-foreground">
+                    Flushes ·{" "}
+                    <span className="font-medium text-foreground">
+                      {wet > 0 ? `${(wet / 1000).toFixed(2)} kg total` : "no harvest yet"}
+                    </span>
+                  </p>
+                  {flushes.length ? (
+                    <ul className="mt-1 flex flex-wrap gap-1">
+                      {flushes.map((flush) => (
+                        <li
+                          key={`${bag.id}-${flush.flush}`}
+                          className="rounded-full bg-muted px-2 py-0.5 text-[11px]"
+                          title={`Flush ${flush.flush} on ${fmtDate(flush.date)}`}
+                        >
+                          F{flush.flush} · {flush.kg.toFixed(2)} kg · {fmtDate(flush.date)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
               </Link>
               {canEdit ? (
                 <div className="absolute right-1.5 top-1.5">
