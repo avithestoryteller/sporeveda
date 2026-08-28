@@ -201,6 +201,8 @@ function BatchesPage() {
                         {fmtDate(batch.inoculation_date)}
                       </p>
                     </div>
+                    </div>
+                    <BatchStageBar stages={stages} bagCount={bagCount} />
                   </Link>
                 </li>
               ))}
