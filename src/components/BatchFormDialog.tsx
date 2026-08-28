@@ -300,7 +300,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
             mutation.mutate();
           }}
         >
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="batch-start">Start date</Label>
               <Input
