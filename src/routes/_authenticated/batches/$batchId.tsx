@@ -150,6 +150,9 @@ function BatchDetailPage() {
                   inoculation_date: batch.inoculation_date,
                   target_avg_temp_c: batch.target_avg_temp_c,
                   target_avg_humidity_pct: batch.target_avg_humidity_pct,
+                  substrate_type: batch.substrate_type,
+                  substrate_vendor: batch.substrate_vendor,
+                  spawn_vendor: batch.spawn_vendor,
                 }}
               />
               <BagFormDialog

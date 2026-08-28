@@ -56,7 +56,19 @@ export type BatchFormValues = {
   inoculation_date?: string | null;
   target_avg_temp_c?: number | null;
   target_avg_humidity_pct?: number | null;
+  substrate_type?: string | null;
+  substrate_vendor?: string | null;
+  spawn_vendor?: string | null;
 };
+
+const SUBSTRATE_SUGGESTIONS = [
+  "Paddy Straw",
+  "Rubber Wood",
+  "Sawdust",
+  "Wheat Straw",
+  "Coco Coir",
+  "Sugarcane Bagasse",
+];
 
 function useFormOptions() {
   return useQuery({
@@ -94,6 +106,9 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
     targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
     targetHumidity:
       batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
+    substrateType: batch?.substrate_type ?? "",
+    substrateVendor: batch?.substrate_vendor ?? "",
+    spawnVendor: batch?.spawn_vendor ?? "",
   });
   const [bagRows, setBagRows] = useState<BagRow[]>([]);
 
@@ -109,6 +124,9 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
       targetHumidity:
         batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
+      substrateType: batch?.substrate_type ?? "",
+      substrateVendor: batch?.substrate_vendor ?? "",
+      spawnVendor: batch?.spawn_vendor ?? "",
     });
     setBagRows(batch ? [] : [defaultBagRow()]);
   }, [open, batch]);
@@ -197,6 +215,9 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       const targets = {
         target_avg_temp_c: num(form.targetTemp),
         target_avg_humidity_pct: num(form.targetHumidity),
+        substrate_type: form.substrateType.trim() || null,
+        substrate_vendor: form.substrateVendor.trim() || null,
+        spawn_vendor: form.spawnVendor.trim() || null,
       };
 
       if (isEdit && batch) {
@@ -461,6 +482,51 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           <p className="-mt-2 text-xs text-muted-foreground">
             Optional — leave blank if this batch has no specific climate target.
           </p>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="batch-substrate">Substrate</Label>
+              <Input
+                id="batch-substrate"
+                list="substrate-suggestions"
+                maxLength={80}
+                placeholder="Paddy Straw"
+                value={form.substrateType}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, substrateType: event.target.value }))
+                }
+              />
+              <datalist id="substrate-suggestions">
+                {SUBSTRATE_SUGGESTIONS.map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="batch-substrate-vendor">Substrate vendor</Label>
+              <Input
+                id="batch-substrate-vendor"
+                maxLength={80}
+                placeholder="Optional"
+                value={form.substrateVendor}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, substrateVendor: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="batch-spawn-vendor">Spawn vendor</Label>
+              <Input
+                id="batch-spawn-vendor"
+                maxLength={80}
+                placeholder="Optional"
+                value={form.spawnVendor}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, spawnVendor: event.target.value }))
+                }
+              />
+            </div>
+          </div>
 
           {!isEdit ? (
             <div className="space-y-2">
