@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -108,6 +109,10 @@ type ItemForm = {
   threshold: string;
   totalQty: string;
   notes: string;
+  wastageQty: string;
+  wastageReason: string;
+  orderReplacement: boolean;
+  replacementStatus: string;
 };
 const EMPTY_ITEM: ItemForm = {
   name: "",
@@ -118,6 +123,10 @@ const EMPTY_ITEM: ItemForm = {
   threshold: "",
   totalQty: "",
   notes: "",
+  wastageQty: "",
+  wastageReason: "",
+  orderReplacement: false,
+  replacementStatus: "ordered",
 };
 
 
@@ -321,7 +330,10 @@ function InventoryPage() {
         ) ?? 0,
       ),
       notes: row.notes ?? "",
-
+      wastageQty: "",
+      wastageReason: "",
+      orderReplacement: false,
+      replacementStatus: "ordered",
     });
     setEditingItemId(id);
     setOpenForm("item");
@@ -646,11 +658,16 @@ function InventoryPage() {
       if (totalRaw && (!Number.isFinite(total) || total < 0))
         throw new Error("Enter a valid total weight / quantity");
 
+      const wastageRaw = itemForm.wastageQty.trim();
+      const wastage = wastageRaw ? Number(wastageRaw) : 0;
+      if (wastageRaw && (!Number.isFinite(wastage) || wastage <= 0))
+        throw new Error("Enter a valid wastage quantity");
+
       if (editingItemId) {
         const current = stockRows.find((row) => row.inventory_item_id === editingItemId);
         const purchased = toNumber(current?.total_purchased_qty) ?? 0;
         const used =
-          (toNumber(current?.total_used_qty) ?? 0) + (current?.derivedUsed ?? 0);
+          (toNumber(current?.total_used_qty) ?? 0) + (current?.derivedUsed ?? 0) + wastage;
         const diff = total - purchased;
         const finalStatus =
           total <= used + 0.0001 && (total > 0 || used > 0) ? "depleted" : payload.status;
@@ -674,6 +691,33 @@ function InventoryPage() {
             notes: "Stock total adjustment",
           });
           if (adjust.error) throw adjust.error;
+        }
+        if (wastage > 0) {
+          const reason = itemForm.wastageReason.trim();
+          const logged = await supabase.from("inventory_usage").insert({
+            org_id: orgId,
+            inventory_item_id: editingItemId,
+            quantity_used: wastage,
+            used_date: todayISO(),
+            notes: reason ? `Wastage — ${reason}` : "Wastage",
+          });
+          if (logged.error) throw logged.error;
+          if (itemForm.orderReplacement) {
+            const replacement = await supabase.from("costs").insert({
+              org_id: orgId,
+              category: payload.category,
+              vendor: payload.vendor,
+              status: itemForm.replacementStatus,
+              description: `${name} — replacement for ${wastage} ${payload.unit} wastage`,
+              amount: 0,
+              cost_type: "one_time",
+              incurred_date: todayISO(),
+              inventory_item_id: editingItemId,
+              quantity_purchased: wastage,
+              notes: reason ? `Replacement order — ${reason}` : "Replacement order for wastage",
+            });
+            if (replacement.error) throw replacement.error;
+          }
         }
         return;
       }
@@ -954,6 +998,76 @@ function InventoryPage() {
                   rows={2}
                 />
               </div>
+              {editingItemId ? (
+                <div className="space-y-3 rounded-lg border border-border p-3 sm:col-span-2">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="item-wastage">Wastage ({itemForm.unit})</Label>
+                      <Input
+                        id="item-wastage"
+                        inputMode="decimal"
+                        value={itemForm.wastageQty}
+                        onChange={(event) => setItem("wastageQty", event.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="item-wastage-reason">Reason (optional)</Label>
+                      <Input
+                        id="item-wastage-reason"
+                        maxLength={120}
+                        value={itemForm.wastageReason}
+                        onChange={(event) => setItem("wastageReason", event.target.value)}
+                        placeholder="Contaminated spawn bag"
+                      />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={itemForm.orderReplacement}
+                      onCheckedChange={(checked) => setItem("orderReplacement", checked === true)}
+                    />
+                    Mark wastage for replacement order
+                  </label>
+                  {itemForm.orderReplacement ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label>Replacement status</Label>
+                        <Select
+                          value={itemForm.replacementStatus}
+                          onValueChange={(value) => setItem("replacementStatus", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PURCHASE_STATUSES.map((status) => (
+                              <SelectItem key={status.value} value={status.value}>
+                                {status.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-end gap-2 text-sm">
+                        <span className="text-muted-foreground">Replacement quantity:</span>
+                        <span className="font-medium">
+                          {(Number(itemForm.wastageQty) || 0).toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          {itemForm.unit}
+                        </span>
+                        <PurchaseStatusBadge status={itemForm.replacementStatus} />
+                      </div>
+                    </div>
+                  ) : null}
+                  <p className="text-xs text-muted-foreground">
+                    Wastage is deducted from stock on save. A replacement order is logged as a
+                    zero-cost purchase with the chosen status, so it shows as incoming until
+                    received.
+                  </p>
+                </div>
+              ) : null}
               {editingItemId ? (
                 <div className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground sm:col-span-2">
                   Used so far:{" "}
