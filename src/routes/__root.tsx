@@ -140,7 +140,13 @@ function AuthSync() {
       // race the session write and redirect a valid sign-in back to /auth.
       window.setTimeout(() => {
         void router.invalidate();
-        if (event !== "SIGNED_OUT") void queryClient.invalidateQueries();
+        if (event === "SIGNED_OUT") {
+          // Never leave another user's cached rows behind in local storage.
+          clearPersistedQueryCache();
+          queryClient.clear();
+        } else {
+          void queryClient.invalidateQueries();
+        }
       }, 0);
     });
     return () => data.subscription.unsubscribe();
