@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
 import { BagFormDialog } from "@/components/BagFormDialog";
 import { BatchFormDialog } from "@/components/BatchFormDialog";
+import { BatchClimateCard } from "@/components/BatchClimateCard";
 import { PageHeader } from "@/components/AppShell";
 import { StageBadge } from "@/components/StageBadge";
 import { StatTile } from "@/components/StatTile";
