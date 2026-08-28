@@ -221,7 +221,7 @@ function InventoryPage() {
     queryKey: ["inventory-consumption", orgId],
     enabled: Boolean(orgId),
     queryFn: async () => {
-      const [links, bags] = await Promise.all([
+      const [links, bags, batchRows] = await Promise.all([
         supabase
           .from("costs")
           .select("inventory_item_id, batch_id, quantity_purchased")
@@ -229,18 +229,24 @@ function InventoryPage() {
           .not("inventory_item_id", "is", null)
           .not("batch_id", "is", null),
         supabase.from("bags").select("batch_id").eq("org_id", orgId),
+        supabase
+          .from("batches")
+          .select("id, substrate_type, substrate_vendor, spawn_vendor, species(common_name)")
+          .eq("org_id", orgId),
       ]);
       if (links.error) throw links.error;
       if (bags.error) throw bags.error;
+      if (batchRows.error) throw batchRows.error;
 
       const bagsPerBatch: Record<string, number> = {};
       for (const bag of bags.data ?? []) {
         if (!bag.batch_id) continue;
         bagsPerBatch[bag.batch_id] = (bagsPerBatch[bag.batch_id] ?? 0) + 1;
       }
-      return { links: links.data ?? [], bagsPerBatch };
+      return { links: links.data ?? [], bagsPerBatch, batches: batchRows.data ?? [] };
     },
   });
+
 
   const { data: purchases } = useQuery({
     queryKey: ["inventory-purchases", orgId],
