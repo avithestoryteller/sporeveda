@@ -155,9 +155,11 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       : undefined;
   const farmName =
     (options.data?.farms ?? []).find((farm) => farm.id === form.farmId)?.name ?? "this room";
-  const codeError = conflictingBatch
-    ? `Batch code ${activeCode} is already used by another batch in ${farmName}. Change the start date, species or code.`
-    : "";
+  const codeError = numberError
+    ? numberError
+    : conflictingBatch
+      ? `Batch code ${activeCode} is already used by another batch in ${farmName}. Change the batch number, start date or species.`
+      : "";
 
 
   const mutation = useMutation({
