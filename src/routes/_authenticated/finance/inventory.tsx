@@ -329,7 +329,10 @@ function InventoryPage() {
         ) ?? 0,
       ),
       notes: row.notes ?? "",
-
+      wastageQty: "",
+      wastageReason: "",
+      orderReplacement: false,
+      replacementStatus: "ordered",
     });
     setEditingItemId(id);
     setOpenForm("item");
