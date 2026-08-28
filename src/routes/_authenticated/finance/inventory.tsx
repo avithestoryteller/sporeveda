@@ -449,9 +449,9 @@ function InventoryPage() {
       batches: (consumption.batches ?? []).map((batch) => ({
         id: batch.id,
         substrate_type: batch.substrate_type,
-        substrate_vendor: (batch as { substrate_vendor?: string | null }).substrate_vendor,
-        spawn_vendor: (batch as { spawn_vendor?: string | null }).spawn_vendor,
-        species: Array.isArray(batch.species) ? batch.species[0] : batch.species,
+        substrate_vendor: (batch as { substrate_vendor?: string | null }).substrate_vendor ?? null,
+        spawn_vendor: (batch as { spawn_vendor?: string | null }).spawn_vendor ?? null,
+        species: (Array.isArray(batch.species) ? batch.species[0] : batch.species) ?? null,
       })),
       items: (itemRows ?? []).map((row) => ({
         id: row.id,
