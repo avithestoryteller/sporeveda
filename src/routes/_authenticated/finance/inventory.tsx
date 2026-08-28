@@ -446,8 +446,35 @@ function InventoryPage() {
       categoryByItem,
       spawnPerBagKg,
       substratePerBagKg,
+      batches: (consumption.batches ?? []).map((batch) => ({
+        id: batch.id,
+        substrate_type: batch.substrate_type,
+        substrate_vendor: (batch as { substrate_vendor?: string | null }).substrate_vendor,
+        spawn_vendor: (batch as { spawn_vendor?: string | null }).spawn_vendor,
+        species: Array.isArray(batch.species) ? batch.species[0] : batch.species,
+      })),
+      items: (itemRows ?? []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        category: row.category,
+        vendor: (row as { vendor?: string | null }).vendor ?? null,
+      })),
     });
-  }, [consumption, stock, spawnPerBagKg, substratePerBagKg]);
+  }, [consumption, stock, itemRows, spawnPerBagKg, substratePerBagKg]);
+
+  /** Items whose purchase row was auto-created from a batch and still needs details. */
+  const needsReviewItems = useMemo(() => {
+    const set = new Set<string>();
+    for (const row of purchases ?? []) {
+      const notes = (row as { notes?: string | null }).notes ?? "";
+      const amount = Number(row.amount) || 0;
+      if (row.inventory_item_id && notes.startsWith("Auto-created from a new batch") && amount === 0) {
+        set.add(row.inventory_item_id);
+      }
+    }
+    return set;
+  }, [purchases]);
+
 
   /** Stock rows adjusted for production consumption derived from bags and batches. */
   const stockRows = useMemo(
