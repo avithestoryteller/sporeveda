@@ -440,7 +440,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           ) : null}
 
           <DialogFooter>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" disabled={mutation.isPending || Boolean(codeError)}>
               {mutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Create batch"}
             </Button>
           </DialogFooter>
