@@ -315,11 +315,13 @@ function InventoryPage() {
       vendor: (row as { vendor?: string | null }).vendor ?? "",
 
       threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
-      openingStock: "",
+      totalQty: String(
+        toNumber(
+          stockRows.find((stockRow) => stockRow.inventory_item_id === id)?.total_purchased_qty,
+        ) ?? 0,
+      ),
       notes: row.notes ?? "",
-      wastage: "",
-      wastageNotes: "",
-      addStock: "",
+
     });
     setEditingItemId(id);
     setOpenForm("item");
