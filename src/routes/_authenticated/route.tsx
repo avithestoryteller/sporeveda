@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const memberships = useOrgMembershipsQuery();
 
-  if (memberships.isPending) {
+  if (memberships.isPending && !memberships.data) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -39,7 +39,7 @@ function AuthenticatedLayout() {
     );
   }
 
-  if (memberships.error) {
+  if (memberships.error && !memberships.data) {
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center">
         <h1 className="font-display text-lg font-semibold">Couldn't load your workspace</h1>
