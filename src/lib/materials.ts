@@ -248,12 +248,20 @@ export function resolveItemForBatch(
 
   const material =
     category === "substrate" ? norm(batch.substrate_type) : norm(batch.species?.common_name);
+  const vendor = category === "substrate" ? norm(batch.substrate_vendor) : norm(batch.spawn_vendor);
+
   if (material) {
-    const byName = pool.find((item) => nameMatches(norm(item.name), material));
-    if (byName) return byName.id;
+    const byName = pool.filter((item) => nameMatches(norm(item.name), material));
+    if (byName.length) {
+      const withVendor = vendor
+        ? byName.find(
+            (item) => nameMatches(norm(item.vendor), vendor) || nameMatches(norm(item.name), vendor),
+          )
+        : undefined;
+      return (withVendor ?? byName[0]!).id;
+    }
   }
 
-  const vendor = category === "substrate" ? norm(batch.substrate_vendor) : norm(batch.spawn_vendor);
   if (vendor) {
     const byVendor = pool.find((item) => nameMatches(norm(item.vendor), vendor));
     if (byVendor) return byVendor.id;
