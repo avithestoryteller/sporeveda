@@ -831,6 +831,21 @@ function InventoryPage() {
                   placeholder="25"
                 />
               </div>
+              {!editingItemId ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="item-opening">Opening weight ({itemForm.unit}) — optional</Label>
+                  <Input
+                    id="item-opening"
+                    inputMode="decimal"
+                    value={itemForm.openingStock}
+                    onChange={(event) => setItem("openingStock", event.target.value)}
+                    placeholder="50"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Stock already on hand — recorded as a zero-cost received entry.
+                  </p>
+                </div>
+              ) : null}
               <div className="space-y-1.5">
                 <Label htmlFor="item-vendor">Vendor (optional)</Label>
                 <Input
