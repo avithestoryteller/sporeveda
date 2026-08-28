@@ -885,7 +885,7 @@ function InventoryPage() {
     <div>
       <PageHeader
         title="Inventory"
-        subtitle="Stock on hand, items on order or awaiting replacement, and every purchase you log."
+        subtitle="Stock on hand and incoming replacements. Fully zeroed items move to the depleted log below."
         action={
           canEdit ? (
             <div className="flex gap-2">
