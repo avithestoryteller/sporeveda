@@ -113,7 +113,7 @@ function BatchDetailPage() {
   }
   if (error) return <p className="text-sm text-destructive">{error.message}</p>;
 
-  const { batch, bags, harvests, contamination } = data;
+  const { batch, bags, harvests, contamination, history } = data;
 
   const totalWetG = harvests.reduce((sum, row) => sum + (toNumber(row.wet_weight_g) ?? 0), 0);
   const dryKg = toNumber(batch.dry_substrate_weight_kg);
