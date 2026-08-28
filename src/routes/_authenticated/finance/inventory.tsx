@@ -998,6 +998,76 @@ function InventoryPage() {
                 />
               </div>
               {editingItemId ? (
+                <div className="space-y-3 rounded-lg border border-border p-3 sm:col-span-2">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="item-wastage">Wastage ({itemForm.unit})</Label>
+                      <Input
+                        id="item-wastage"
+                        inputMode="decimal"
+                        value={itemForm.wastageQty}
+                        onChange={(event) => setItem("wastageQty", event.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="item-wastage-reason">Reason (optional)</Label>
+                      <Input
+                        id="item-wastage-reason"
+                        maxLength={120}
+                        value={itemForm.wastageReason}
+                        onChange={(event) => setItem("wastageReason", event.target.value)}
+                        placeholder="Contaminated spawn bag"
+                      />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={itemForm.orderReplacement}
+                      onCheckedChange={(checked) => setItem("orderReplacement", checked === true)}
+                    />
+                    Mark wastage for replacement order
+                  </label>
+                  {itemForm.orderReplacement ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label>Replacement status</Label>
+                        <Select
+                          value={itemForm.replacementStatus}
+                          onValueChange={(value) => setItem("replacementStatus", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PURCHASE_STATUSES.map((status) => (
+                              <SelectItem key={status.value} value={status.value}>
+                                {status.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-end gap-2 text-sm">
+                        <span className="text-muted-foreground">Replacement quantity:</span>
+                        <span className="font-medium">
+                          {(Number(itemForm.wastageQty) || 0).toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          {itemForm.unit}
+                        </span>
+                        <PurchaseStatusBadge status={itemForm.replacementStatus} />
+                      </div>
+                    </div>
+                  ) : null}
+                  <p className="text-xs text-muted-foreground">
+                    Wastage is deducted from stock on save. A replacement order is logged as a
+                    zero-cost purchase with the chosen status, so it shows as incoming until
+                    received.
+                  </p>
+                </div>
+              ) : null}
+              {editingItemId ? (
                 <div className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground sm:col-span-2">
                   Used so far:{" "}
                   <span className="font-medium text-foreground">
