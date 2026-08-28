@@ -53,6 +53,7 @@ export type BatchFormValues = {
   batch_code: string;
   species_id: string;
   farm_id: string;
+  inoculation_date?: string | null;
   target_avg_temp_c?: number | null;
   target_avg_humidity_pct?: number | null;
 };
@@ -87,7 +88,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
     speciesId: batch?.species_id ?? "",
     newSpecies: "",
     batchCode: batch?.batch_code ?? "",
-    startDate: todayISO(),
+    startDate: batch?.inoculation_date ?? todayISO(),
     targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
     targetHumidity:
       batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
@@ -101,7 +102,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       speciesId: batch?.species_id ?? "",
       newSpecies: "",
       batchCode: batch?.batch_code ?? "",
-      startDate: todayISO(),
+      startDate: batch?.inoculation_date ?? todayISO(),
       targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
       targetHumidity:
         batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
@@ -160,7 +161,13 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       if (isEdit && batch) {
         const { error } = await supabase
           .from("batches")
-          .update({ batch_code: code, species_id: speciesId, farm_id: form.farmId, ...targets })
+          .update({
+            batch_code: code,
+            species_id: speciesId,
+            farm_id: form.farmId,
+            inoculation_date: form.startDate,
+            ...targets,
+          })
           .eq("id", batch.id);
         if (error) throw error;
         return batch.id;
@@ -252,40 +259,46 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
             mutation.mutate();
           }}
         >
-          {isEdit ? (
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="batch-code">Batch code</Label>
+              <Label htmlFor="batch-start">Start date</Label>
               <Input
-                id="batch-code"
-                value={form.batchCode}
-                maxLength={40}
-                onChange={(event) => setForm((prev) => ({ ...prev, batchCode: event.target.value }))}
+                id="batch-start"
+                type="date"
+                value={form.startDate}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, startDate: event.target.value }))
+                }
                 required
               />
             </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="batch-start">Start date</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="batch-code">Batch code</Label>
+              {isEdit ? (
                 <Input
-                  id="batch-start"
-                  type="date"
-                  value={form.startDate}
+                  id="batch-code"
+                  value={form.batchCode}
+                  maxLength={40}
                   onChange={(event) =>
-                    setForm((prev) => ({ ...prev, startDate: event.target.value }))
+                    setForm((prev) => ({ ...prev, batchCode: event.target.value }))
                   }
                   required
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="batch-code">Batch code</Label>
-                <Input id="batch-code" value={generatedCode} readOnly placeholder="BO1P-280826" />
-                <p className="text-xs text-muted-foreground">
-                  Generated from species, sequence and start date.
-                </p>
-              </div>
+              ) : (
+                <>
+                  <Input
+                    id="batch-code"
+                    value={generatedCode}
+                    readOnly
+                    placeholder="BO1P-280826"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Generated from species, sequence and start date.
+                  </p>
+                </>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="space-y-1.5">
             <Label>Species</Label>

@@ -147,6 +147,7 @@ function BatchDetailPage() {
                   batch_code: batch.batch_code,
                   species_id: batch.species_id,
                   farm_id: batch.farm_id,
+                  inoculation_date: batch.inoculation_date,
                   target_avg_temp_c: batch.target_avg_temp_c,
                   target_avg_humidity_pct: batch.target_avg_humidity_pct,
                 }}
