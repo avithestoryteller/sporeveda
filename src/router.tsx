@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { hydratePersistedQueryCache } from "./lib/query-persist";
 
 export const getRouter = () => {
   const queryClient = new QueryClient({
@@ -13,6 +14,10 @@ export const getRouter = () => {
       },
     },
   });
+
+  // Restore the persisted cache before any route guard or prefetch runs so the
+  // first screen paints from cache instead of waiting on the network.
+  hydratePersistedQueryCache(queryClient);
 
   const router = createRouter({
     routeTree,

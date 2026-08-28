@@ -7,12 +7,19 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  BUSTER,
+  MAX_AGE,
+  clearPersistedQueryCache,
+  getQueryPersister,
+} from "@/lib/query-persist";
 
 function NotFoundComponent() {
   return (
@@ -138,7 +145,13 @@ function AuthSync() {
       // race the session write and redirect a valid sign-in back to /auth.
       window.setTimeout(() => {
         void router.invalidate();
-        if (event !== "SIGNED_OUT") void queryClient.invalidateQueries();
+        if (event === "SIGNED_OUT") {
+          // Never leave another user's cached rows behind in local storage.
+          clearPersistedQueryCache();
+          queryClient.clear();
+        } else {
+          void queryClient.invalidateQueries();
+        }
       }, 0);
     });
     return () => data.subscription.unsubscribe();
@@ -149,13 +162,27 @@ function AuthSync() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const persister = getQueryPersister();
 
-  return (
-    <QueryClientProvider client={queryClient}>
+  const content = (
+    <>
       <AuthSync />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster position="top-center" richColors />
-    </QueryClientProvider>
+    </>
+  );
+
+  if (!persister) {
+    return <QueryClientProvider client={queryClient}>{content}</QueryClientProvider>;
+  }
+
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister, maxAge: MAX_AGE, buster: BUSTER }}
+    >
+      {content}
+    </PersistQueryClientProvider>
   );
 }
