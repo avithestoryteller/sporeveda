@@ -279,6 +279,16 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
             </Select>
           </div>
 
+          {!isEdit ? (
+            <div className="space-y-2">
+              <Label>Bags</Label>
+              <p className="text-xs text-muted-foreground">
+                Bag numbers are assigned automatically in order.
+              </p>
+              <BagRowsEditor rows={bagRows} onChange={setBagRows} startNumber={1} />
+            </div>
+          ) : null}
+
           <DialogFooter>
             <Button type="submit" disabled={mutation.isPending}>
               {mutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Create batch"}
