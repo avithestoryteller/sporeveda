@@ -83,7 +83,7 @@ export async function ensureInventoryItem(params: {
       name: params.name,
       category: params.category,
       unit,
-      vendor: params.vendor ?? null,
+      vendor,
     })
     .select("id")
     .single();
