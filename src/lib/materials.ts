@@ -154,7 +154,27 @@ export async function reconcileMaterialForBatch(params: {
     };
   }
 
+  // Never stack duplicate drafts for the same item on the same batch.
+  const existingLink = await supabase
+    .from("costs")
+    .select("id")
+    .eq("inventory_item_id", itemId)
+    .eq("batch_id", params.batchId)
+    .limit(1);
+  if (existingLink.error) throw existingLink.error;
+  if ((existingLink.data ?? []).length) {
+    return {
+      category: params.category,
+      name,
+      itemId,
+      available,
+      required: params.requiredQty,
+      createdPurchase: false,
+    };
+  }
+
   const qty = params.requiredQty > 0 ? Number(params.requiredQty.toFixed(3)) : 0;
+
   const { error } = await supabase.from("costs").insert({
     org_id: params.orgId,
     category: params.category,
