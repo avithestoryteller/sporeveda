@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
-import { AddBagsDialog } from "@/components/AddBagsDialog";
+import { BagFormDialog } from "@/components/BagFormDialog";
 import { BatchFormDialog } from "@/components/BatchFormDialog";
 import { PageHeader } from "@/components/AppShell";
 import { StageBadge } from "@/components/StageBadge";
@@ -51,7 +51,9 @@ function useBatchDetail(batchId: string) {
 
       const bags = await supabase
         .from("bags")
-        .select("id, bag_code, bag_number, current_stage, net_weight_kg, is_discarded")
+        .select(
+          "id, bag_code, bag_number, current_stage, net_weight_kg, dry_weight_kg, spawn_weight_kg, notes, is_discarded",
+        )
         .eq("batch_id", batchId)
         .order("bag_number");
       if (bags.error) throw bags.error;

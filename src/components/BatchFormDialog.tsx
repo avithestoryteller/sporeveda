@@ -199,7 +199,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="font-display">{isEdit ? "Edit batch" : "Start a batch"}</DialogTitle>
           <DialogDescription>
