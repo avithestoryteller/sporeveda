@@ -1508,6 +1508,7 @@ function InventoryPage() {
             const remaining = row.remaining;
             const threshold = toNumber(row.reorder_threshold);
             const low = threshold !== null && remaining <= threshold;
+            const pending = pendingPurchasesByItem.get(row.inventory_item_id ?? "");
             return (
               <Card key={row.inventory_item_id ?? row.name}>
                 <CardContent className="p-4">
