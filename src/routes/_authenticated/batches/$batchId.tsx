@@ -53,16 +53,20 @@ function useBatchDetail(batchId: string) {
       const bags = await supabase
         .from("bags")
         .select(
-          "id, bag_code, bag_number, current_stage, net_weight_kg, dry_weight_kg, spawn_weight_kg, notes, is_discarded",
+          "id, bag_code, bag_number, current_stage, net_weight_kg, dry_weight_kg, spawn_weight_kg, notes, is_discarded, inoculation_date, pinning_date",
         )
         .eq("batch_id", batchId)
         .order("bag_number");
       if (bags.error) throw bags.error;
 
       const bagIds = (bags.data ?? []).map((bag) => bag.id);
-      const [harvests, contamination] = await Promise.all([
+      const [harvests, contamination, history] = await Promise.all([
         bagIds.length
-          ? supabase.from("harvests").select("bag_id, wet_weight_g, flush_number").in("bag_id", bagIds)
+          ? supabase
+              .from("harvests")
+              .select("bag_id, wet_weight_g, flush_number, harvest_date")
+              .in("bag_id", bagIds)
+              .order("flush_number")
           : Promise.resolve({ data: [], error: null } as const),
         bagIds.length
           ? supabase
@@ -70,8 +74,15 @@ function useBatchDetail(batchId: string) {
               .select("bag_id, severity")
               .in("bag_id", bagIds)
           : Promise.resolve({ data: [], error: null } as const),
+        bagIds.length
+          ? supabase
+              .from("bag_stage_history")
+              .select("bag_id, stage, changed_at")
+              .in("bag_id", bagIds)
+              .order("changed_at")
+          : Promise.resolve({ data: [], error: null } as const),
       ]);
-      const error = harvests.error ?? contamination.error;
+      const error = harvests.error ?? contamination.error ?? history.error;
       if (error) throw error;
 
       return {
@@ -79,6 +90,7 @@ function useBatchDetail(batchId: string) {
         bags: bags.data ?? [],
         harvests: harvests.data ?? [],
         contamination: contamination.data ?? [],
+        history: history.data ?? [],
       };
     },
   });
@@ -101,7 +113,7 @@ function BatchDetailPage() {
   }
   if (error) return <p className="text-sm text-destructive">{error.message}</p>;
 
-  const { batch, bags, harvests, contamination } = data;
+  const { batch, bags, harvests, contamination, history } = data;
 
   const totalWetG = harvests.reduce((sum, row) => sum + (toNumber(row.wet_weight_g) ?? 0), 0);
   const dryKg = toNumber(batch.dry_substrate_weight_kg);
@@ -115,6 +127,31 @@ function BatchDetailPage() {
     harvestByBag.set(row.bag_id, (harvestByBag.get(row.bag_id) ?? 0) + (toNumber(row.wet_weight_g) ?? 0));
   }
   const contaminatedBagIds = new Set(contamination.map((row) => row.bag_id));
+
+  // Milestones per bag, derived from stage history and harvests.
+  const stageDateByBag = new Map<string, Record<string, string>>();
+  for (const row of history) {
+    const seen = stageDateByBag.get(row.bag_id) ?? {};
+    if (!seen[row.stage]) seen[row.stage] = row.changed_at;
+    stageDateByBag.set(row.bag_id, seen);
+  }
+  const flushesByBag = new Map<string, { flush: number; date: string; kg: number }[]>();
+  for (const row of harvests) {
+    const list = flushesByBag.get(row.bag_id) ?? [];
+    list.push({
+      flush: row.flush_number,
+      date: row.harvest_date,
+      kg: (toNumber(row.wet_weight_g) ?? 0) / 1000,
+    });
+    flushesByBag.set(row.bag_id, list);
+  }
+  const daysBetween = (from: string | null | undefined, to: string | null | undefined) => {
+    if (!from || !to) return null;
+    const a = new Date(from.length <= 10 ? `${from}T00:00:00` : from).getTime();
+    const b = new Date(to.length <= 10 ? `${to}T00:00:00` : to).getTime();
+    if (Number.isNaN(a) || Number.isNaN(b)) return null;
+    return Math.max(0, Math.round((b - a) / 86_400_000));
+  };
 
   return (
     <div>
@@ -225,9 +262,18 @@ function BatchDetailPage() {
       ) : null}
 
       <h2 className="mb-3 mt-8 font-display text-lg font-semibold">Bags</h2>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {bags.map((bag) => {
           const wet = harvestByBag.get(bag.id) ?? 0;
+          const stageDates = stageDateByBag.get(bag.id) ?? {};
+          const start = bag.inoculation_date ?? batch.inoculation_date;
+          const colonisedOn =
+            stageDates["bulking"] ?? stageDates["fruiting"] ?? stageDates["harvested"] ?? null;
+          const daysToColonise = daysBetween(start, colonisedOn);
+          const fruitingOn = stageDates["fruiting"] ?? null;
+          const fruitingDay = daysBetween(start, fruitingOn);
+          const pinningDay = daysBetween(start, bag.pinning_date);
+          const flushes = (flushesByBag.get(bag.id) ?? []).sort((a, b) => a.flush - b.flush);
           return (
             <div
               key={bag.id}
@@ -243,9 +289,65 @@ function BatchDetailPage() {
                 <div className="mt-2">
                   <StageBadge stage={bag.current_stage as BagStage} size="sm" />
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {wet > 0 ? `${(wet / 1000).toFixed(2)} kg harvested` : "No harvest yet"}
-                </p>
+
+                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                  <div>
+                    <dt className="text-muted-foreground">Substrate</dt>
+                    <dd className="truncate font-medium">
+                      {batch.substrate_type ?? "—"}
+                      {batch.substrate_vendor ? (
+                        <span className="font-normal text-muted-foreground">
+                          {" "}
+                          · {batch.substrate_vendor}
+                        </span>
+                      ) : null}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Spawn vendor</dt>
+                    <dd className="truncate font-medium">{batch.spawn_vendor ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Days to colonise</dt>
+                    <dd className="font-medium">
+                      {daysToColonise === null ? "—" : `${daysToColonise} d`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Fruiting day</dt>
+                    <dd className="font-medium">
+                      {fruitingDay === null ? "—" : `Day ${fruitingDay}`}
+                      {pinningDay !== null ? (
+                        <span className="font-normal text-muted-foreground">
+                          {" "}
+                          · pinned d{pinningDay}
+                        </span>
+                      ) : null}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="mt-3">
+                  <p className="text-xs text-muted-foreground">
+                    Flushes ·{" "}
+                    <span className="font-medium text-foreground">
+                      {wet > 0 ? `${(wet / 1000).toFixed(2)} kg total` : "no harvest yet"}
+                    </span>
+                  </p>
+                  {flushes.length ? (
+                    <ul className="mt-1 flex flex-wrap gap-1">
+                      {flushes.map((flush) => (
+                        <li
+                          key={`${bag.id}-${flush.flush}`}
+                          className="rounded-full bg-muted px-2 py-0.5 text-[11px]"
+                          title={`Flush ${flush.flush} on ${fmtDate(flush.date)}`}
+                        >
+                          F{flush.flush} · {flush.kg.toFixed(2)} kg · {fmtDate(flush.date)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
               </Link>
               {canEdit ? (
                 <div className="absolute right-1.5 top-1.5">
