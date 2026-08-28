@@ -1436,7 +1436,13 @@ function InventoryPage() {
       ) : null}
 
       <div className="mb-3 mt-8 flex flex-wrap items-end justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold">Stock on hand</h2>
+        <div>
+          <h2 className="font-display text-lg font-semibold">Inventory summary</h2>
+          <p className="text-xs text-muted-foreground">
+            Stock on hand plus items on order or awaiting replacement
+            {incomingItems.length ? ` · ${incomingItems.length} incoming` : ""}
+          </p>
+        </div>
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <Label htmlFor="spawn-per-bag" className="text-xs text-muted-foreground">
