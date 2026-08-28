@@ -1,8 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Ban } from "lucide-react";
+import { ArrowLeft, ArrowRight, Ban, Sprout } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
@@ -119,6 +119,48 @@ function BagDetailPage() {
     type: string;
     notes: string;
   }>({ severity: "minor", action: "monitoring", type: "", notes: "" });
+
+  const [notes, setNotes] = useState("");
+  const [pinningDate, setPinningDate] = useState(todayISO());
+  const loadedBagNotes = data?.bag.notes ?? "";
+  const loadedPinning = data?.bag.pinning_date ?? null;
+  useEffect(() => {
+    setNotes(loadedBagNotes);
+  }, [loadedBagNotes, bagId]);
+  useEffect(() => {
+    setPinningDate(loadedPinning ?? todayISO());
+  }, [loadedPinning, bagId]);
+
+  const notesMutation = useMutation({
+    mutationFn: async (value: string) => {
+      const { error: updateError } = await supabase
+        .from("bags")
+        .update({ notes: value.trim() || null })
+        .eq("id", bagId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: async () => {
+      toast.success("Notes saved");
+      await queryClient.invalidateQueries({ queryKey: ["bag", bagId] });
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
+
+  const pinningMutation = useMutation({
+    mutationFn: async (value: string | null) => {
+      const { error: updateError } = await supabase
+        .from("bags")
+        .update({ pinning_date: value })
+        .eq("id", bagId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: async (_result, value) => {
+      toast.success(value ? "Pinning milestone recorded" : "Pinning milestone cleared");
+      await queryClient.invalidateQueries({ queryKey: ["bag", bagId] });
+      await queryClient.invalidateQueries({ queryKey: ["batch"] });
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
 
   const refresh = async () => {
     await Promise.all([
@@ -278,6 +320,79 @@ function BagDetailPage() {
           tone={contamination.length > 0 ? "warning" : "default"}
         />
       </div>
+
+      <Card className="mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-display text-base">Notes &amp; milestones</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            {bag.pinning_date ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                <Sprout className="size-4" /> Pinning · {fmtDate(bag.pinning_date)}
+              </span>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {stage === "fruiting"
+                  ? "No pinning milestone recorded yet."
+                  : "Pinning can be marked once the bag is fruiting."}
+              </span>
+            )}
+            {canEdit && (stage === "fruiting" || bag.pinning_date) ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  type="date"
+                  aria-label="Pinning date"
+                  className="w-40"
+                  value={pinningDate}
+                  onChange={(event) => setPinningDate(event.target.value)}
+                />
+                <Button
+                  size="sm"
+                  onClick={() => pinningMutation.mutate(pinningDate)}
+                  disabled={pinningMutation.isPending || !pinningDate}
+                >
+                  {bag.pinning_date ? "Update pinning" : "Mark pinning"}
+                </Button>
+                {bag.pinning_date ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => pinningMutation.mutate(null)}
+                    disabled={pinningMutation.isPending}
+                  >
+                    Clear
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="bag-notes">Bag notes</Label>
+            <Textarea
+              id="bag-notes"
+              rows={3}
+              placeholder="Observations, treatments, anything worth remembering for this bag."
+              value={notes}
+              disabled={!canEdit}
+              onChange={(event) => setNotes(event.target.value)}
+            />
+            {canEdit ? (
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => notesMutation.mutate(notes)}
+                  disabled={notesMutation.isPending || notes === (bag.notes ?? "")}
+                >
+                  Save notes
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
 
       {canEdit ? (
         <Card className="mt-6">

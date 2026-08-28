@@ -1,0 +1,1 @@
+ALTER TABLE public.bags ADD COLUMN IF NOT EXISTS pinning_date date;
