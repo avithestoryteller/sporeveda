@@ -916,21 +916,21 @@ function InventoryPage() {
                   placeholder="25"
                 />
               </div>
-              {!editingItemId ? (
-                <div className="space-y-1.5">
-                  <Label htmlFor="item-opening">Opening weight ({itemForm.unit}) — optional</Label>
-                  <Input
-                    id="item-opening"
-                    inputMode="decimal"
-                    value={itemForm.openingStock}
-                    onChange={(event) => setItem("openingStock", event.target.value)}
-                    placeholder="50"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Stock already on hand — recorded as a zero-cost received entry.
-                  </p>
-                </div>
-              ) : null}
+              <div className="space-y-1.5">
+                <Label htmlFor="item-total">Total weight / quantity ({itemForm.unit})</Label>
+                <Input
+                  id="item-total"
+                  inputMode="decimal"
+                  value={itemForm.totalQty}
+                  onChange={(event) => setItem("totalQty", event.target.value)}
+                  placeholder="50"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Everything ever brought in for this item. Used amounts are deducted from this
+                  total.
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="item-vendor">Vendor (optional)</Label>
                 <Input
