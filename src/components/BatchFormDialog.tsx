@@ -170,6 +170,18 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       const code = isEdit ? form.batchCode.trim() : generatedCode;
       if (code.length < 2) throw new Error("Pick a species and start date to generate the batch code");
 
+      // Re-check against live data so a batch created elsewhere still blocks a duplicate.
+      const duplicate = await supabase
+        .from("batches")
+        .select("id")
+        .eq("farm_id", form.farmId)
+        .eq("batch_code", code)
+        .limit(1);
+      if (duplicate.error) throw duplicate.error;
+      if ((duplicate.data ?? []).some((row) => row.id !== batch?.id)) {
+        throw new Error(`Batch code ${code} already exists in ${farmName}. Adjust the details and try again.`);
+      }
+
       const num = (value: string) => (value.trim() ? Number(value) : null);
       const targets = {
         target_avg_temp_c: num(form.targetTemp),
