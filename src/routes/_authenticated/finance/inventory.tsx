@@ -631,47 +631,39 @@ function InventoryPage() {
         reorder_threshold: threshold !== null && Number.isFinite(threshold) ? threshold : null,
         notes: itemForm.notes.trim() || null,
       };
-      const wastage = itemForm.wastage.trim() ? Number(itemForm.wastage) : 0;
-      if (itemForm.wastage.trim() && (!Number.isFinite(wastage) || wastage <= 0))
-        throw new Error("Enter a valid wastage quantity");
-      const opening = itemForm.openingStock.trim() ? Number(itemForm.openingStock) : 0;
-      if (itemForm.openingStock.trim() && (!Number.isFinite(opening) || opening <= 0))
-        throw new Error("Enter a valid opening weight");
-      const addStock = itemForm.addStock.trim() ? Number(itemForm.addStock) : 0;
-      if (itemForm.addStock.trim() && (!Number.isFinite(addStock) || addStock <= 0))
-        throw new Error("Enter a valid weight to add");
+      const totalRaw = itemForm.totalQty.trim();
+      const total = totalRaw ? Number(totalRaw) : 0;
+      if (totalRaw && (!Number.isFinite(total) || total < 0))
+        throw new Error("Enter a valid total weight / quantity");
 
       if (editingItemId) {
+        const current = stockRows.find((row) => row.inventory_item_id === editingItemId);
+        const purchased = toNumber(current?.total_purchased_qty) ?? 0;
+        const used =
+          (toNumber(current?.total_used_qty) ?? 0) + (current?.derivedUsed ?? 0);
+        const diff = total - purchased;
+        const finalStatus =
+          total <= used + 0.0001 && (total > 0 || used > 0) ? "depleted" : payload.status;
         const { error } = await supabase
           .from("inventory_items")
-          .update(payload)
+          .update({ ...payload, status: finalStatus })
           .eq("id", editingItemId);
         if (error) throw error;
-        if (addStock > 0) {
-          const stock = await supabase.from("costs").insert({
+        if (Math.abs(diff) > 0.0001) {
+          const adjust = await supabase.from("costs").insert({
             org_id: orgId,
             category: payload.category,
             vendor: payload.vendor,
             status: "received",
-            description: `${name} — stock added ${addStock} ${payload.unit}`,
+            description: `${name} — total adjusted to ${total} ${payload.unit}`,
             amount: 0,
             cost_type: "one_time",
             incurred_date: todayISO(),
             inventory_item_id: editingItemId,
-            quantity_purchased: addStock,
-            notes: "Manual stock addition",
+            quantity_purchased: diff,
+            notes: "Stock total adjustment",
           });
-          if (stock.error) throw stock.error;
-        }
-        if (wastage > 0) {
-          const usage = await supabase.from("inventory_usage").insert({
-            org_id: orgId,
-            inventory_item_id: editingItemId,
-            quantity_used: wastage,
-            used_date: todayISO(),
-            notes: `Wastage${itemForm.wastageNotes.trim() ? ` — ${itemForm.wastageNotes.trim()}` : ""}`,
-          });
-          if (usage.error) throw usage.error;
+          if (adjust.error) throw adjust.error;
         }
         return;
       }
@@ -681,22 +673,23 @@ function InventoryPage() {
         .select("id")
         .single();
       if (error) throw error;
-      if (opening > 0 && inserted?.id) {
+      if (total > 0 && inserted?.id) {
         const stock = await supabase.from("costs").insert({
           org_id: orgId,
           category: payload.category,
           vendor: payload.vendor,
           status: "received",
-          description: `${name} — opening stock ${opening} ${payload.unit}`,
+          description: `${name} — opening stock ${total} ${payload.unit}`,
           amount: 0,
           cost_type: "one_time",
           incurred_date: todayISO(),
           inventory_item_id: inserted.id,
-          quantity_purchased: opening,
+          quantity_purchased: total,
           notes: "Opening stock",
         });
         if (stock.error) throw stock.error;
       }
+
     },
     onSuccess: () => {
       toast.success(editingItemId ? "Item updated" : "Item added");
