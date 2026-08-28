@@ -918,11 +918,16 @@ function InventoryPage() {
         <StatTile label="Items tracked" value={stock?.length ?? 0} />
         <StatTile label="Stock value" value={fmtMoney(stockValue)} hint="Weighted average cost" />
         <StatTile
-          label="Incoming"
+          label="On order / replacement"
           value={incomingItems.length}
           hint={
             incomingItems.length
-              ? incomingItems.map((row) => `${row.name} (${row.qty} ${row.unit})`).join(", ")
+              ? incomingItems
+                  .map(
+                    (row) =>
+                      `${row.name} (${row.qty.toLocaleString("en-IN", { maximumFractionDigits: 2 })} ${row.unit})`,
+                  )
+                  .join(", ")
               : "Nothing on order or in transit"
           }
         />
