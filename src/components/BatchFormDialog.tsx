@@ -127,13 +127,20 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       ? form.newSpecies.trim()
       : ((options.data?.species ?? []).find((item) => item.id === form.speciesId)?.common_name ?? "");
 
+  const suggestedNumber = selectedSpeciesName
+    ? nextBatchNumber(options.data?.codes ?? [], selectedSpeciesName)
+    : 1;
+  const parsedNumber = Number.parseInt(form.batchNumber, 10);
+  const effectiveNumber =
+    Number.isFinite(parsedNumber) && parsedNumber > 0 ? parsedNumber : suggestedNumber;
+  const numberError =
+    form.batchNumber.trim() && !(Number.isFinite(parsedNumber) && parsedNumber > 0)
+      ? "Enter a whole number of 1 or more."
+      : "";
+
   const generatedCode =
     !isEdit && selectedSpeciesName && form.startDate
-      ? buildBatchCode(
-          selectedSpeciesName,
-          nextBatchNumber(options.data?.codes ?? [], selectedSpeciesName),
-          form.startDate,
-        )
+      ? buildBatchCode(selectedSpeciesName, effectiveNumber, form.startDate)
       : "";
 
   const activeCode = (isEdit ? form.batchCode : generatedCode).trim();
