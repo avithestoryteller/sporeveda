@@ -65,13 +65,14 @@ function useFormOptions() {
       const [farms, species, batches] = await Promise.all([
         supabase.from("farms").select("id, name").eq("is_active", true).order("name"),
         supabase.from("species").select("id, common_name").order("common_name"),
-        supabase.from("batches").select("batch_code"),
+        supabase.from("batches").select("id, batch_code, farm_id"),
       ]);
       const error = farms.error ?? species.error ?? batches.error;
       if (error) throw error;
       return {
         farms: farms.data ?? [],
         species: species.data ?? [],
+        batches: batches.data ?? [],
         codes: (batches.data ?? []).map((row) => row.batch_code),
       };
     },
