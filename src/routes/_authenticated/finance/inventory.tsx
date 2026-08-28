@@ -238,7 +238,7 @@ function InventoryPage() {
           .not("batch_id", "is", null),
         supabase
           .from("bags")
-          .select("batch_id, spawn_weight_kg, dry_weight_kg")
+          .select("batch_id, spawn_weight_kg, dry_weight_kg, current_stage")
           .eq("org_id", orgId),
         supabase
           .from("batches")
@@ -262,11 +262,13 @@ function InventoryPage() {
         });
         const spawn = Number(bag.spawn_weight_kg);
         if (Number.isFinite(spawn) && spawn > 0) entry.spawnKg += spawn;
-        else entry.spawnMissingBags += 1;
+        // Bags still in prep have not been inoculated yet — no spawn consumed.
+        else if (bag.current_stage !== "prep") entry.spawnMissingBags += 1;
         const dry = Number(bag.dry_weight_kg);
         if (Number.isFinite(dry) && dry > 0) entry.substrateKg += dry;
         else entry.substrateMissingBags += 1;
       }
+
       return { links: links.data ?? [], bagsPerBatch, weightsPerBatch, batches: batchRows.data ?? [] };
 
     },
