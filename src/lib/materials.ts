@@ -54,25 +54,27 @@ export async function ensureInventoryItem(params: {
   vendor?: string | null;
 }): Promise<string> {
   const unit = params.unit ?? "kg";
+  const vendor = params.vendor?.trim() || null;
+  // Stock is tracked per vendor: same material from another vendor is its own item.
   const existing = await supabase
     .from("inventory_items")
     .select("id, vendor")
     .eq("org_id", params.orgId)
     .eq("category", params.category)
-    .eq("name", params.name)
-    .limit(1)
-    .maybeSingle();
+    .eq("name", params.name);
   if (existing.error) throw existing.error;
-  if (existing.data?.id) {
-    // Backfill the vendor on items that never had one.
-    if (params.vendor && !existing.data.vendor) {
-      await supabase
-        .from("inventory_items")
-        .update({ vendor: params.vendor })
-        .eq("id", existing.data.id);
-    }
-    return existing.data.id;
+  const rows = existing.data ?? [];
+  const sameVendor = rows.find(
+    (row) => (row.vendor ?? "").trim().toLowerCase() === (vendor ?? "").toLowerCase(),
+  );
+  if (sameVendor) return sameVendor.id;
+  // Backfill an existing vendor-less item rather than duplicating it.
+  const vendorless = vendor ? rows.find((row) => !row.vendor) : undefined;
+  if (vendorless) {
+    await supabase.from("inventory_items").update({ vendor }).eq("id", vendorless.id);
+    return vendorless.id;
   }
+
 
   const created = await supabase
     .from("inventory_items")
