@@ -230,7 +230,10 @@ function InventoryPage() {
           .eq("org_id", orgId)
           .not("inventory_item_id", "is", null)
           .not("batch_id", "is", null),
-        supabase.from("bags").select("batch_id").eq("org_id", orgId),
+        supabase
+          .from("bags")
+          .select("batch_id, spawn_weight_kg, dry_weight_kg")
+          .eq("org_id", orgId),
         supabase
           .from("batches")
           .select("id, substrate_type, substrate_vendor, spawn_vendor, species(common_name)")
@@ -241,11 +244,25 @@ function InventoryPage() {
       if (batchRows.error) throw batchRows.error;
 
       const bagsPerBatch: Record<string, number> = {};
+      const weightsPerBatch: Record<string, BatchWeights> = {};
       for (const bag of bags.data ?? []) {
         if (!bag.batch_id) continue;
         bagsPerBatch[bag.batch_id] = (bagsPerBatch[bag.batch_id] ?? 0) + 1;
+        const entry = (weightsPerBatch[bag.batch_id] ??= {
+          spawnKg: 0,
+          spawnMissingBags: 0,
+          substrateKg: 0,
+          substrateMissingBags: 0,
+        });
+        const spawn = Number(bag.spawn_weight_kg);
+        if (Number.isFinite(spawn) && spawn > 0) entry.spawnKg += spawn;
+        else entry.spawnMissingBags += 1;
+        const dry = Number(bag.dry_weight_kg);
+        if (Number.isFinite(dry) && dry > 0) entry.substrateKg += dry;
+        else entry.substrateMissingBags += 1;
       }
-      return { links: links.data ?? [], bagsPerBatch, batches: batchRows.data ?? [] };
+      return { links: links.data ?? [], bagsPerBatch, weightsPerBatch, batches: batchRows.data ?? [] };
+
     },
   });
 
