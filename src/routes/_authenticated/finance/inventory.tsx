@@ -108,6 +108,7 @@ type ItemForm = {
   notes: string;
   wastage: string;
   wastageNotes: string;
+  addStock: string;
 };
 const EMPTY_ITEM: ItemForm = {
   name: "",
