@@ -30,8 +30,12 @@ import {
   DEFAULT_SUBSTRATE_PER_BAG_KG,
   SPAWN_PER_BAG_STORAGE_KEY,
   SUBSTRATE_PER_BAG_STORAGE_KEY,
+  reconcileMaterialForBatch,
+  type MaterialCheck,
 } from "@/lib/materials";
+import { NOTIFICATIONS_QUERY_KEY, pushNotification } from "@/lib/notifications";
 import { bagCode, buildBatchCode, nextBatchNumber } from "@/lib/batch-code";
+
 
 function storedRate(key: string, fallback: number) {
   if (typeof window === "undefined") return fallback;
