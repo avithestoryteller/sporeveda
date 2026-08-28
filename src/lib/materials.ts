@@ -209,12 +209,68 @@ type LinkRow = {
   quantity_purchased: number | string | null;
 };
 
+export type BatchMaterialRow = {
+  id: string;
+  substrate_type?: string | null;
+  substrate_vendor?: string | null;
+  spawn_vendor?: string | null;
+  species?: { common_name?: string | null } | null;
+};
+
+export type InventoryItemRow = {
+  id: string;
+  name: string | null;
+  category: string | null;
+  vendor?: string | null;
+};
+
+const norm = (value: string | null | undefined) => (value ?? "").trim().toLowerCase();
+
+/** Loose name match: either string contains the other (after normalising). */
+function nameMatches(a: string, b: string) {
+  if (!a || !b) return false;
+  return a === b || a.includes(b) || b.includes(a);
+}
+
+/**
+ * Finds the inventory item that most likely supplied a batch for a category when no
+ * purchase row is explicitly linked to the batch: match the recorded material name
+ * (substrate type / species for spawn), then the vendor, then fall back to the only
+ * item in that category.
+ */
+export function resolveItemForBatch(
+  batch: BatchMaterialRow,
+  category: MaterialCategory,
+  items: InventoryItemRow[],
+): string | null {
+  const pool = items.filter((item) => norm(item.category) === category);
+  if (pool.length === 0) return null;
+
+  const material =
+    category === "substrate" ? norm(batch.substrate_type) : norm(batch.species?.common_name);
+  if (material) {
+    const byName = pool.find((item) => nameMatches(norm(item.name), material));
+    if (byName) return byName.id;
+  }
+
+  const vendor = category === "substrate" ? norm(batch.substrate_vendor) : norm(batch.spawn_vendor);
+  if (vendor) {
+    const byVendor = pool.filter((item) => nameMatches(norm(item.vendor), vendor));
+    if (byVendor.length === 1) return byVendor[0].id;
+    if (byVendor.length > 1) return byVendor[0].id;
+  }
+
+  if (pool.length === 1) return pool[0].id;
+  return null;
+}
+
 /**
  * Derives material consumption per inventory item from production data:
  * spawn is consumed at `spawnPerBagKg` per bag and substrate at `substratePerBagKg`
- * per bag of every linked batch — every bag counts, including discarded ones. When
- * several items supply the same batch, the consumption is split in proportion to the
- * quantity purchased for that batch.
+ * per bag of every batch — every bag counts, including discarded ones. Items linked
+ * to the batch through purchase rows split the consumption in proportion to the
+ * quantity purchased for that batch; batches with no linked purchase fall back to the
+ * inventory item matching the batch's recorded substrate / species / vendor.
  */
 export function deriveUsageByItem(params: {
   costRows: LinkRow[];
@@ -222,21 +278,41 @@ export function deriveUsageByItem(params: {
   categoryByItem: Record<string, string>;
   spawnPerBagKg: number;
   substratePerBagKg: number;
+  batches?: BatchMaterialRow[];
+  items?: InventoryItemRow[];
 }): Record<string, number> {
   const { costRows, bagsPerBatch, categoryByItem, spawnPerBagKg, substratePerBagKg } = params;
+  const batches = params.batches ?? [];
+  const items = params.items ?? [];
 
   // batchId -> category -> itemId -> purchased qty
   const grouped = new Map<string, Map<string, Map<string, number>>>();
+  const ensure = (batchId: string, category: string) => {
+    const byCategory = grouped.get(batchId) ?? new Map<string, Map<string, number>>();
+    grouped.set(batchId, byCategory);
+    const byItem = byCategory.get(category) ?? new Map<string, number>();
+    byCategory.set(category, byItem);
+    return byItem;
+  };
+
   for (const row of costRows) {
     if (!row.inventory_item_id || !row.batch_id) continue;
     const category = categoryByItem[row.inventory_item_id];
     if (category !== "spawn" && category !== "substrate") continue;
     const qty = Number(row.quantity_purchased ?? 0) || 0;
-    const byCategory = grouped.get(row.batch_id) ?? new Map();
-    grouped.set(row.batch_id, byCategory);
-    const byItem = byCategory.get(category) ?? new Map<string, number>();
-    byCategory.set(category, byItem);
+    const byItem = ensure(row.batch_id, category);
     byItem.set(row.inventory_item_id, (byItem.get(row.inventory_item_id) ?? 0) + qty);
+  }
+
+  // Fallback mapping for batches without a purchase row linked to them.
+  for (const batch of batches) {
+    if (!bagsPerBatch[batch.id]) continue;
+    for (const category of MATERIAL_CATEGORIES) {
+      if (grouped.get(batch.id)?.get(category)?.size) continue;
+      const itemId = resolveItemForBatch(batch, category, items);
+      if (!itemId) continue;
+      ensure(batch.id, category).set(itemId, 1);
+    }
   }
 
   const usage: Record<string, number> = {};
@@ -246,12 +322,13 @@ export function deriveUsageByItem(params: {
       const consumed = (bagsPerBatch[batchId] ?? 0) * perBag;
       if (consumed <= 0) continue;
       const totalQty = [...byItem.values()].reduce((sum, value) => sum + value, 0);
-      const items = [...byItem.entries()];
-      for (const [itemId, qty] of items) {
-        const share = totalQty > 0 ? qty / totalQty : 1 / items.length;
+      const items2 = [...byItem.entries()];
+      for (const [itemId, qty] of items2) {
+        const share = totalQty > 0 ? qty / totalQty : 1 / items2.length;
         usage[itemId] = (usage[itemId] ?? 0) + consumed * share;
       }
     }
   }
   return usage;
 }
+
