@@ -157,13 +157,27 @@ function AuthSync() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const persister = getQueryPersister();
 
-  return (
-    <QueryClientProvider client={queryClient}>
+  const content = (
+    <>
       <AuthSync />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster position="top-center" richColors />
-    </QueryClientProvider>
+    </>
+  );
+
+  if (!persister) {
+    return <QueryClientProvider client={queryClient}>{content}</QueryClientProvider>;
+  }
+
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000, buster: "v1" }}
+    >
+      {content}
+    </PersistQueryClientProvider>
   );
 }
