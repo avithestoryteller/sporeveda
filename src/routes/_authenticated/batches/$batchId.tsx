@@ -60,9 +60,13 @@ function useBatchDetail(batchId: string) {
       if (bags.error) throw bags.error;
 
       const bagIds = (bags.data ?? []).map((bag) => bag.id);
-      const [harvests, contamination] = await Promise.all([
+      const [harvests, contamination, history] = await Promise.all([
         bagIds.length
-          ? supabase.from("harvests").select("bag_id, wet_weight_g, flush_number").in("bag_id", bagIds)
+          ? supabase
+              .from("harvests")
+              .select("bag_id, wet_weight_g, flush_number, harvest_date")
+              .in("bag_id", bagIds)
+              .order("flush_number")
           : Promise.resolve({ data: [], error: null } as const),
         bagIds.length
           ? supabase
@@ -70,8 +74,15 @@ function useBatchDetail(batchId: string) {
               .select("bag_id, severity")
               .in("bag_id", bagIds)
           : Promise.resolve({ data: [], error: null } as const),
+        bagIds.length
+          ? supabase
+              .from("bag_stage_history")
+              .select("bag_id, stage, changed_at")
+              .in("bag_id", bagIds)
+              .order("changed_at")
+          : Promise.resolve({ data: [], error: null } as const),
       ]);
-      const error = harvests.error ?? contamination.error;
+      const error = harvests.error ?? contamination.error ?? history.error;
       if (error) throw error;
 
       return {
@@ -79,6 +90,7 @@ function useBatchDetail(batchId: string) {
         bags: bags.data ?? [],
         harvests: harvests.data ?? [],
         contamination: contamination.data ?? [],
+        history: history.data ?? [],
       };
     },
   });
