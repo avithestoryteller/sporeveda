@@ -25,13 +25,15 @@ import {
 import { fmtDate, todayISO, toNumber } from "@/lib/format";
 import { fmtMoney, titleCase } from "@/lib/money";
 import {
+  type BatchWeights,
   DEFAULT_SPAWN_PER_BAG_KG,
   DEFAULT_SUBSTRATE_PER_BAG_KG,
   SPAWN_PER_BAG_STORAGE_KEY,
   SUBSTRATE_PER_BAG_STORAGE_KEY,
-  deriveUsageByItem,
+  deriveUsageDetailByItem,
   ensureInventoryItem,
 } from "@/lib/materials";
+
 
 export const Route = createFileRoute("/_authenticated/finance/inventory")({
   head: () => ({
