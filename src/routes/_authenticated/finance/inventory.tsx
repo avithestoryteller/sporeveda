@@ -293,6 +293,7 @@ function InventoryPage() {
       vendor: (row as { vendor?: string | null }).vendor ?? "",
 
       threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
+      openingStock: "",
       notes: row.notes ?? "",
       wastage: "",
       wastageNotes: "",
