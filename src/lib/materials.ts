@@ -255,12 +255,12 @@ export function resolveItemForBatch(
 
   const vendor = category === "substrate" ? norm(batch.substrate_vendor) : norm(batch.spawn_vendor);
   if (vendor) {
-    const byVendor = pool.filter((item) => nameMatches(norm(item.vendor), vendor));
-    if (byVendor.length === 1) return byVendor[0].id;
-    if (byVendor.length > 1) return byVendor[0].id;
+    const byVendor = pool.find((item) => nameMatches(norm(item.vendor), vendor));
+    if (byVendor) return byVendor.id;
   }
 
-  if (pool.length === 1) return pool[0].id;
+  if (pool.length === 1) return pool[0]!.id;
+
   return null;
 }
 
