@@ -272,26 +272,39 @@ export function resolveItemForBatch(
   return null;
 }
 
+/** Actual logged material weight per batch, with a count of bags missing a logged weight. */
+export type BatchWeights = {
+  spawnKg: number;
+  spawnMissingBags: number;
+  substrateKg: number;
+  substrateMissingBags: number;
+};
+
+export type UsageDetail = { qty: number; bags: number };
+
 /**
- * Derives material consumption per inventory item from production data:
- * spawn is consumed at `spawnPerBagKg` per bag and substrate at `substratePerBagKg`
- * per bag of every batch — every bag counts, including discarded ones. Items linked
- * to the batch through purchase rows split the consumption in proportion to the
- * quantity purchased for that batch; batches with no linked purchase fall back to the
- * inventory item matching the batch's recorded substrate / species / vendor.
+ * Derives material consumption per inventory item from production data. When bags
+ * carry logged spawn / dry-substrate weights those actual weights are used; bags
+ * without a logged weight fall back to `spawnPerBagKg` / `substratePerBagKg`.
+ * Every bag counts, including discarded ones. Items linked to the batch through
+ * purchase rows split the consumption in proportion to the quantity purchased for
+ * that batch; batches with no linked purchase fall back to the inventory item
+ * matching the batch's recorded substrate / species / vendor.
  */
-export function deriveUsageByItem(params: {
+export function deriveUsageDetailByItem(params: {
   costRows: LinkRow[];
   bagsPerBatch: Record<string, number>;
   categoryByItem: Record<string, string>;
   spawnPerBagKg: number;
   substratePerBagKg: number;
+  weightsPerBatch?: Record<string, BatchWeights>;
   batches?: BatchMaterialRow[];
   items?: InventoryItemRow[];
-}): Record<string, number> {
+}): Record<string, UsageDetail> {
   const { costRows, bagsPerBatch, categoryByItem, spawnPerBagKg, substratePerBagKg } = params;
   const batches = params.batches ?? [];
   const items = params.items ?? [];
+  const weights = params.weightsPerBatch ?? {};
 
   // batchId -> category -> itemId -> purchased qty
   const grouped = new Map<string, Map<string, Map<string, number>>>();
@@ -323,20 +336,42 @@ export function deriveUsageByItem(params: {
     }
   }
 
-  const usage: Record<string, number> = {};
+  const usage: Record<string, UsageDetail> = {};
   for (const [batchId, byCategory] of grouped) {
+    const bags = bagsPerBatch[batchId] ?? 0;
     for (const [category, byItem] of byCategory) {
+      const logged = weights[batchId];
       const perBag = category === "spawn" ? spawnPerBagKg : substratePerBagKg;
-      const consumed = (bagsPerBatch[batchId] ?? 0) * perBag;
+      let consumed: number;
+      if (logged) {
+        const actual = category === "spawn" ? logged.spawnKg : logged.substrateKg;
+        const missing =
+          category === "spawn" ? logged.spawnMissingBags : logged.substrateMissingBags;
+        consumed = actual + missing * perBag;
+      } else {
+        consumed = bags * perBag;
+      }
       if (consumed <= 0) continue;
       const totalQty = [...byItem.values()].reduce((sum, value) => sum + value, 0);
       const items2 = [...byItem.entries()];
       for (const [itemId, qty] of items2) {
         const share = totalQty > 0 ? qty / totalQty : 1 / items2.length;
-        usage[itemId] = (usage[itemId] ?? 0) + consumed * share;
+        const entry = usage[itemId] ?? { qty: 0, bags: 0 };
+        entry.qty += consumed * share;
+        entry.bags += bags * share;
+        usage[itemId] = entry;
       }
     }
   }
   return usage;
 }
+
+/** Consumed quantity per inventory item. See {@link deriveUsageDetailByItem}. */
+export function deriveUsageByItem(params: Parameters<typeof deriveUsageDetailByItem>[0]) {
+  const detail = deriveUsageDetailByItem(params);
+  const usage: Record<string, number> = {};
+  for (const [itemId, value] of Object.entries(detail)) usage[itemId] = value.qty;
+  return usage;
+}
+
 
