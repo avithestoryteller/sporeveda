@@ -148,14 +148,13 @@ function BatchDetailPage() {
                   farm_id: batch.farm_id,
                 }}
               />
-              <AddBagsDialog
+              <BagFormDialog
                 orgId={orgId}
                 batchId={batch.id}
                 batchCode={batch.batch_code}
                 farmId={batch.farm_id}
                 speciesId={batch.species_id}
-                existingBags={bags.reduce((max, bag) => Math.max(max, bag.bag_number), 0)}
-                existingDryKg={dryKg}
+                nextBagNumber={bags.reduce((max, bag) => Math.max(max, bag.bag_number), 0) + 1}
               />
             </div>
           ) : null
