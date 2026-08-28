@@ -22,22 +22,57 @@ type OrgContextValue = {
 
 const OrgContext = createContext<OrgContextValue | null>(null);
 
+const MEMBERSHIPS_CACHE_KEY = "sporeveda.memberships.v1";
+
+function readCachedMemberships(): OrgMembership[] | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = window.localStorage.getItem(MEMBERSHIPS_CACHE_KEY);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as OrgMembership[];
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeCachedMemberships(rows: OrgMembership[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(MEMBERSHIPS_CACHE_KEY, JSON.stringify(rows));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+export const membershipsQueryOptions = {
+  queryKey: ["memberships"] as const,
+  staleTime: 5 * 60_000,
+  gcTime: 30 * 60_000,
+  queryFn: async (): Promise<OrgMembership[]> => {
+    const { data, error } = await supabase
+      .from("memberships")
+      .select("org_id, role, organizations(name, slug)")
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    const rows = (data ?? []).map((row) => ({
+      org_id: row.org_id,
+      role: row.role,
+      name: row.organizations?.name ?? "Organization",
+      slug: row.organizations?.slug ?? "",
+    }));
+    writeCachedMemberships(rows);
+    return rows;
+  },
+};
+
 export function useOrgMembershipsQuery() {
   return useQuery({
-    queryKey: ["memberships"],
-    queryFn: async (): Promise<OrgMembership[]> => {
-      const { data, error } = await supabase
-        .from("memberships")
-        .select("org_id, role, organizations(name, slug)")
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data ?? []).map((row) => ({
-        org_id: row.org_id,
-        role: row.role,
-        name: row.organizations?.name ?? "Organization",
-        slug: row.organizations?.slug ?? "",
-      }));
-    },
+    ...membershipsQueryOptions,
+    // Render instantly from the last known workspace so page queries can fire
+    // without waiting for the membership round-trip.
+    initialData: readCachedMemberships(),
+    initialDataUpdatedAt: 0,
   });
 }
 

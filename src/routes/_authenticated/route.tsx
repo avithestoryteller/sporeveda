@@ -4,19 +4,25 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { OrgSetup } from "@/components/OrgSetup";
-import { OrgProvider, useOrgMembershipsQuery } from "@/hooks/use-org";
+import { OrgProvider, membershipsQueryOptions, useOrgMembershipsQuery } from "@/hooks/use-org";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ context }) => {
     // Read the locally cached session first: getUser() hits the auth server on
     // every navigation, which added a network round-trip before each screen.
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
-    if (session?.user) return { user: session.user };
+    if (session?.user) {
+      // Warm the workspace query in parallel with route module loading so page
+      // data isn't blocked behind a late membership round-trip.
+      void context.queryClient.prefetchQuery(membershipsQueryOptions);
+      return { user: session.user };
+    }
 
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+    void context.queryClient.prefetchQuery(membershipsQueryOptions);
     return { user: data.user };
   },
   component: AuthenticatedLayout,
