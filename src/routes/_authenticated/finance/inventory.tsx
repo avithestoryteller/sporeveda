@@ -554,19 +554,31 @@ function InventoryPage() {
     return { used, purchased: toNumber(row?.total_purchased_qty) ?? 0 };
   }, [editingItemId, stockRows]);
 
-  /**
-   * The summary shows items that are currently in stock OR have an incoming
-   * order / replacement. Fully zeroed items (no stock and nothing incoming)
-   * move to the depleted log.
-   */
+  /** Zero-stock items stay in the summary only when a replacement is incoming. */
+  const replacementItemIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const row of purchases ?? []) {
+      const status = (row as { status?: string | null }).status ?? "received";
+      const notes = (row as { notes?: string | null }).notes ?? "";
+      if (
+        row.inventory_item_id &&
+        (status === "ordered" || status === "in_transit") &&
+        notes.startsWith("Replacement order")
+      ) {
+        ids.add(row.inventory_item_id);
+      }
+    }
+    return ids;
+  }, [purchases]);
+
   const depletedRows = useMemo(
     () =>
       stockRows.filter(
         (row) =>
           row.remaining <= 0.0001 &&
-          (toNumber((row as { incoming_qty?: number | null }).incoming_qty) ?? 0) <= 0,
+          !replacementItemIds.has(row.inventory_item_id ?? ""),
       ),
-    [stockRows],
+    [stockRows, replacementItemIds],
   );
 
   const activeStockRows = useMemo(
