@@ -56,6 +56,10 @@ function useBatches() {
             batch,
             bagCount: batchBags.length,
             discarded: batchBags.filter((bag) => bag.current_stage === "discarded").length,
+            stages: STAGE_ORDER.map((stage) => ({
+              stage,
+              count: batchBags.filter((bag) => bag.current_stage === stage).length,
+            })).filter((entry) => entry.count > 0),
           };
         }),
         funnel,
