@@ -108,6 +108,10 @@ type ItemForm = {
   threshold: string;
   totalQty: string;
   notes: string;
+  wastageQty: string;
+  wastageReason: string;
+  orderReplacement: boolean;
+  replacementStatus: string;
 };
 const EMPTY_ITEM: ItemForm = {
   name: "",
@@ -118,6 +122,10 @@ const EMPTY_ITEM: ItemForm = {
   threshold: "",
   totalQty: "",
   notes: "",
+  wastageQty: "",
+  wastageReason: "",
+  orderReplacement: false,
+  replacementStatus: "ordered",
 };
 
 
