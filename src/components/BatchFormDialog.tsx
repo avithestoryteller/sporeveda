@@ -72,8 +72,9 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
   // Default the room when there is only one to choose from.
   useEffect(() => {
     const farms = options.data?.farms ?? [];
-    if (!form.farmId && farms.length === 1) {
-      setForm((prev) => ({ ...prev, farmId: farms[0].id }));
+    const only = farms.length === 1 ? farms[0] : null;
+    if (!form.farmId && only) {
+      setForm((prev) => ({ ...prev, farmId: only.id }));
     }
   }, [options.data, form.farmId]);
 
