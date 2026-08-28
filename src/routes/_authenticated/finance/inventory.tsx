@@ -522,14 +522,27 @@ function InventoryPage() {
 
   const stockValue = stockRows.reduce((sum, row) => sum + row.remainingValue, 0);
 
+  /** Usage totals for the item currently being edited. */
+  const editingItemUsage = useMemo(() => {
+    const row = editingItemId
+      ? stockRows.find((item) => item.inventory_item_id === editingItemId)
+      : undefined;
+    const used = (toNumber(row?.total_used_qty) ?? 0) + (row?.derivedUsed ?? 0);
+    return { used, purchased: toNumber(row?.total_purchased_qty) ?? 0 };
+  }, [editingItemId, stockRows]);
+
   /** Items whose stock is fully consumed drop out of the tiles and into the depleted log. */
   const depletedRows = useMemo(
     () =>
       stockRows.filter(
-        (row) => (toNumber(row.total_purchased_qty) ?? 0) > 0 && row.remaining <= 0.0001,
+        (row) =>
+          row.remaining <= 0.0001 &&
+          ((toNumber(row.total_purchased_qty) ?? 0) > 0 ||
+            (row as { status?: string | null }).status === "depleted"),
       ),
     [stockRows],
   );
+
   const activeStockRows = useMemo(
     () => stockRows.filter((row) => !depletedRows.includes(row)),
     [stockRows, depletedRows],
