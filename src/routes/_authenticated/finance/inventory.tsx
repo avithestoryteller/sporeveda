@@ -1056,7 +1056,7 @@ function InventoryPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="purchase-qty">Quantity</Label>
+                <Label htmlFor="purchase-qty">Weight / quantity ({purchaseForm.unit})</Label>
                 <Input
                   id="purchase-qty"
                   inputMode="decimal"
