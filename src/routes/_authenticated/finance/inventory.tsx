@@ -1447,7 +1447,7 @@ function InventoryPage() {
         <div>
           <h2 className="font-display text-lg font-semibold">Inventory summary</h2>
           <p className="text-xs text-muted-foreground">
-            Stock on hand plus items on order or awaiting replacement
+            In-stock and replacement / on-order items. Zeroed items are kept in the depleted log.
             {incomingItems.length ? ` · ${incomingItems.length} incoming` : ""}
           </p>
         </div>
