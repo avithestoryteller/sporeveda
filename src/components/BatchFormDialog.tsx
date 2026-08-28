@@ -88,6 +88,9 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
     newSpecies: "",
     batchCode: batch?.batch_code ?? "",
     startDate: todayISO(),
+    targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
+    targetHumidity:
+      batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
   });
   const [bagRows, setBagRows] = useState<BagRow[]>([]);
 
@@ -99,6 +102,9 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       newSpecies: "",
       batchCode: batch?.batch_code ?? "",
       startDate: todayISO(),
+      targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
+      targetHumidity:
+        batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
     });
     setBagRows(batch ? [] : [defaultBagRow()]);
   }, [open, batch]);
