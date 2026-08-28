@@ -106,11 +106,8 @@ type ItemForm = {
   status: string;
   vendor: string;
   threshold: string;
-  openingStock: string;
+  totalQty: string;
   notes: string;
-  wastage: string;
-  wastageNotes: string;
-  addStock: string;
 };
 const EMPTY_ITEM: ItemForm = {
   name: "",
@@ -119,12 +116,10 @@ const EMPTY_ITEM: ItemForm = {
   status: "in_stock",
   vendor: "",
   threshold: "",
-  openingStock: "",
+  totalQty: "",
   notes: "",
-  wastage: "",
-  wastageNotes: "",
-  addStock: "",
 };
+
 
 
 type PurchaseForm = {
