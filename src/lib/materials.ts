@@ -19,8 +19,8 @@ export const VARIETY_SUGGESTIONS: Record<MaterialCategory, string[]> = {
 };
 
 /** Default spawn used per bag, in kg. */
-export const DEFAULT_SPAWN_PER_BAG_KG = 0.2;
-export const SPAWN_PER_BAG_STORAGE_KEY = "sporeveda.spawnPerBagKg";
+export const DEFAULT_SPAWN_PER_BAG_KG = 0.25;
+export const SPAWN_PER_BAG_STORAGE_KEY = "sporeveda.spawnPerBagKg.v2";
 
 /** Default dry substrate used per bag, in kg. */
 export const DEFAULT_SUBSTRATE_PER_BAG_KG = 1.2;
