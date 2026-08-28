@@ -86,12 +86,14 @@ export function AppShell({ children }: { children?: ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
+            <NotificationsBell />
             <div className="hidden text-right sm:block">
               <p className="max-w-[12rem] truncate text-xs font-medium">{org?.name}</p>
               <p className="text-[10px] uppercase tracking-wide text-sidebar-foreground/60">
                 {role}
               </p>
             </div>
+
             <Button
               variant="ghost"
               size="icon"
