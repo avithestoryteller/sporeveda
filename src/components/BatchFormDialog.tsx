@@ -89,6 +89,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
     speciesId: batch?.species_id ?? "",
     newSpecies: "",
     batchCode: batch?.batch_code ?? "",
+    batchNumber: "",
     startDate: batch?.inoculation_date ?? todayISO(),
     targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
     targetHumidity:
@@ -103,6 +104,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       speciesId: batch?.species_id ?? "",
       newSpecies: "",
       batchCode: batch?.batch_code ?? "",
+      batchNumber: "",
       startDate: batch?.inoculation_date ?? todayISO(),
       targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
       targetHumidity:
@@ -125,13 +127,20 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       ? form.newSpecies.trim()
       : ((options.data?.species ?? []).find((item) => item.id === form.speciesId)?.common_name ?? "");
 
+  const suggestedNumber = selectedSpeciesName
+    ? nextBatchNumber(options.data?.codes ?? [], selectedSpeciesName)
+    : 1;
+  const parsedNumber = Number.parseInt(form.batchNumber, 10);
+  const effectiveNumber =
+    Number.isFinite(parsedNumber) && parsedNumber > 0 ? parsedNumber : suggestedNumber;
+  const numberError =
+    form.batchNumber.trim() && !(Number.isFinite(parsedNumber) && parsedNumber > 0)
+      ? "Enter a whole number of 1 or more."
+      : "";
+
   const generatedCode =
     !isEdit && selectedSpeciesName && form.startDate
-      ? buildBatchCode(
-          selectedSpeciesName,
-          nextBatchNumber(options.data?.codes ?? [], selectedSpeciesName),
-          form.startDate,
-        )
+      ? buildBatchCode(selectedSpeciesName, effectiveNumber, form.startDate)
       : "";
 
   const activeCode = (isEdit ? form.batchCode : generatedCode).trim();
@@ -146,9 +155,11 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       : undefined;
   const farmName =
     (options.data?.farms ?? []).find((farm) => farm.id === form.farmId)?.name ?? "this room";
-  const codeError = conflictingBatch
-    ? `Batch code ${activeCode} is already used by another batch in ${farmName}. Change the start date, species or code.`
-    : "";
+  const codeError = numberError
+    ? numberError
+    : conflictingBatch
+      ? `Batch code ${activeCode} is already used by another batch in ${farmName}. Change the batch number, start date or species.`
+      : "";
 
 
   const mutation = useMutation({
@@ -289,7 +300,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
             mutation.mutate();
           }}
         >
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="batch-start">Start date</Label>
               <Input
@@ -302,6 +313,28 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
                 required
               />
             </div>
+            {!isEdit ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="batch-number">Batch number</Label>
+                <Input
+                  id="batch-number"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
+                  placeholder={String(suggestedNumber)}
+                  value={form.batchNumber}
+                  aria-invalid={Boolean(numberError)}
+                  className={numberError ? "border-destructive" : undefined}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, batchNumber: event.target.value }))
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave blank to use the next number for this species.
+                </p>
+              </div>
+            ) : null}
             <div className="space-y-1.5">
               <Label htmlFor="batch-code">Batch code</Label>
               {isEdit ? (
