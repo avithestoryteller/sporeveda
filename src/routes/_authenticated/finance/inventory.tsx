@@ -121,6 +121,7 @@ const EMPTY_ITEM: ItemForm = {
   notes: "",
   wastage: "",
   wastageNotes: "",
+  addStock: "",
 };
 
 
