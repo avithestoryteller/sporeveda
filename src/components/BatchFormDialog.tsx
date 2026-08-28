@@ -309,6 +309,8 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
                   id="batch-code"
                   value={form.batchCode}
                   maxLength={40}
+                  aria-invalid={Boolean(codeError)}
+                  className={codeError ? "border-destructive" : undefined}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, batchCode: event.target.value }))
                   }
@@ -320,13 +322,22 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
                     id="batch-code"
                     value={generatedCode}
                     readOnly
+                    aria-invalid={Boolean(codeError)}
+                    className={codeError ? "border-destructive" : undefined}
                     placeholder="BO1P-280826"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Generated from species, sequence and start date.
-                  </p>
+                  {codeError ? null : (
+                    <p className="text-xs text-muted-foreground">
+                      Generated from species, sequence and start date.
+                    </p>
+                  )}
                 </>
               )}
+              {codeError ? (
+                <p role="alert" className="text-xs font-medium text-destructive">
+                  {codeError}
+                </p>
+              ) : null}
             </div>
           </div>
 
