@@ -104,6 +104,7 @@ type ItemForm = {
   status: string;
   vendor: string;
   threshold: string;
+  openingStock: string;
   notes: string;
   wastage: string;
   wastageNotes: string;
@@ -115,6 +116,7 @@ const EMPTY_ITEM: ItemForm = {
   status: "in_stock",
   vendor: "",
   threshold: "",
+  openingStock: "",
   notes: "",
   wastage: "",
   wastageNotes: "",
@@ -291,6 +293,7 @@ function InventoryPage() {
       vendor: (row as { vendor?: string | null }).vendor ?? "",
 
       threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
+      openingStock: "",
       notes: row.notes ?? "",
       wastage: "",
       wastageNotes: "",
@@ -565,6 +568,9 @@ function InventoryPage() {
       const wastage = itemForm.wastage.trim() ? Number(itemForm.wastage) : 0;
       if (itemForm.wastage.trim() && (!Number.isFinite(wastage) || wastage <= 0))
         throw new Error("Enter a valid wastage quantity");
+      const opening = itemForm.openingStock.trim() ? Number(itemForm.openingStock) : 0;
+      if (itemForm.openingStock.trim() && (!Number.isFinite(opening) || opening <= 0))
+        throw new Error("Enter a valid opening weight");
 
       if (editingItemId) {
         const { error } = await supabase
@@ -584,10 +590,28 @@ function InventoryPage() {
         }
         return;
       }
-      const { error } = await supabase
+      const { data: inserted, error } = await supabase
         .from("inventory_items")
-        .insert({ org_id: orgId, ...payload });
+        .insert({ org_id: orgId, ...payload })
+        .select("id")
+        .single();
       if (error) throw error;
+      if (opening > 0 && inserted?.id) {
+        const stock = await supabase.from("costs").insert({
+          org_id: orgId,
+          category: payload.category,
+          vendor: payload.vendor,
+          status: "received",
+          description: `${name} — opening stock ${opening} ${payload.unit}`,
+          amount: 0,
+          cost_type: "one_time",
+          incurred_date: todayISO(),
+          inventory_item_id: inserted.id,
+          quantity_purchased: opening,
+          notes: "Opening stock",
+        });
+        if (stock.error) throw stock.error;
+      }
     },
     onSuccess: () => {
       toast.success(editingItemId ? "Item updated" : "Item added");
@@ -807,6 +831,21 @@ function InventoryPage() {
                   placeholder="25"
                 />
               </div>
+              {!editingItemId ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="item-opening">Opening weight ({itemForm.unit}) — optional</Label>
+                  <Input
+                    id="item-opening"
+                    inputMode="decimal"
+                    value={itemForm.openingStock}
+                    onChange={(event) => setItem("openingStock", event.target.value)}
+                    placeholder="50"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Stock already on hand — recorded as a zero-cost received entry.
+                  </p>
+                </div>
+              ) : null}
               <div className="space-y-1.5">
                 <Label htmlFor="item-vendor">Vendor (optional)</Label>
                 <Input
@@ -1017,7 +1056,7 @@ function InventoryPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="purchase-qty">Quantity</Label>
+                <Label htmlFor="purchase-qty">Weight / quantity ({purchaseForm.unit})</Label>
                 <Input
                   id="purchase-qty"
                   inputMode="decimal"
