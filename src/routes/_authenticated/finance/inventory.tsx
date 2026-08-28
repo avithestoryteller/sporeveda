@@ -106,11 +106,8 @@ type ItemForm = {
   status: string;
   vendor: string;
   threshold: string;
-  openingStock: string;
+  totalQty: string;
   notes: string;
-  wastage: string;
-  wastageNotes: string;
-  addStock: string;
 };
 const EMPTY_ITEM: ItemForm = {
   name: "",
@@ -119,12 +116,10 @@ const EMPTY_ITEM: ItemForm = {
   status: "in_stock",
   vendor: "",
   threshold: "",
-  openingStock: "",
+  totalQty: "",
   notes: "",
-  wastage: "",
-  wastageNotes: "",
-  addStock: "",
 };
+
 
 
 type PurchaseForm = {
@@ -320,11 +315,13 @@ function InventoryPage() {
       vendor: (row as { vendor?: string | null }).vendor ?? "",
 
       threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
-      openingStock: "",
+      totalQty: String(
+        toNumber(
+          stockRows.find((stockRow) => stockRow.inventory_item_id === id)?.total_purchased_qty,
+        ) ?? 0,
+      ),
       notes: row.notes ?? "",
-      wastage: "",
-      wastageNotes: "",
-      addStock: "",
+
     });
     setEditingItemId(id);
     setOpenForm("item");
@@ -525,14 +522,27 @@ function InventoryPage() {
 
   const stockValue = stockRows.reduce((sum, row) => sum + row.remainingValue, 0);
 
+  /** Usage totals for the item currently being edited. */
+  const editingItemUsage = useMemo(() => {
+    const row = editingItemId
+      ? stockRows.find((item) => item.inventory_item_id === editingItemId)
+      : undefined;
+    const used = (toNumber(row?.total_used_qty) ?? 0) + (row?.derivedUsed ?? 0);
+    return { used, purchased: toNumber(row?.total_purchased_qty) ?? 0 };
+  }, [editingItemId, stockRows]);
+
   /** Items whose stock is fully consumed drop out of the tiles and into the depleted log. */
   const depletedRows = useMemo(
     () =>
       stockRows.filter(
-        (row) => (toNumber(row.total_purchased_qty) ?? 0) > 0 && row.remaining <= 0.0001,
+        (row) =>
+          row.remaining <= 0.0001 &&
+          ((toNumber(row.total_purchased_qty) ?? 0) > 0 ||
+            (row as { status?: string | null }).status === "depleted"),
       ),
     [stockRows],
   );
+
   const activeStockRows = useMemo(
     () => stockRows.filter((row) => !depletedRows.includes(row)),
     [stockRows, depletedRows],
@@ -631,47 +641,39 @@ function InventoryPage() {
         reorder_threshold: threshold !== null && Number.isFinite(threshold) ? threshold : null,
         notes: itemForm.notes.trim() || null,
       };
-      const wastage = itemForm.wastage.trim() ? Number(itemForm.wastage) : 0;
-      if (itemForm.wastage.trim() && (!Number.isFinite(wastage) || wastage <= 0))
-        throw new Error("Enter a valid wastage quantity");
-      const opening = itemForm.openingStock.trim() ? Number(itemForm.openingStock) : 0;
-      if (itemForm.openingStock.trim() && (!Number.isFinite(opening) || opening <= 0))
-        throw new Error("Enter a valid opening weight");
-      const addStock = itemForm.addStock.trim() ? Number(itemForm.addStock) : 0;
-      if (itemForm.addStock.trim() && (!Number.isFinite(addStock) || addStock <= 0))
-        throw new Error("Enter a valid weight to add");
+      const totalRaw = itemForm.totalQty.trim();
+      const total = totalRaw ? Number(totalRaw) : 0;
+      if (totalRaw && (!Number.isFinite(total) || total < 0))
+        throw new Error("Enter a valid total weight / quantity");
 
       if (editingItemId) {
+        const current = stockRows.find((row) => row.inventory_item_id === editingItemId);
+        const purchased = toNumber(current?.total_purchased_qty) ?? 0;
+        const used =
+          (toNumber(current?.total_used_qty) ?? 0) + (current?.derivedUsed ?? 0);
+        const diff = total - purchased;
+        const finalStatus =
+          total <= used + 0.0001 && (total > 0 || used > 0) ? "depleted" : payload.status;
         const { error } = await supabase
           .from("inventory_items")
-          .update(payload)
+          .update({ ...payload, status: finalStatus })
           .eq("id", editingItemId);
         if (error) throw error;
-        if (addStock > 0) {
-          const stock = await supabase.from("costs").insert({
+        if (Math.abs(diff) > 0.0001) {
+          const adjust = await supabase.from("costs").insert({
             org_id: orgId,
             category: payload.category,
             vendor: payload.vendor,
             status: "received",
-            description: `${name} — stock added ${addStock} ${payload.unit}`,
+            description: `${name} — total adjusted to ${total} ${payload.unit}`,
             amount: 0,
             cost_type: "one_time",
             incurred_date: todayISO(),
             inventory_item_id: editingItemId,
-            quantity_purchased: addStock,
-            notes: "Manual stock addition",
+            quantity_purchased: diff,
+            notes: "Stock total adjustment",
           });
-          if (stock.error) throw stock.error;
-        }
-        if (wastage > 0) {
-          const usage = await supabase.from("inventory_usage").insert({
-            org_id: orgId,
-            inventory_item_id: editingItemId,
-            quantity_used: wastage,
-            used_date: todayISO(),
-            notes: `Wastage${itemForm.wastageNotes.trim() ? ` — ${itemForm.wastageNotes.trim()}` : ""}`,
-          });
-          if (usage.error) throw usage.error;
+          if (adjust.error) throw adjust.error;
         }
         return;
       }
@@ -681,22 +683,23 @@ function InventoryPage() {
         .select("id")
         .single();
       if (error) throw error;
-      if (opening > 0 && inserted?.id) {
+      if (total > 0 && inserted?.id) {
         const stock = await supabase.from("costs").insert({
           org_id: orgId,
           category: payload.category,
           vendor: payload.vendor,
           status: "received",
-          description: `${name} — opening stock ${opening} ${payload.unit}`,
+          description: `${name} — opening stock ${total} ${payload.unit}`,
           amount: 0,
           cost_type: "one_time",
           incurred_date: todayISO(),
           inventory_item_id: inserted.id,
-          quantity_purchased: opening,
+          quantity_purchased: total,
           notes: "Opening stock",
         });
         if (stock.error) throw stock.error;
       }
+
     },
     onSuccess: () => {
       toast.success(editingItemId ? "Item updated" : "Item added");
@@ -916,21 +919,21 @@ function InventoryPage() {
                   placeholder="25"
                 />
               </div>
-              {!editingItemId ? (
-                <div className="space-y-1.5">
-                  <Label htmlFor="item-opening">Opening weight ({itemForm.unit}) — optional</Label>
-                  <Input
-                    id="item-opening"
-                    inputMode="decimal"
-                    value={itemForm.openingStock}
-                    onChange={(event) => setItem("openingStock", event.target.value)}
-                    placeholder="50"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Stock already on hand — recorded as a zero-cost received entry.
-                  </p>
-                </div>
-              ) : null}
+              <div className="space-y-1.5">
+                <Label htmlFor="item-total">Total weight / quantity ({itemForm.unit})</Label>
+                <Input
+                  id="item-total"
+                  inputMode="decimal"
+                  value={itemForm.totalQty}
+                  onChange={(event) => setItem("totalQty", event.target.value)}
+                  placeholder="50"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Everything ever brought in for this item. Used amounts are deducted from this
+                  total.
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="item-vendor">Vendor (optional)</Label>
                 <Input
@@ -952,44 +955,25 @@ function InventoryPage() {
                 />
               </div>
               {editingItemId ? (
-                <div className="grid gap-4 rounded-lg border border-dashed border-border p-3 sm:col-span-2 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-addstock">Add weight ({itemForm.unit})</Label>
-                    <Input
-                      id="item-addstock"
-                      inputMode="decimal"
-                      value={itemForm.addStock}
-                      onChange={(event) => setItem("addStock", event.target.value)}
-                      placeholder="0"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Extra stock on hand — added as a zero-cost received entry.
-                    </p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-wastage">Add wastage ({itemForm.unit})</Label>
-                    <Input
-                      id="item-wastage"
-                      inputMode="decimal"
-                      value={itemForm.wastage}
-                      onChange={(event) => setItem("wastage", event.target.value)}
-                      placeholder="0"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Spoiled or discarded stock — subtracted from stock on hand.
-                    </p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-wastage-notes">Wastage reason</Label>
-                    <Input
-                      id="item-wastage-notes"
-                      value={itemForm.wastageNotes}
-                      onChange={(event) => setItem("wastageNotes", event.target.value)}
-                      placeholder="Contaminated spawn bag"
-                    />
-                  </div>
+                <div className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground sm:col-span-2">
+                  Used so far:{" "}
+                  <span className="font-medium text-foreground">
+                    {editingItemUsage.used.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                    {itemForm.unit}
+                  </span>{" "}
+                  · Remaining after this total:{" "}
+                  <span className="font-medium text-foreground">
+                    {Math.max(
+                      (Number(itemForm.totalQty) || 0) - editingItemUsage.used,
+                      0,
+                    ).toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                    {itemForm.unit}
+                  </span>
+                  . If the total equals or drops below the used amount, the item is marked
+                  depleted and moves to the log.
                 </div>
               ) : null}
+
               <div className="flex gap-2 sm:col-span-2">
                 <Button type="submit" disabled={addItem.isPending}>
                   {addItem.isPending ? "Saving…" : editingItemId ? "Save changes" : "Add item"}
