@@ -952,44 +952,25 @@ function InventoryPage() {
                 />
               </div>
               {editingItemId ? (
-                <div className="grid gap-4 rounded-lg border border-dashed border-border p-3 sm:col-span-2 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-addstock">Add weight ({itemForm.unit})</Label>
-                    <Input
-                      id="item-addstock"
-                      inputMode="decimal"
-                      value={itemForm.addStock}
-                      onChange={(event) => setItem("addStock", event.target.value)}
-                      placeholder="0"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Extra stock on hand — added as a zero-cost received entry.
-                    </p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-wastage">Add wastage ({itemForm.unit})</Label>
-                    <Input
-                      id="item-wastage"
-                      inputMode="decimal"
-                      value={itemForm.wastage}
-                      onChange={(event) => setItem("wastage", event.target.value)}
-                      placeholder="0"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Spoiled or discarded stock — subtracted from stock on hand.
-                    </p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-wastage-notes">Wastage reason</Label>
-                    <Input
-                      id="item-wastage-notes"
-                      value={itemForm.wastageNotes}
-                      onChange={(event) => setItem("wastageNotes", event.target.value)}
-                      placeholder="Contaminated spawn bag"
-                    />
-                  </div>
+                <div className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground sm:col-span-2">
+                  Used so far:{" "}
+                  <span className="font-medium text-foreground">
+                    {editingItemUsage.used.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                    {itemForm.unit}
+                  </span>{" "}
+                  · Remaining after this total:{" "}
+                  <span className="font-medium text-foreground">
+                    {Math.max(
+                      (Number(itemForm.totalQty) || 0) - editingItemUsage.used,
+                      0,
+                    ).toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
+                    {itemForm.unit}
+                  </span>
+                  . If the total equals or drops below the used amount, the item is marked
+                  depleted and moves to the log.
                 </div>
               ) : null}
+
               <div className="flex gap-2 sm:col-span-2">
                 <Button type="submit" disabled={addItem.isPending}>
                   {addItem.isPending ? "Saving…" : editingItemId ? "Save changes" : "Add item"}
