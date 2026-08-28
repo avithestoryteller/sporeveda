@@ -504,13 +504,22 @@ function InventoryPage() {
   const stockRows = useMemo(
     () =>
       (stock ?? []).map((row) => {
-        const derived = row.inventory_item_id ? (derivedUsage[row.inventory_item_id] ?? 0) : 0;
+        const detail = row.inventory_item_id ? derivedUsage[row.inventory_item_id] : undefined;
+        const derived = detail?.qty ?? 0;
+        const derivedBags = detail?.bags ?? 0;
         const purchased = toNumber(row.total_purchased_qty) ?? 0;
         const logged = toNumber(row.total_used_qty) ?? 0;
         const avgCost = toNumber(row.avg_unit_cost) ?? 0;
         const remaining = Math.max(purchased - logged - derived, 0);
-        return { ...row, derivedUsed: derived, remaining, remainingValue: remaining * avgCost };
+        return {
+          ...row,
+          derivedUsed: derived,
+          derivedBags,
+          remaining,
+          remainingValue: remaining * avgCost,
+        };
       }),
+
     [stock, derivedUsage],
   );
 
