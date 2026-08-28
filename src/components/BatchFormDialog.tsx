@@ -56,7 +56,19 @@ export type BatchFormValues = {
   inoculation_date?: string | null;
   target_avg_temp_c?: number | null;
   target_avg_humidity_pct?: number | null;
+  substrate_type?: string | null;
+  substrate_vendor?: string | null;
+  spawn_vendor?: string | null;
 };
+
+const SUBSTRATE_SUGGESTIONS = [
+  "Paddy Straw",
+  "Rubber Wood",
+  "Sawdust",
+  "Wheat Straw",
+  "Coco Coir",
+  "Sugarcane Bagasse",
+];
 
 function useFormOptions() {
   return useQuery({
@@ -94,6 +106,9 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
     targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
     targetHumidity:
       batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
+    substrateType: batch?.substrate_type ?? "",
+    substrateVendor: batch?.substrate_vendor ?? "",
+    spawnVendor: batch?.spawn_vendor ?? "",
   });
   const [bagRows, setBagRows] = useState<BagRow[]>([]);
 
@@ -109,6 +124,9 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
       targetHumidity:
         batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
+      substrateType: batch?.substrate_type ?? "",
+      substrateVendor: batch?.substrate_vendor ?? "",
+      spawnVendor: batch?.spawn_vendor ?? "",
     });
     setBagRows(batch ? [] : [defaultBagRow()]);
   }, [open, batch]);
