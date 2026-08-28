@@ -53,6 +53,7 @@ export type BatchFormValues = {
   batch_code: string;
   species_id: string;
   farm_id: string;
+  inoculation_date?: string | null;
   target_avg_temp_c?: number | null;
   target_avg_humidity_pct?: number | null;
 };
