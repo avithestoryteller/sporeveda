@@ -95,7 +95,7 @@ export function NotificationsBell() {
                 )}
                 onClick={() => {
                   if (!row.read_at) markRead.mutate([row.id]);
-                  if (row.link) navigate({ to: row.link });
+                  if (row.link) navigate({ to: row.link as never });
                 }}
               >
                 <p className="text-sm font-medium">{row.title}</p>
