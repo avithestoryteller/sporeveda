@@ -192,6 +192,8 @@ export type Database = {
           org_id: string
           species_id: string
           substrate_type: string | null
+          target_avg_humidity_pct: number | null
+          target_avg_temp_c: number | null
         }
         Insert: {
           batch_code: string
@@ -204,6 +206,8 @@ export type Database = {
           org_id: string
           species_id: string
           substrate_type?: string | null
+          target_avg_humidity_pct?: number | null
+          target_avg_temp_c?: number | null
         }
         Update: {
           batch_code?: string
@@ -216,6 +220,8 @@ export type Database = {
           org_id?: string
           species_id?: string
           substrate_type?: string | null
+          target_avg_humidity_pct?: number | null
+          target_avg_temp_c?: number | null
         }
         Relationships: [
           {

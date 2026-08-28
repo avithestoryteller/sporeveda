@@ -53,6 +53,8 @@ export type BatchFormValues = {
   batch_code: string;
   species_id: string;
   farm_id: string;
+  target_avg_temp_c?: number | null;
+  target_avg_humidity_pct?: number | null;
 };
 
 function useFormOptions() {
@@ -86,6 +88,9 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
     newSpecies: "",
     batchCode: batch?.batch_code ?? "",
     startDate: todayISO(),
+    targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
+    targetHumidity:
+      batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
   });
   const [bagRows, setBagRows] = useState<BagRow[]>([]);
 
@@ -97,6 +102,9 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       newSpecies: "",
       batchCode: batch?.batch_code ?? "",
       startDate: todayISO(),
+      targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
+      targetHumidity:
+        batch?.target_avg_humidity_pct != null ? String(batch.target_avg_humidity_pct) : "",
     });
     setBagRows(batch ? [] : [defaultBagRow()]);
   }, [open, batch]);
@@ -143,10 +151,16 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       const code = isEdit ? form.batchCode.trim() : generatedCode;
       if (code.length < 2) throw new Error("Pick a species and start date to generate the batch code");
 
+      const num = (value: string) => (value.trim() ? Number(value) : null);
+      const targets = {
+        target_avg_temp_c: num(form.targetTemp),
+        target_avg_humidity_pct: num(form.targetHumidity),
+      };
+
       if (isEdit && batch) {
         const { error } = await supabase
           .from("batches")
-          .update({ batch_code: code, species_id: speciesId, farm_id: form.farmId })
+          .update({ batch_code: code, species_id: speciesId, farm_id: form.farmId, ...targets })
           .eq("id", batch.id);
         if (error) throw error;
         return batch.id;
@@ -166,6 +180,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           batch_code: code,
           inoculation_date: firstDate || todayISO(),
           dry_substrate_weight_kg: totalDry > 0 ? totalDry : null,
+          ...targets,
         })
         .select("id")
         .single();
@@ -323,6 +338,42 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
               </SelectContent>
             </Select>
           </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="batch-target-temp">Target avg temperature (°C)</Label>
+              <Input
+                id="batch-target-temp"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                min={0}
+                max={60}
+                placeholder="e.g. 24.5"
+                value={form.targetTemp}
+                onChange={(event) => setForm((prev) => ({ ...prev, targetTemp: event.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="batch-target-humidity">Target avg humidity (%RH)</Label>
+              <Input
+                id="batch-target-humidity"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                min={0}
+                max={100}
+                placeholder="e.g. 85"
+                value={form.targetHumidity}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, targetHumidity: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Optional — leave blank if this batch has no specific climate target.
+          </p>
 
           {!isEdit ? (
             <div className="space-y-2">
