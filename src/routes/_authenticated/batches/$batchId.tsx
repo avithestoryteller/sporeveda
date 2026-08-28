@@ -214,25 +214,45 @@ function BatchDetailPage() {
         {bags.map((bag) => {
           const wet = harvestByBag.get(bag.id) ?? 0;
           return (
-            <Link
+            <div
               key={bag.id}
-              to="/bags/$bagId"
-              params={{ bagId: bag.id }}
-              className="rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary"
+              className="relative rounded-lg border border-border bg-card transition-colors hover:border-primary"
             >
-              <div className="flex items-start justify-between gap-2">
-                <p className="truncate text-sm font-medium">{bag.bag_code}</p>
-                {contaminatedBagIds.has(bag.id) ? (
-                  <span className="size-2 shrink-0 rounded-full bg-destructive" />
-                ) : null}
-              </div>
-              <div className="mt-2">
-                <StageBadge stage={bag.current_stage as BagStage} size="sm" />
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {wet > 0 ? `${(wet / 1000).toFixed(2)} kg harvested` : "No harvest yet"}
-              </p>
-            </Link>
+              <Link to="/bags/$bagId" params={{ bagId: bag.id }} className="block p-3">
+                <div className="flex items-start justify-between gap-2 pr-7">
+                  <p className="truncate text-sm font-medium">{bag.bag_code}</p>
+                  {contaminatedBagIds.has(bag.id) ? (
+                    <span className="size-2 shrink-0 rounded-full bg-destructive" />
+                  ) : null}
+                </div>
+                <div className="mt-2">
+                  <StageBadge stage={bag.current_stage as BagStage} size="sm" />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {wet > 0 ? `${(wet / 1000).toFixed(2)} kg harvested` : "No harvest yet"}
+                </p>
+              </Link>
+              {canEdit ? (
+                <div className="absolute right-1.5 top-1.5">
+                  <BagFormDialog
+                    orgId={orgId}
+                    batchId={batch.id}
+                    batchCode={batch.batch_code}
+                    farmId={batch.farm_id}
+                    speciesId={batch.species_id}
+                    nextBagNumber={bag.bag_number}
+                    bag={{
+                      id: bag.id,
+                      bag_number: bag.bag_number,
+                      net_weight_kg: bag.net_weight_kg,
+                      dry_weight_kg: bag.dry_weight_kg,
+                      spawn_weight_kg: bag.spawn_weight_kg,
+                      notes: bag.notes,
+                    }}
+                  />
+                </div>
+              ) : null}
+            </div>
           );
         })}
       </div>
