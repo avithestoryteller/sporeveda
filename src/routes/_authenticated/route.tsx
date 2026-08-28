@@ -9,6 +9,12 @@ import { OrgProvider, useOrgMembershipsQuery } from "@/hooks/use-org";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
+    // Read the locally cached session first: getUser() hits the auth server on
+    // every navigation, which added a network round-trip before each screen.
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (session?.user) return { user: session.user };
+
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
     return { user: data.user };
