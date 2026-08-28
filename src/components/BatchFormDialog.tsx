@@ -24,6 +24,28 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { todayISO } from "@/lib/format";
+import { BagRowsEditor, makeBagRow, type BagRow } from "@/components/BagRowsEditor";
+import {
+  DEFAULT_SPAWN_PER_BAG_KG,
+  DEFAULT_SUBSTRATE_PER_BAG_KG,
+  SPAWN_PER_BAG_STORAGE_KEY,
+  SUBSTRATE_PER_BAG_STORAGE_KEY,
+} from "@/lib/materials";
+
+function storedRate(key: string, fallback: number) {
+  if (typeof window === "undefined") return fallback;
+  const raw = window.localStorage.getItem(key);
+  const value = raw ? Number(raw) : NaN;
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function defaultBagRow() {
+  return makeBagRow({
+    dryWeight: String(storedRate(SUBSTRATE_PER_BAG_STORAGE_KEY, DEFAULT_SUBSTRATE_PER_BAG_KG)),
+    spawnWeight: String(storedRate(SPAWN_PER_BAG_STORAGE_KEY, DEFAULT_SPAWN_PER_BAG_KG)),
+    inoculationDate: todayISO(),
+  });
+}
 
 export type BatchFormValues = {
   id: string;
