@@ -924,6 +924,19 @@ function InventoryPage() {
               {editingItemId ? (
                 <div className="grid gap-4 rounded-lg border border-dashed border-border p-3 sm:col-span-2 sm:grid-cols-2">
                   <div className="space-y-1.5">
+                    <Label htmlFor="item-addstock">Add weight ({itemForm.unit})</Label>
+                    <Input
+                      id="item-addstock"
+                      inputMode="decimal"
+                      value={itemForm.addStock}
+                      onChange={(event) => setItem("addStock", event.target.value)}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Extra stock on hand — added as a zero-cost received entry.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
                     <Label htmlFor="item-wastage">Add wastage ({itemForm.unit})</Label>
                     <Input
                       id="item-wastage"
