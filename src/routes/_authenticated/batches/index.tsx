@@ -56,6 +56,10 @@ function useBatches() {
             batch,
             bagCount: batchBags.length,
             discarded: batchBags.filter((bag) => bag.current_stage === "discarded").length,
+            stages: STAGE_ORDER.map((stage) => ({
+              stage,
+              count: batchBags.filter((bag) => bag.current_stage === stage).length,
+            })).filter((entry) => entry.count > 0),
           };
         }),
         funnel,
@@ -110,6 +114,36 @@ function StageFunnel({
   );
 }
 
+function BatchStageBar({
+  stages,
+  bagCount,
+}: {
+  stages: { stage: string; count: number }[];
+  bagCount: number;
+}) {
+  if (bagCount === 0) return null;
+  return (
+    <div
+      className="mt-2 flex h-3 w-full overflow-hidden rounded-full bg-muted"
+      role="img"
+      aria-label={`Bags by stage: ${stages
+        .map((s) => `${STAGE_LABEL[s.stage as BagStage] ?? s.stage} ${s.count}`)
+        .join(", ")}`}
+    >
+      {stages.map(({ stage, count }) => (
+        <div
+          key={stage}
+          className="h-full transition-all"
+          title={`${STAGE_LABEL[stage as BagStage] ?? stage}: ${count} bag${count === 1 ? "" : "s"}`}
+          style={{
+            width: `${(count / bagCount) * 100}%`,
+            background: STAGE_COLOR[stage as BagStage] ?? "var(--muted-foreground)",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 function BatchesPage() {
   const orgId = useOrgId();
@@ -144,14 +178,15 @@ function BatchesPage() {
         <Card>
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
-              {data.rows.map(({ batch, bagCount, discarded }) => (
+              {data.rows.map(({ batch, bagCount, discarded, stages }) => (
 
                 <li key={batch.id}>
                   <Link
                     to="/batches/$batchId"
                     params={{ batchId: batch.id }}
-                    className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/60"
+                    className="block px-4 py-3.5 transition-colors hover:bg-muted/60"
                   >
+                    <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{batch.batch_code}</p>
                       <p className="truncate text-xs text-muted-foreground">
@@ -166,6 +201,8 @@ function BatchesPage() {
                         {fmtDate(batch.inoculation_date)}
                       </p>
                     </div>
+                    </div>
+                    <BatchStageBar stages={stages} bagCount={bagCount} />
                   </Link>
                 </li>
               ))}
