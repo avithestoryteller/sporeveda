@@ -89,6 +89,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
     speciesId: batch?.species_id ?? "",
     newSpecies: "",
     batchCode: batch?.batch_code ?? "",
+    batchNumber: "",
     startDate: batch?.inoculation_date ?? todayISO(),
     targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
     targetHumidity:
@@ -103,6 +104,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       speciesId: batch?.species_id ?? "",
       newSpecies: "",
       batchCode: batch?.batch_code ?? "",
+      batchNumber: "",
       startDate: batch?.inoculation_date ?? todayISO(),
       targetTemp: batch?.target_avg_temp_c != null ? String(batch.target_avg_temp_c) : "",
       targetHumidity:
