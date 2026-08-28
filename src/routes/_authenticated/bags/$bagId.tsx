@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Ban } from "lucide-react";
+import { ArrowLeft, ArrowRight, Ban } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
@@ -247,7 +247,21 @@ function BagDetailPage() {
             )}
           </>
         }
-        action={<StageBadge stage={stage} />}
+        action={
+          <div className="flex items-center gap-2">
+            {bag.batches ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link
+                  to="/batches/$batchId"
+                  params={{ batchId: bag.batches.id }}
+                >
+                  <ArrowLeft className="size-4" /> Back to batch
+                </Link>
+              </Button>
+            ) : null}
+            <StageBadge stage={stage} />
+          </div>
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
