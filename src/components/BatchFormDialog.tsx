@@ -65,13 +65,14 @@ function useFormOptions() {
       const [farms, species, batches] = await Promise.all([
         supabase.from("farms").select("id, name").eq("is_active", true).order("name"),
         supabase.from("species").select("id, common_name").order("common_name"),
-        supabase.from("batches").select("batch_code"),
+        supabase.from("batches").select("id, batch_code, farm_id"),
       ]);
       const error = farms.error ?? species.error ?? batches.error;
       if (error) throw error;
       return {
         farms: farms.data ?? [],
         species: species.data ?? [],
+        batches: batches.data ?? [],
         codes: (batches.data ?? []).map((row) => row.batch_code),
       };
     },
@@ -133,6 +134,23 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
         )
       : "";
 
+  const activeCode = (isEdit ? form.batchCode : generatedCode).trim();
+  const conflictingBatch =
+    activeCode && form.farmId
+      ? (options.data?.batches ?? []).find(
+          (row) =>
+            row.id !== batch?.id &&
+            row.farm_id === form.farmId &&
+            row.batch_code.trim().toLowerCase() === activeCode.toLowerCase(),
+        )
+      : undefined;
+  const farmName =
+    (options.data?.farms ?? []).find((farm) => farm.id === form.farmId)?.name ?? "this room";
+  const codeError = conflictingBatch
+    ? `Batch code ${activeCode} is already used by another batch in ${farmName}. Change the start date, species or code.`
+    : "";
+
+
   const mutation = useMutation({
     mutationFn: async () => {
       let speciesId = form.speciesId;
@@ -151,6 +169,18 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       if (!form.farmId) throw new Error("Pick a room");
       const code = isEdit ? form.batchCode.trim() : generatedCode;
       if (code.length < 2) throw new Error("Pick a species and start date to generate the batch code");
+
+      // Re-check against live data so a batch created elsewhere still blocks a duplicate.
+      const duplicate = await supabase
+        .from("batches")
+        .select("id")
+        .eq("farm_id", form.farmId)
+        .eq("batch_code", code)
+        .limit(1);
+      if (duplicate.error) throw duplicate.error;
+      if ((duplicate.data ?? []).some((row) => row.id !== batch?.id)) {
+        throw new Error(`Batch code ${code} already exists in ${farmName}. Adjust the details and try again.`);
+      }
 
       const num = (value: string) => (value.trim() ? Number(value) : null);
       const targets = {
@@ -279,6 +309,8 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
                   id="batch-code"
                   value={form.batchCode}
                   maxLength={40}
+                  aria-invalid={Boolean(codeError)}
+                  className={codeError ? "border-destructive" : undefined}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, batchCode: event.target.value }))
                   }
@@ -290,13 +322,22 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
                     id="batch-code"
                     value={generatedCode}
                     readOnly
+                    aria-invalid={Boolean(codeError)}
+                    className={codeError ? "border-destructive" : undefined}
                     placeholder="BO1P-280826"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Generated from species, sequence and start date.
-                  </p>
+                  {codeError ? null : (
+                    <p className="text-xs text-muted-foreground">
+                      Generated from species, sequence and start date.
+                    </p>
+                  )}
                 </>
               )}
+              {codeError ? (
+                <p role="alert" className="text-xs font-medium text-destructive">
+                  {codeError}
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -399,7 +440,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           ) : null}
 
           <DialogFooter>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" disabled={mutation.isPending || Boolean(codeError)}>
               {mutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Create batch"}
             </Button>
           </DialogFooter>
