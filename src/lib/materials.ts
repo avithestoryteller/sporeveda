@@ -51,27 +51,137 @@ export async function ensureInventoryItem(params: {
   name: string;
   category: string;
   unit?: string;
+  vendor?: string | null;
 }): Promise<string> {
   const unit = params.unit ?? "kg";
   const existing = await supabase
     .from("inventory_items")
-    .select("id")
+    .select("id, vendor")
     .eq("org_id", params.orgId)
     .eq("category", params.category)
     .eq("name", params.name)
     .limit(1)
     .maybeSingle();
   if (existing.error) throw existing.error;
-  if (existing.data?.id) return existing.data.id;
+  if (existing.data?.id) {
+    // Backfill the vendor on items that never had one.
+    if (params.vendor && !existing.data.vendor) {
+      await supabase
+        .from("inventory_items")
+        .update({ vendor: params.vendor })
+        .eq("id", existing.data.id);
+    }
+    return existing.data.id;
+  }
 
   const created = await supabase
     .from("inventory_items")
-    .insert({ org_id: params.orgId, name: params.name, category: params.category, unit })
+    .insert({
+      org_id: params.orgId,
+      name: params.name,
+      category: params.category,
+      unit,
+      vendor: params.vendor ?? null,
+    })
     .select("id")
     .single();
   if (created.error) throw created.error;
   return created.data.id;
 }
+
+/** Quantity of an inventory item currently on hand, counting received purchases only. */
+export async function availableStock(itemId: string): Promise<number> {
+  const [purchases, usage] = await Promise.all([
+    supabase
+      .from("costs")
+      .select("quantity_purchased, status")
+      .eq("inventory_item_id", itemId),
+    supabase.from("inventory_usage").select("quantity_used").eq("inventory_item_id", itemId),
+  ]);
+  if (purchases.error) throw purchases.error;
+  if (usage.error) throw usage.error;
+  const bought = (purchases.data ?? [])
+    .filter((row) => (row.status ?? "received") === "received")
+    .reduce((sum, row) => sum + (Number(row.quantity_purchased) || 0), 0);
+  const used = (usage.data ?? []).reduce((sum, row) => sum + (Number(row.quantity_used) || 0), 0);
+  return bought - used;
+}
+
+export type MaterialCheck = {
+  category: MaterialCategory;
+  name: string;
+  itemId: string;
+  available: number;
+  required: number;
+  createdPurchase: boolean;
+};
+
+/**
+ * Links a batch's substrate/spawn to inventory. When the named material has no
+ * inventory item or no stock on hand, a draft purchase is created (status
+ * `ordered`, zero amount) so the shortfall is visible and editable.
+ */
+export async function reconcileMaterialForBatch(params: {
+  orgId: string;
+  category: MaterialCategory;
+  name: string;
+  vendor?: string | null;
+  batchId: string;
+  batchCode: string;
+  farmId: string | null;
+  requiredQty: number;
+}): Promise<MaterialCheck | null> {
+  const name = params.name.trim();
+  if (name.length < 2) return null;
+  const vendor = params.vendor?.trim() || null;
+
+  const itemId = await ensureInventoryItem({
+    orgId: params.orgId,
+    name,
+    category: params.category,
+    unit: "kg",
+    vendor,
+  });
+  const available = await availableStock(itemId);
+  if (available > 0) {
+    return {
+      category: params.category,
+      name,
+      itemId,
+      available,
+      required: params.requiredQty,
+      createdPurchase: false,
+    };
+  }
+
+  const qty = params.requiredQty > 0 ? Number(params.requiredQty.toFixed(3)) : 0;
+  const { error } = await supabase.from("costs").insert({
+    org_id: params.orgId,
+    category: params.category,
+    vendor,
+    status: "ordered",
+    description: `${name} for batch ${params.batchCode}${vendor ? ` — ${vendor}` : ""}`,
+    amount: 0,
+    cost_type: "one_time",
+    incurred_date: new Date().toISOString().slice(0, 10),
+    inventory_item_id: itemId,
+    quantity_purchased: qty,
+    farm_id: params.farmId,
+    batch_id: params.batchId,
+    notes: "Auto-created from a new batch — add the vendor, quantity and amount.",
+  });
+  if (error) throw error;
+
+  return {
+    category: params.category,
+    name,
+    itemId,
+    available,
+    required: params.requiredQty,
+    createdPurchase: true,
+  };
+}
+
 
 type LinkRow = {
   inventory_item_id: string | null;
