@@ -877,7 +877,7 @@ function InventoryPage() {
     <div>
       <PageHeader
         title="Inventory"
-        subtitle="Stock on hand, weighted average unit cost and every purchase you log."
+        subtitle="Stock on hand, items on order or awaiting replacement, and every purchase you log."
         action={
           canEdit ? (
             <div className="flex gap-2">
