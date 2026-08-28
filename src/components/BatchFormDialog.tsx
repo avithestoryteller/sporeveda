@@ -24,6 +24,28 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { todayISO } from "@/lib/format";
+import { BagRowsEditor, makeBagRow, type BagRow } from "@/components/BagRowsEditor";
+import {
+  DEFAULT_SPAWN_PER_BAG_KG,
+  DEFAULT_SUBSTRATE_PER_BAG_KG,
+  SPAWN_PER_BAG_STORAGE_KEY,
+  SUBSTRATE_PER_BAG_STORAGE_KEY,
+} from "@/lib/materials";
+
+function storedRate(key: string, fallback: number) {
+  if (typeof window === "undefined") return fallback;
+  const raw = window.localStorage.getItem(key);
+  const value = raw ? Number(raw) : NaN;
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function defaultBagRow() {
+  return makeBagRow({
+    dryWeight: String(storedRate(SUBSTRATE_PER_BAG_STORAGE_KEY, DEFAULT_SUBSTRATE_PER_BAG_KG)),
+    spawnWeight: String(storedRate(SPAWN_PER_BAG_STORAGE_KEY, DEFAULT_SPAWN_PER_BAG_KG)),
+    inoculationDate: todayISO(),
+  });
+}
 
 export type BatchFormValues = {
   id: string;
@@ -58,6 +80,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
     newSpecies: "",
     batchCode: batch?.batch_code ?? "",
   });
+  const [bagRows, setBagRows] = useState<BagRow[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -67,6 +90,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       newSpecies: "",
       batchCode: batch?.batch_code ?? "",
     });
+    setBagRows(batch ? [] : [defaultBagRow()]);
   }, [open, batch]);
 
   // Default the room when there is only one to choose from.
@@ -106,6 +130,11 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
         return batch.id;
       }
 
+      const numeric = (value: string) => (value.trim() ? Number(value) : null);
+      const rows = bagRows;
+      const firstDate = rows.find((row) => row.inoculationDate)?.inoculationDate;
+      const totalDry = rows.reduce((sum, row) => sum + (numeric(row.dryWeight) ?? 0), 0);
+
       const { data, error } = await supabase
         .from("batches")
         .insert({
@@ -113,11 +142,35 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           farm_id: form.farmId,
           species_id: speciesId,
           batch_code: code,
-          inoculation_date: todayISO(),
+          inoculation_date: firstDate || todayISO(),
+          dry_substrate_weight_kg: totalDry > 0 ? totalDry : null,
         })
         .select("id")
         .single();
       if (error) throw error;
+
+      if (rows.length) {
+        const bags = rows.map((row, index) => ({
+          org_id: orgId,
+          batch_id: data.id,
+          farm_id: form.farmId,
+          species_id: speciesId,
+          bag_number: index + 1,
+          bag_code: `${code}-${String(index + 1).padStart(3, "0")}`,
+          net_weight_kg: numeric(row.netWeight),
+          dry_weight_kg: numeric(row.dryWeight),
+          spawn_weight_kg: numeric(row.spawnWeight),
+          inoculation_date: row.inoculationDate || null,
+        }));
+        const inserted = await supabase.from("bags").insert(bags);
+        if (inserted.error) throw inserted.error;
+
+        const last = rows[rows.length - 1];
+        const dry = numeric(last?.dryWeight ?? "");
+        const spawn = numeric(last?.spawnWeight ?? "");
+        if (dry && dry > 0) window.localStorage.setItem(SUBSTRATE_PER_BAG_STORAGE_KEY, String(dry));
+        if (spawn && spawn > 0) window.localStorage.setItem(SPAWN_PER_BAG_STORAGE_KEY, String(spawn));
+      }
       return data.id;
     },
     onSuccess: async () => {
@@ -146,7 +199,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="font-display">{isEdit ? "Edit batch" : "Start a batch"}</DialogTitle>
           <DialogDescription>
@@ -225,6 +278,16 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
               </SelectContent>
             </Select>
           </div>
+
+          {!isEdit ? (
+            <div className="space-y-2">
+              <Label>Bags</Label>
+              <p className="text-xs text-muted-foreground">
+                Bag numbers are assigned automatically in order.
+              </p>
+              <BagRowsEditor rows={bagRows} onChange={setBagRows} startNumber={1} />
+            </div>
+          ) : null}
 
           <DialogFooter>
             <Button type="submit" disabled={mutation.isPending}>

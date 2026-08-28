@@ -66,11 +66,15 @@ export type Database = {
           batch_id: string
           created_at: string
           current_stage: Database["public"]["Enums"]["bag_stage"]
+          dry_weight_kg: number | null
           farm_id: string
           id: string
+          inoculation_date: string | null
           is_discarded: boolean
           net_weight_kg: number | null
+          notes: string | null
           org_id: string
+          spawn_weight_kg: number | null
           species_id: string
           updated_at: string
         }
@@ -80,11 +84,15 @@ export type Database = {
           batch_id: string
           created_at?: string
           current_stage?: Database["public"]["Enums"]["bag_stage"]
+          dry_weight_kg?: number | null
           farm_id: string
           id?: string
+          inoculation_date?: string | null
           is_discarded?: boolean
           net_weight_kg?: number | null
+          notes?: string | null
           org_id: string
+          spawn_weight_kg?: number | null
           species_id: string
           updated_at?: string
         }
@@ -94,11 +102,15 @@ export type Database = {
           batch_id?: string
           created_at?: string
           current_stage?: Database["public"]["Enums"]["bag_stage"]
+          dry_weight_kg?: number | null
           farm_id?: string
           id?: string
+          inoculation_date?: string | null
           is_discarded?: boolean
           net_weight_kg?: number | null
+          notes?: string | null
           org_id?: string
+          spawn_weight_kg?: number | null
           species_id?: string
           updated_at?: string
         }
