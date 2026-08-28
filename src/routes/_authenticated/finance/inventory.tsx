@@ -554,22 +554,25 @@ function InventoryPage() {
     return { used, purchased: toNumber(row?.total_purchased_qty) ?? 0 };
   }, [editingItemId, stockRows]);
 
-  /** Zero-stock items stay in the summary only when a replacement is incoming. */
+  /** Zero-stock items stay in the summary only when a real replacement / re-order is incoming. */
   const replacementItemIds = useMemo(() => {
     const ids = new Set<string>();
     for (const row of purchases ?? []) {
       const status = (row as { status?: string | null }).status ?? "received";
       const notes = (row as { notes?: string | null }).notes ?? "";
+      // Auto-created placeholder shortage rows don't count as real replacements.
+      const isPlaceholder = notes.startsWith("Auto-created");
       if (
         row.inventory_item_id &&
         (status === "ordered" || status === "in_transit") &&
-        notes.startsWith("Replacement order")
+        !isPlaceholder
       ) {
         ids.add(row.inventory_item_id);
       }
     }
     return ids;
   }, [purchases]);
+
 
   const depletedRows = useMemo(
     () =>
