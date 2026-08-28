@@ -555,17 +555,16 @@ function InventoryPage() {
   }, [editingItemId, stockRows]);
 
   /**
-   * Items whose stock is fully consumed drop out of the tiles and into the depleted log —
-   * unless they have an incoming order / replacement, which keeps them on the board.
+   * The summary shows items that are currently in stock OR have an incoming
+   * order / replacement. Fully zeroed items (no stock and nothing incoming)
+   * move to the depleted log.
    */
   const depletedRows = useMemo(
     () =>
       stockRows.filter(
         (row) =>
           row.remaining <= 0.0001 &&
-          (toNumber((row as { incoming_qty?: number | null }).incoming_qty) ?? 0) <= 0 &&
-          ((toNumber(row.total_purchased_qty) ?? 0) > 0 ||
-            (row as { status?: string | null }).status === "depleted"),
+          (toNumber((row as { incoming_qty?: number | null }).incoming_qty) ?? 0) <= 0,
       ),
     [stockRows],
   );
@@ -886,7 +885,7 @@ function InventoryPage() {
     <div>
       <PageHeader
         title="Inventory"
-        subtitle="Stock on hand, items on order or awaiting replacement, and every purchase you log."
+        subtitle="Stock on hand and incoming replacements. Fully zeroed items move to the depleted log below."
         action={
           canEdit ? (
             <div className="flex gap-2">
@@ -1448,7 +1447,7 @@ function InventoryPage() {
         <div>
           <h2 className="font-display text-lg font-semibold">Inventory summary</h2>
           <p className="text-xs text-muted-foreground">
-            Stock on hand plus items on order or awaiting replacement
+            In-stock and replacement / on-order items. Zeroed items are kept in the depleted log.
             {incomingItems.length ? ` · ${incomingItems.length} incoming` : ""}
           </p>
         </div>
