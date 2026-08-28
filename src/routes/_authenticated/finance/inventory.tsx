@@ -305,6 +305,7 @@ function InventoryPage() {
       notes: row.notes ?? "",
       wastage: "",
       wastageNotes: "",
+      addStock: "",
     });
     setEditingItemId(id);
     setOpenForm("item");
