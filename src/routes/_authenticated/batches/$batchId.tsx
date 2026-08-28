@@ -184,6 +184,14 @@ function BatchDetailPage() {
         />
       </div>
 
+      <BatchClimateCard
+        farmId={batch.farm_id}
+        farmName={batch.farms?.name}
+        startDate={batch.inoculation_date}
+        targetTemp={toNumber(batch.target_avg_temp_c)}
+        targetHumidity={toNumber(batch.target_avg_humidity_pct)}
+      />
+
       <Card className="mt-6">
         <CardHeader className="pb-2">
           <CardTitle className="font-display text-base">Stage spread</CardTitle>
