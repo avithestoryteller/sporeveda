@@ -2,7 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, Package, Pencil, Plus, ShoppingCart, Trash2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Package,
+  PackageCheck,
+  Pencil,
+  Plus,
+  ShoppingCart,
+  Trash2,
+  X,
+} from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
@@ -545,12 +554,16 @@ function InventoryPage() {
     return { used, purchased: toNumber(row?.total_purchased_qty) ?? 0 };
   }, [editingItemId, stockRows]);
 
-  /** Items whose stock is fully consumed drop out of the tiles and into the depleted log. */
+  /**
+   * Items whose stock is fully consumed drop out of the tiles and into the depleted log —
+   * unless they have an incoming order / replacement, which keeps them on the board.
+   */
   const depletedRows = useMemo(
     () =>
       stockRows.filter(
         (row) =>
           row.remaining <= 0.0001 &&
+          (toNumber((row as { incoming_qty?: number | null }).incoming_qty) ?? 0) <= 0 &&
           ((toNumber(row.total_purchased_qty) ?? 0) > 0 ||
             (row as { status?: string | null }).status === "depleted"),
       ),
@@ -567,6 +580,7 @@ function InventoryPage() {
     () =>
       stockRows
         .map((row) => ({
+          id: row.inventory_item_id ?? "",
           name: row.name ?? "Item",
           unit: row.unit ?? "",
           qty: toNumber((row as { incoming_qty?: number | null }).incoming_qty) ?? 0,
@@ -574,6 +588,49 @@ function InventoryPage() {
         .filter((row) => row.qty > 0),
     [stockRows],
   );
+
+  /** Purchases still awaiting receipt, grouped by item — powers the one-click receive action. */
+  const pendingPurchasesByItem = useMemo(() => {
+    const map = new Map<string, { ids: string[]; qty: number }>();
+    for (const row of purchases ?? []) {
+      const itemId = row.inventory_item_id;
+      if (!itemId) continue;
+      const status = (row as { status?: string | null }).status ?? "received";
+      if (status !== "ordered" && status !== "in_transit") continue;
+      const entry = map.get(itemId) ?? { ids: [], qty: 0 };
+      entry.ids.push(row.id);
+      entry.qty += toNumber(row.quantity_purchased) ?? 0;
+      map.set(itemId, entry);
+    }
+    return map;
+  }, [purchases]);
+
+  const markInStock = useMutation({
+    mutationFn: async (itemId: string) => {
+      const pending = pendingPurchasesByItem.get(itemId);
+      if (!pending || pending.ids.length === 0)
+        throw new Error("Nothing on order for this item — record a purchase first");
+      const received = await supabase
+        .from("costs")
+        .update({ status: "received" })
+        .in("id", pending.ids);
+      if (received.error) throw received.error;
+      const updated = await supabase
+        .from("inventory_items")
+        .update({ status: "in_stock" })
+        .eq("id", itemId);
+      if (updated.error) throw updated.error;
+    },
+    onSuccess: () => {
+      toast.success("Marked in stock");
+      queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["costs"] });
+      queryClient.invalidateQueries({ queryKey: ["financials"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   const lowStock = activeStockRows.filter((row) => {
     const threshold = toNumber(row.reorder_threshold);
@@ -829,7 +886,7 @@ function InventoryPage() {
     <div>
       <PageHeader
         title="Inventory"
-        subtitle="Stock on hand, weighted average unit cost and every purchase you log."
+        subtitle="Stock on hand, items on order or awaiting replacement, and every purchase you log."
         action={
           canEdit ? (
             <div className="flex gap-2">
@@ -870,11 +927,16 @@ function InventoryPage() {
         <StatTile label="Items tracked" value={stock?.length ?? 0} />
         <StatTile label="Stock value" value={fmtMoney(stockValue)} hint="Weighted average cost" />
         <StatTile
-          label="Incoming"
+          label="On order / replacement"
           value={incomingItems.length}
           hint={
             incomingItems.length
-              ? incomingItems.map((row) => `${row.name} (${row.qty} ${row.unit})`).join(", ")
+              ? incomingItems
+                  .map(
+                    (row) =>
+                      `${row.name} (${row.qty.toLocaleString("en-IN", { maximumFractionDigits: 2 })} ${row.unit})`,
+                  )
+                  .join(", ")
               : "Nothing on order or in transit"
           }
         />
@@ -1383,7 +1445,13 @@ function InventoryPage() {
       ) : null}
 
       <div className="mb-3 mt-8 flex flex-wrap items-end justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold">Stock on hand</h2>
+        <div>
+          <h2 className="font-display text-lg font-semibold">Inventory summary</h2>
+          <p className="text-xs text-muted-foreground">
+            Stock on hand plus items on order or awaiting replacement
+            {incomingItems.length ? ` · ${incomingItems.length} incoming` : ""}
+          </p>
+        </div>
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <Label htmlFor="spawn-per-bag" className="text-xs text-muted-foreground">
@@ -1440,6 +1508,7 @@ function InventoryPage() {
             const remaining = row.remaining;
             const threshold = toNumber(row.reorder_threshold);
             const low = threshold !== null && remaining <= threshold;
+            const pending = pendingPurchasesByItem.get(row.inventory_item_id ?? "");
             return (
               <Card key={row.inventory_item_id ?? row.name}>
                 <CardContent className="p-4">
@@ -1483,6 +1552,17 @@ function InventoryPage() {
                     {remaining.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
                     <span className="text-sm font-normal text-muted-foreground">{row.unit}</span>
                   </p>
+                  {canEdit && remaining <= 0.0001 && pending && pending.qty > 0 ? (
+                    <Button
+                      size="sm"
+                      className="mt-3 w-full"
+                      disabled={markInStock.isPending}
+                      onClick={() => markInStock.mutate(row.inventory_item_id!)}
+                    >
+                      <PackageCheck className="size-4" /> Mark in stock (
+                      {pending.qty.toLocaleString("en-IN", { maximumFractionDigits: 2 })} {row.unit})
+                    </Button>
+                  ) : null}
                   <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <div>
                       <dt>Avg cost</dt>
