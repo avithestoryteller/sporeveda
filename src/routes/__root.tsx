@@ -14,7 +14,12 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { clearPersistedQueryCache, getQueryPersister } from "@/lib/query-persist";
+import {
+  BUSTER,
+  MAX_AGE,
+  clearPersistedQueryCache,
+  getQueryPersister,
+} from "@/lib/query-persist";
 
 function NotFoundComponent() {
   return (
@@ -175,7 +180,7 @@ function RootComponent() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000, buster: "v1" }}
+      persistOptions={{ persister, maxAge: MAX_AGE, buster: BUSTER }}
     >
       {content}
     </PersistQueryClientProvider>
