@@ -279,6 +279,79 @@ function BagDetailPage() {
         />
       </div>
 
+      <Card className="mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-display text-base">Notes &amp; milestones</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            {bag.pinning_date ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                <Sprout className="size-4" /> Pinning · {fmtDate(bag.pinning_date)}
+              </span>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {stage === "fruiting"
+                  ? "No pinning milestone recorded yet."
+                  : "Pinning can be marked once the bag is fruiting."}
+              </span>
+            )}
+            {canEdit && (stage === "fruiting" || bag.pinning_date) ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  type="date"
+                  aria-label="Pinning date"
+                  className="w-40"
+                  value={pinningDate}
+                  onChange={(event) => setPinningDate(event.target.value)}
+                />
+                <Button
+                  size="sm"
+                  onClick={() => pinningMutation.mutate(pinningDate)}
+                  disabled={pinningMutation.isPending || !pinningDate}
+                >
+                  {bag.pinning_date ? "Update pinning" : "Mark pinning"}
+                </Button>
+                {bag.pinning_date ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => pinningMutation.mutate(null)}
+                    disabled={pinningMutation.isPending}
+                  >
+                    Clear
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="bag-notes">Bag notes</Label>
+            <Textarea
+              id="bag-notes"
+              rows={3}
+              placeholder="Observations, treatments, anything worth remembering for this bag."
+              value={notes}
+              disabled={!canEdit}
+              onChange={(event) => setNotes(event.target.value)}
+            />
+            {canEdit ? (
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => notesMutation.mutate(notes)}
+                  disabled={notesMutation.isPending || notes === (bag.notes ?? "")}
+                >
+                  Save notes
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
+
       {canEdit ? (
         <Card className="mt-6">
           <CardHeader className="pb-2">
