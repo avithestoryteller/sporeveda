@@ -108,6 +108,7 @@ type ItemForm = {
   notes: string;
   wastage: string;
   wastageNotes: string;
+  addStock: string;
 };
 const EMPTY_ITEM: ItemForm = {
   name: "",
@@ -120,6 +121,7 @@ const EMPTY_ITEM: ItemForm = {
   notes: "",
   wastage: "",
   wastageNotes: "",
+  addStock: "",
 };
 
 
@@ -303,6 +305,7 @@ function InventoryPage() {
       notes: row.notes ?? "",
       wastage: "",
       wastageNotes: "",
+      addStock: "",
     });
     setEditingItemId(id);
     setOpenForm("item");
@@ -604,6 +607,9 @@ function InventoryPage() {
       const opening = itemForm.openingStock.trim() ? Number(itemForm.openingStock) : 0;
       if (itemForm.openingStock.trim() && (!Number.isFinite(opening) || opening <= 0))
         throw new Error("Enter a valid opening weight");
+      const addStock = itemForm.addStock.trim() ? Number(itemForm.addStock) : 0;
+      if (itemForm.addStock.trim() && (!Number.isFinite(addStock) || addStock <= 0))
+        throw new Error("Enter a valid weight to add");
 
       if (editingItemId) {
         const { error } = await supabase
@@ -611,6 +617,22 @@ function InventoryPage() {
           .update(payload)
           .eq("id", editingItemId);
         if (error) throw error;
+        if (addStock > 0) {
+          const stock = await supabase.from("costs").insert({
+            org_id: orgId,
+            category: payload.category,
+            vendor: payload.vendor,
+            status: "received",
+            description: `${name} — stock added ${addStock} ${payload.unit}`,
+            amount: 0,
+            cost_type: "one_time",
+            incurred_date: todayISO(),
+            inventory_item_id: editingItemId,
+            quantity_purchased: addStock,
+            notes: "Manual stock addition",
+          });
+          if (stock.error) throw stock.error;
+        }
         if (wastage > 0) {
           const usage = await supabase.from("inventory_usage").insert({
             org_id: orgId,
@@ -901,6 +923,19 @@ function InventoryPage() {
               </div>
               {editingItemId ? (
                 <div className="grid gap-4 rounded-lg border border-dashed border-border p-3 sm:col-span-2 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="item-addstock">Add weight ({itemForm.unit})</Label>
+                    <Input
+                      id="item-addstock"
+                      inputMode="decimal"
+                      value={itemForm.addStock}
+                      onChange={(event) => setItem("addStock", event.target.value)}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Extra stock on hand — added as a zero-cost received entry.
+                    </p>
+                  </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="item-wastage">Add wastage ({itemForm.unit})</Label>
                     <Input
