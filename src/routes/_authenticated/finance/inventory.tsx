@@ -590,10 +590,28 @@ function InventoryPage() {
         }
         return;
       }
-      const { error } = await supabase
+      const { data: inserted, error } = await supabase
         .from("inventory_items")
-        .insert({ org_id: orgId, ...payload });
+        .insert({ org_id: orgId, ...payload })
+        .select("id")
+        .single();
       if (error) throw error;
+      if (opening > 0 && inserted?.id) {
+        const stock = await supabase.from("costs").insert({
+          org_id: orgId,
+          category: payload.category,
+          vendor: payload.vendor,
+          status: "received",
+          description: `${name} — opening stock ${opening} ${payload.unit}`,
+          amount: 0,
+          cost_type: "one_time",
+          incurred_date: todayISO(),
+          inventory_item_id: inserted.id,
+          quantity_purchased: opening,
+          notes: "Opening stock",
+        });
+        if (stock.error) throw stock.error;
+      }
     },
     onSuccess: () => {
       toast.success(editingItemId ? "Item updated" : "Item added");
