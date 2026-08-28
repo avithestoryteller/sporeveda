@@ -1203,7 +1203,13 @@ function InventoryPage() {
                     <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{row.name}</p>
-                      <p className="text-xs text-muted-foreground">{titleCase(row.category)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {titleCase(row.category)}
+                        {vendorByItem[row.inventory_item_id ?? ""]
+                          ? ` · ${vendorByItem[row.inventory_item_id ?? ""]}`
+                          : ""}
+                      </p>
+
                       <div className="mt-1">
                         <ItemStatusBadge status={row.item_status} />
                       </div>
