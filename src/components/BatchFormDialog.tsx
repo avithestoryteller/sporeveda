@@ -313,6 +313,28 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
                 required
               />
             </div>
+            {!isEdit ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="batch-number">Batch number</Label>
+                <Input
+                  id="batch-number"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
+                  placeholder={String(suggestedNumber)}
+                  value={form.batchNumber}
+                  aria-invalid={Boolean(numberError)}
+                  className={numberError ? "border-destructive" : undefined}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, batchNumber: event.target.value }))
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave blank to use the next number for this species.
+                </p>
+              </div>
+            ) : null}
             <div className="space-y-1.5">
               <Label htmlFor="batch-code">Batch code</Label>
               {isEdit ? (
