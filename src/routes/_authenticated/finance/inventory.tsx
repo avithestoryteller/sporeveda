@@ -238,7 +238,7 @@ function InventoryPage() {
           .not("batch_id", "is", null),
         supabase
           .from("bags")
-          .select("batch_id, spawn_weight_kg, dry_weight_kg")
+          .select("batch_id, spawn_weight_kg, dry_weight_kg, current_stage")
           .eq("org_id", orgId),
         supabase
           .from("batches")
@@ -262,11 +262,13 @@ function InventoryPage() {
         });
         const spawn = Number(bag.spawn_weight_kg);
         if (Number.isFinite(spawn) && spawn > 0) entry.spawnKg += spawn;
-        else entry.spawnMissingBags += 1;
+        // Bags still in prep have not been inoculated yet — no spawn consumed.
+        else if (bag.current_stage !== "prep") entry.spawnMissingBags += 1;
         const dry = Number(bag.dry_weight_kg);
         if (Number.isFinite(dry) && dry > 0) entry.substrateKg += dry;
         else entry.substrateMissingBags += 1;
       }
+
       return { links: links.data ?? [], bagsPerBatch, weightsPerBatch, batches: batchRows.data ?? [] };
 
     },
@@ -765,12 +767,15 @@ function InventoryPage() {
       if (!Number.isFinite(quantity) || quantity <= 0) throw new Error("Enter a valid quantity");
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
 
+      const vendor = purchaseForm.vendor.trim() || null;
+      const vendorKey = (vendor ?? "").toLowerCase();
+      // Stock is tracked per vendor, so an item is identified by name + category + vendor.
       const matched = allItems.find(
         (row) =>
           row.category === purchaseForm.category &&
-          row.name.toLowerCase() === typedName.toLowerCase(),
+          row.name.toLowerCase() === typedName.toLowerCase() &&
+          ((row as { vendor?: string | null }).vendor ?? "").trim().toLowerCase() === vendorKey,
       );
-      const vendor = purchaseForm.vendor.trim() || null;
       const itemId =
         matched?.id ??
         (await ensureInventoryItem({
@@ -781,6 +786,7 @@ function InventoryPage() {
           vendor,
         }));
       const unit = matched?.unit || purchaseForm.unit;
+
 
 
       const payload = {
