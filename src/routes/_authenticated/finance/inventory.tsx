@@ -1423,10 +1423,19 @@ function InventoryPage() {
                           {row.derivedUsed.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
                           {row.unit}{" "}
                           <span className="text-muted-foreground">
-                            {row.category === "spawn"
-                              ? `(${(spawnPerBagKg * 1000).toFixed(0)} g per bag)`
-                              : `(${substratePerBagKg} kg per bag)`}
+                            {(() => {
+                              const perBag =
+                                row.derivedBags > 0
+                                  ? row.derivedUsed / row.derivedBags
+                                  : row.category === "spawn"
+                                    ? spawnPerBagKg
+                                    : substratePerBagKg;
+                              return row.category === "spawn"
+                                ? `(${(perBag * 1000).toFixed(0)} g per bag)`
+                                : `(${perBag.toFixed(2)} kg per bag)`;
+                            })()}
                           </span>
+
                         </dd>
                       </div>
                     ) : null}
