@@ -568,6 +568,9 @@ function InventoryPage() {
       const wastage = itemForm.wastage.trim() ? Number(itemForm.wastage) : 0;
       if (itemForm.wastage.trim() && (!Number.isFinite(wastage) || wastage <= 0))
         throw new Error("Enter a valid wastage quantity");
+      const opening = itemForm.openingStock.trim() ? Number(itemForm.openingStock) : 0;
+      if (itemForm.openingStock.trim() && (!Number.isFinite(opening) || opening <= 0))
+        throw new Error("Enter a valid opening weight");
 
       if (editingItemId) {
         const { error } = await supabase
