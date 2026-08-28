@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Package, Pencil, Plus, ShoppingCart, Trash2, X } from "lucide-react";
+import { AlertTriangle, Package, Pencil, Plus, ShoppingCart, Trash2, X } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
@@ -221,7 +221,7 @@ function InventoryPage() {
     queryKey: ["inventory-consumption", orgId],
     enabled: Boolean(orgId),
     queryFn: async () => {
-      const [links, bags] = await Promise.all([
+      const [links, bags, batchRows] = await Promise.all([
         supabase
           .from("costs")
           .select("inventory_item_id, batch_id, quantity_purchased")
@@ -229,18 +229,24 @@ function InventoryPage() {
           .not("inventory_item_id", "is", null)
           .not("batch_id", "is", null),
         supabase.from("bags").select("batch_id").eq("org_id", orgId),
+        supabase
+          .from("batches")
+          .select("id, substrate_type, substrate_vendor, spawn_vendor, species(common_name)")
+          .eq("org_id", orgId),
       ]);
       if (links.error) throw links.error;
       if (bags.error) throw bags.error;
+      if (batchRows.error) throw batchRows.error;
 
       const bagsPerBatch: Record<string, number> = {};
       for (const bag of bags.data ?? []) {
         if (!bag.batch_id) continue;
         bagsPerBatch[bag.batch_id] = (bagsPerBatch[bag.batch_id] ?? 0) + 1;
       }
-      return { links: links.data ?? [], bagsPerBatch };
+      return { links: links.data ?? [], bagsPerBatch, batches: batchRows.data ?? [] };
     },
   });
+
 
   const { data: purchases } = useQuery({
     queryKey: ["inventory-purchases", orgId],
@@ -440,8 +446,35 @@ function InventoryPage() {
       categoryByItem,
       spawnPerBagKg,
       substratePerBagKg,
+      batches: (consumption.batches ?? []).map((batch) => ({
+        id: batch.id,
+        substrate_type: batch.substrate_type,
+        substrate_vendor: (batch as { substrate_vendor?: string | null }).substrate_vendor ?? null,
+        spawn_vendor: (batch as { spawn_vendor?: string | null }).spawn_vendor ?? null,
+        species: (Array.isArray(batch.species) ? batch.species[0] : batch.species) ?? null,
+      })),
+      items: (itemRows ?? []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        category: row.category,
+        vendor: (row as { vendor?: string | null }).vendor ?? null,
+      })),
     });
-  }, [consumption, stock, spawnPerBagKg, substratePerBagKg]);
+  }, [consumption, stock, itemRows, spawnPerBagKg, substratePerBagKg]);
+
+  /** Items whose purchase row was auto-created from a batch and still needs details. */
+  const needsReviewItems = useMemo(() => {
+    const set = new Set<string>();
+    for (const row of purchases ?? []) {
+      const notes = (row as { notes?: string | null }).notes ?? "";
+      const amount = Number(row.amount) || 0;
+      if (row.inventory_item_id && notes.startsWith("Auto-created from a new batch") && amount === 0) {
+        set.add(row.inventory_item_id);
+      }
+    }
+    return set;
+  }, [purchases]);
+
 
   /** Stock rows adjusted for production consumption derived from bags and batches. */
   const stockRows = useMemo(
@@ -1256,6 +1289,14 @@ function InventoryPage() {
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
+                      {needsReviewItems.has(row.inventory_item_id ?? "") ? (
+                        <AlertTriangle
+                          className="size-4 shrink-0 text-amber-500"
+                          aria-label="Auto-created from a batch — add vendor, quantity and amount"
+                        >
+                          <title>Auto-created from a batch — add vendor, quantity and amount</title>
+                        </AlertTriangle>
+                      ) : null}
                       {low ? <Badge variant="destructive">Low</Badge> : null}
                       {canEdit && row.inventory_item_id ? (
                         <Button
