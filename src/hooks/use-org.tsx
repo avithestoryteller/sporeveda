@@ -76,26 +76,6 @@ export function useOrgMembershipsQuery() {
   });
 }
 
-function _unusedLegacy() {
-  return useQuery({
-    queryKey: ["memberships-legacy"],
-    enabled: false,
-    queryFn: async (): Promise<OrgMembership[]> => {
-      const { data, error } = await supabase
-        .from("memberships")
-        .select("org_id, role, organizations(name, slug)")
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data ?? []).map((row) => ({
-        org_id: row.org_id,
-        role: row.role,
-        name: row.organizations?.name ?? "Organization",
-        slug: row.organizations?.slug ?? "",
-      }));
-    },
-  });
-}
-
 export function OrgProvider({
   memberships,
   children,
