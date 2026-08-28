@@ -555,17 +555,16 @@ function InventoryPage() {
   }, [editingItemId, stockRows]);
 
   /**
-   * Items whose stock is fully consumed drop out of the tiles and into the depleted log —
-   * unless they have an incoming order / replacement, which keeps them on the board.
+   * The summary shows items that are currently in stock OR have an incoming
+   * order / replacement. Fully zeroed items (no stock and nothing incoming)
+   * move to the depleted log.
    */
   const depletedRows = useMemo(
     () =>
       stockRows.filter(
         (row) =>
           row.remaining <= 0.0001 &&
-          (toNumber((row as { incoming_qty?: number | null }).incoming_qty) ?? 0) <= 0 &&
-          ((toNumber(row.total_purchased_qty) ?? 0) > 0 ||
-            (row as { status?: string | null }).status === "depleted"),
+          (toNumber((row as { incoming_qty?: number | null }).incoming_qty) ?? 0) <= 0,
       ),
     [stockRows],
   );
