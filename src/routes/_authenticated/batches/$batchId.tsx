@@ -2,6 +2,9 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useOrg, useOrgId } from "@/hooks/use-org";
+import { AddBagsDialog } from "@/components/AddBagsDialog";
+import { BatchFormDialog } from "@/components/BatchFormDialog";
 import { PageHeader } from "@/components/AppShell";
 import { StageBadge } from "@/components/StageBadge";
 import { StatTile } from "@/components/StatTile";
@@ -80,6 +83,8 @@ function useBatchDetail(batchId: string) {
 
 function BatchDetailPage() {
   const { batchId } = Route.useParams();
+  const orgId = useOrgId();
+  const { canEdit } = useOrg();
   const { data, isPending, error } = useBatchDetail(batchId);
 
   if (isPending) {
@@ -128,6 +133,30 @@ function BatchDetailPage() {
             )}{" "}
             · inoculated {fmtDate(batch.inoculation_date)}
           </>
+        }
+        action={
+          canEdit ? (
+            <div className="flex gap-2">
+              <BatchFormDialog
+                orgId={orgId}
+                batch={{
+                  id: batch.id,
+                  batch_code: batch.batch_code,
+                  species_id: batch.species_id,
+                  farm_id: batch.farm_id,
+                }}
+              />
+              <AddBagsDialog
+                orgId={orgId}
+                batchId={batch.id}
+                batchCode={batch.batch_code}
+                farmId={batch.farm_id}
+                speciesId={batch.species_id}
+                existingBags={bags.reduce((max, bag) => Math.max(max, bag.bag_number), 0)}
+                existingDryKg={dryKg}
+              />
+            </div>
+          ) : null
         }
       />
 
