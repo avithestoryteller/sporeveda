@@ -57,8 +57,6 @@ export function hydratePersistedQueryCache(queryClient: QueryClient) {
       return;
     }
     hydrate(queryClient, client.clientState);
-    (window as unknown as Record<string, unknown>).__qcHydrated =
-      client.clientState.queries.length;
   } catch {
     clearPersistedQueryCache();
   }
