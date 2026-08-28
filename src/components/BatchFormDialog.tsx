@@ -80,6 +80,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
     newSpecies: "",
     batchCode: batch?.batch_code ?? "",
   });
+  const [bagRows, setBagRows] = useState<BagRow[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -89,6 +90,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       newSpecies: "",
       batchCode: batch?.batch_code ?? "",
     });
+    setBagRows(batch ? [] : [defaultBagRow()]);
   }, [open, batch]);
 
   // Default the room when there is only one to choose from.
