@@ -767,12 +767,15 @@ function InventoryPage() {
       if (!Number.isFinite(quantity) || quantity <= 0) throw new Error("Enter a valid quantity");
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount");
 
+      const vendor = purchaseForm.vendor.trim() || null;
+      const vendorKey = (vendor ?? "").toLowerCase();
+      // Stock is tracked per vendor, so an item is identified by name + category + vendor.
       const matched = allItems.find(
         (row) =>
           row.category === purchaseForm.category &&
-          row.name.toLowerCase() === typedName.toLowerCase(),
+          row.name.toLowerCase() === typedName.toLowerCase() &&
+          ((row as { vendor?: string | null }).vendor ?? "").trim().toLowerCase() === vendorKey,
       );
-      const vendor = purchaseForm.vendor.trim() || null;
       const itemId =
         matched?.id ??
         (await ensureInventoryItem({
@@ -783,6 +786,7 @@ function InventoryPage() {
           vendor,
         }));
       const unit = matched?.unit || purchaseForm.unit;
+
 
 
       const payload = {
