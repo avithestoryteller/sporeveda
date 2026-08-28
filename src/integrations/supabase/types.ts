@@ -190,8 +190,10 @@ export type Database = {
           inoculation_date: string
           notes: string | null
           org_id: string
+          spawn_vendor: string | null
           species_id: string
           substrate_type: string | null
+          substrate_vendor: string | null
           target_avg_humidity_pct: number | null
           target_avg_temp_c: number | null
         }
@@ -204,8 +206,10 @@ export type Database = {
           inoculation_date: string
           notes?: string | null
           org_id: string
+          spawn_vendor?: string | null
           species_id: string
           substrate_type?: string | null
+          substrate_vendor?: string | null
           target_avg_humidity_pct?: number | null
           target_avg_temp_c?: number | null
         }
@@ -218,8 +222,10 @@ export type Database = {
           inoculation_date?: string
           notes?: string | null
           org_id?: string
+          spawn_vendor?: string | null
           species_id?: string
           substrate_type?: string | null
+          substrate_vendor?: string | null
           target_avg_humidity_pct?: number | null
           target_avg_temp_c?: number | null
         }
