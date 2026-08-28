@@ -457,14 +457,16 @@ function InventoryPage() {
 
 
   const derivedUsage = useMemo(() => {
-    if (!consumption) return {} as Record<string, number>;
+    if (!consumption) return {} as Record<string, { qty: number; bags: number }>;
     const categoryByItem: Record<string, string> = {};
     for (const row of stock ?? []) {
       if (row.inventory_item_id) categoryByItem[row.inventory_item_id] = row.category ?? "other";
     }
-    return deriveUsageByItem({
+    return deriveUsageDetailByItem({
       costRows: consumption.links,
       bagsPerBatch: consumption.bagsPerBatch,
+      weightsPerBatch: consumption.weightsPerBatch,
+
       categoryByItem,
       spawnPerBagKg,
       substratePerBagKg,
