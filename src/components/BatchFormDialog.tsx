@@ -259,40 +259,46 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
             mutation.mutate();
           }}
         >
-          {isEdit ? (
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="batch-code">Batch code</Label>
+              <Label htmlFor="batch-start">Start date</Label>
               <Input
-                id="batch-code"
-                value={form.batchCode}
-                maxLength={40}
-                onChange={(event) => setForm((prev) => ({ ...prev, batchCode: event.target.value }))}
+                id="batch-start"
+                type="date"
+                value={form.startDate}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, startDate: event.target.value }))
+                }
                 required
               />
             </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="batch-start">Start date</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="batch-code">Batch code</Label>
+              {isEdit ? (
                 <Input
-                  id="batch-start"
-                  type="date"
-                  value={form.startDate}
+                  id="batch-code"
+                  value={form.batchCode}
+                  maxLength={40}
                   onChange={(event) =>
-                    setForm((prev) => ({ ...prev, startDate: event.target.value }))
+                    setForm((prev) => ({ ...prev, batchCode: event.target.value }))
                   }
                   required
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="batch-code">Batch code</Label>
-                <Input id="batch-code" value={generatedCode} readOnly placeholder="BO1P-280826" />
-                <p className="text-xs text-muted-foreground">
-                  Generated from species, sequence and start date.
-                </p>
-              </div>
+              ) : (
+                <>
+                  <Input
+                    id="batch-code"
+                    value={generatedCode}
+                    readOnly
+                    placeholder="BO1P-280826"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Generated from species, sequence and start date.
+                  </p>
+                </>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="space-y-1.5">
             <Label>Species</Label>
