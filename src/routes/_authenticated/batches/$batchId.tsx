@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
 import { BagFormDialog } from "@/components/BagFormDialog";
 import { BatchFormDialog } from "@/components/BatchFormDialog";
+import { BatchClimateCard } from "@/components/BatchClimateCard";
 import { PageHeader } from "@/components/AppShell";
 import { StageBadge } from "@/components/StageBadge";
 import { StatTile } from "@/components/StatTile";
@@ -183,6 +184,14 @@ function BatchDetailPage() {
           tone={biologicalEfficiency && biologicalEfficiency >= 75 ? "success" : "default"}
         />
       </div>
+
+      <BatchClimateCard
+        farmId={batch.farm_id}
+        farmName={batch.farms?.name}
+        startDate={batch.inoculation_date}
+        targetTemp={toNumber(batch.target_avg_temp_c)}
+        targetHumidity={toNumber(batch.target_avg_humidity_pct)}
+      />
 
       <Card className="mt-6">
         <CardHeader className="pb-2">
