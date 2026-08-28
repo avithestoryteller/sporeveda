@@ -166,8 +166,8 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
         if (inserted.error) throw inserted.error;
 
         const last = rows[rows.length - 1];
-        const dry = numeric(last.dryWeight);
-        const spawn = numeric(last.spawnWeight);
+        const dry = numeric(last?.dryWeight ?? "");
+        const spawn = numeric(last?.spawnWeight ?? "");
         if (dry && dry > 0) window.localStorage.setItem(SUBSTRATE_PER_BAG_STORAGE_KEY, String(dry));
         if (spawn && spawn > 0) window.localStorage.setItem(SPAWN_PER_BAG_STORAGE_KEY, String(spawn));
       }
