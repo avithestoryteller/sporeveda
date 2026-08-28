@@ -53,7 +53,7 @@ function useBatchDetail(batchId: string) {
       const bags = await supabase
         .from("bags")
         .select(
-          "id, bag_code, bag_number, current_stage, net_weight_kg, dry_weight_kg, spawn_weight_kg, notes, is_discarded",
+          "id, bag_code, bag_number, current_stage, net_weight_kg, dry_weight_kg, spawn_weight_kg, notes, is_discarded, inoculation_date, pinning_date",
         )
         .eq("batch_id", batchId)
         .order("bag_number");
