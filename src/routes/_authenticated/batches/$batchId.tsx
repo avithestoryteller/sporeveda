@@ -128,6 +128,31 @@ function BatchDetailPage() {
   }
   const contaminatedBagIds = new Set(contamination.map((row) => row.bag_id));
 
+  // Milestones per bag, derived from stage history and harvests.
+  const stageDateByBag = new Map<string, Record<string, string>>();
+  for (const row of history) {
+    const seen = stageDateByBag.get(row.bag_id) ?? {};
+    if (!seen[row.stage]) seen[row.stage] = row.changed_at;
+    stageDateByBag.set(row.bag_id, seen);
+  }
+  const flushesByBag = new Map<string, { flush: number; date: string; kg: number }[]>();
+  for (const row of harvests) {
+    const list = flushesByBag.get(row.bag_id) ?? [];
+    list.push({
+      flush: row.flush_number,
+      date: row.harvest_date,
+      kg: (toNumber(row.wet_weight_g) ?? 0) / 1000,
+    });
+    flushesByBag.set(row.bag_id, list);
+  }
+  const daysBetween = (from: string | null | undefined, to: string | null | undefined) => {
+    if (!from || !to) return null;
+    const a = new Date(from.length <= 10 ? `${from}T00:00:00` : from).getTime();
+    const b = new Date(to.length <= 10 ? `${to}T00:00:00` : to).getTime();
+    if (Number.isNaN(a) || Number.isNaN(b)) return null;
+    return Math.max(0, Math.round((b - a) / 86_400_000));
+  };
+
   return (
     <div>
       <PageHeader
