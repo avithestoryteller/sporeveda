@@ -262,9 +262,18 @@ function BatchDetailPage() {
       ) : null}
 
       <h2 className="mb-3 mt-8 font-display text-lg font-semibold">Bags</h2>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {bags.map((bag) => {
           const wet = harvestByBag.get(bag.id) ?? 0;
+          const stageDates = stageDateByBag.get(bag.id) ?? {};
+          const start = bag.inoculation_date ?? batch.inoculation_date;
+          const colonisedOn =
+            stageDates["bulking"] ?? stageDates["fruiting"] ?? stageDates["harvested"] ?? null;
+          const daysToColonise = daysBetween(start, colonisedOn);
+          const fruitingOn = stageDates["fruiting"] ?? null;
+          const fruitingDay = daysBetween(start, fruitingOn);
+          const pinningDay = daysBetween(start, bag.pinning_date);
+          const flushes = (flushesByBag.get(bag.id) ?? []).sort((a, b) => a.flush - b.flush);
           return (
             <div
               key={bag.id}
