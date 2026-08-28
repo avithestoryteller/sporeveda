@@ -102,6 +102,7 @@ type ItemForm = {
   category: string;
   unit: string;
   status: string;
+  vendor: string;
   threshold: string;
   notes: string;
   wastage: string;
@@ -112,11 +113,13 @@ const EMPTY_ITEM: ItemForm = {
   category: "substrate",
   unit: "kg",
   status: "in_stock",
+  vendor: "",
   threshold: "",
   notes: "",
   wastage: "",
   wastageNotes: "",
 };
+
 
 type PurchaseForm = {
   category: string;
