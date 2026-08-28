@@ -23,6 +23,7 @@ import {
   SPAWN_PER_BAG_STORAGE_KEY,
   SUBSTRATE_PER_BAG_STORAGE_KEY,
 } from "@/lib/materials";
+import { MAX_BAG_NUMBER, bagCode } from "@/lib/batch-code";
 
 export type BagFormValues = {
   id: string;
@@ -42,10 +43,6 @@ function storedRate(key: string, fallback: number) {
 
 function str(value: number | string | null | undefined) {
   return value === null || value === undefined ? "" : String(value);
-}
-
-function bagCode(batchCode: string, bagNumber: number) {
-  return `${batchCode}-${String(bagNumber).padStart(3, "0")}`;
 }
 
 /** Create a single bag in a batch, or edit an existing one. */
@@ -92,7 +89,8 @@ export function BagFormDialog({
   const mutation = useMutation({
     mutationFn: async () => {
       const bagNumber = Number(form.bagNumber);
-      if (!Number.isInteger(bagNumber) || bagNumber < 1) throw new Error("Enter a valid bag number");
+      if (!Number.isInteger(bagNumber) || bagNumber < 1 || bagNumber > MAX_BAG_NUMBER)
+        throw new Error(`Enter a bag number between 1 and ${MAX_BAG_NUMBER}`);
       const numeric = (value: string) => (value.trim() ? Number(value) : null);
 
       const payload = {
@@ -177,6 +175,7 @@ export function BagFormDialog({
                 id="bag-number"
                 type="number"
                 min="1"
+                max={MAX_BAG_NUMBER}
                 value={form.bagNumber}
                 onChange={(event) => setForm((prev) => ({ ...prev, bagNumber: event.target.value }))}
                 required

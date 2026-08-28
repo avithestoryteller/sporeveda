@@ -164,20 +164,25 @@ function LogPage() {
   const tempWarn = outOfRange(form.avgTemp, tempTarget);
   const humWarn = outOfRange(form.avgHum, humTarget);
 
-  const field = (
-    id: string,
-    label: string,
-    key: keyof typeof EMPTY,
-    step = "0.1",
-  ) => (
+  /** Types like a calculator: digits fill in from the right with two decimals. */
+  const formatDecimal = (raw: string) => {
+    const digits = raw.replace(/\D/g, "").replace(/^0+(?=\d{3})/, "");
+    if (!digits) return "";
+    return (Number(digits) / 100).toFixed(2);
+  };
+
+  const field = (id: string, label: string, key: keyof typeof EMPTY) => (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{label}</Label>
       <Input
         id={id}
-        type="number"
-        step={step}
+        type="text"
+        inputMode="decimal"
+        placeholder="0.00"
         value={form[key]}
-        onChange={(event) => setForm((prev) => ({ ...prev, [key]: event.target.value }))}
+        onChange={(event) =>
+          setForm((prev) => ({ ...prev, [key]: formatDecimal(event.target.value) }))
+        }
       />
     </div>
   );

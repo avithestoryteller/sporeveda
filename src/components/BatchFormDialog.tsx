@@ -31,6 +31,7 @@ import {
   SPAWN_PER_BAG_STORAGE_KEY,
   SUBSTRATE_PER_BAG_STORAGE_KEY,
 } from "@/lib/materials";
+import { bagCode, buildBatchCode, nextBatchNumber } from "@/lib/batch-code";
 
 function storedRate(key: string, fallback: number) {
   if (typeof window === "undefined") return fallback;
@@ -58,13 +59,18 @@ function useFormOptions() {
   return useQuery({
     queryKey: ["batch-form-options"],
     queryFn: async () => {
-      const [farms, species] = await Promise.all([
+      const [farms, species, batches] = await Promise.all([
         supabase.from("farms").select("id, name").eq("is_active", true).order("name"),
         supabase.from("species").select("id, common_name").order("common_name"),
+        supabase.from("batches").select("batch_code"),
       ]);
-      const error = farms.error ?? species.error;
+      const error = farms.error ?? species.error ?? batches.error;
       if (error) throw error;
-      return { farms: farms.data ?? [], species: species.data ?? [] };
+      return {
+        farms: farms.data ?? [],
+        species: species.data ?? [],
+        codes: (batches.data ?? []).map((row) => row.batch_code),
+      };
     },
   });
 }
@@ -79,6 +85,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
     speciesId: batch?.species_id ?? "",
     newSpecies: "",
     batchCode: batch?.batch_code ?? "",
+    startDate: todayISO(),
   });
   const [bagRows, setBagRows] = useState<BagRow[]>([]);
 
@@ -89,6 +96,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       speciesId: batch?.species_id ?? "",
       newSpecies: "",
       batchCode: batch?.batch_code ?? "",
+      startDate: todayISO(),
     });
     setBagRows(batch ? [] : [defaultBagRow()]);
   }, [open, batch]);
@@ -101,6 +109,20 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       setForm((prev) => ({ ...prev, farmId: only.id }));
     }
   }, [options.data, form.farmId]);
+
+  const selectedSpeciesName =
+    form.speciesId === "__new__"
+      ? form.newSpecies.trim()
+      : ((options.data?.species ?? []).find((item) => item.id === form.speciesId)?.common_name ?? "");
+
+  const generatedCode =
+    !isEdit && selectedSpeciesName && form.startDate
+      ? buildBatchCode(
+          selectedSpeciesName,
+          nextBatchNumber(options.data?.codes ?? [], selectedSpeciesName),
+          form.startDate,
+        )
+      : "";
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -118,8 +140,8 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       }
       if (!speciesId) throw new Error("Pick a species");
       if (!form.farmId) throw new Error("Pick a room");
-      const code = form.batchCode.trim();
-      if (code.length < 2) throw new Error("Enter a batch name");
+      const code = isEdit ? form.batchCode.trim() : generatedCode;
+      if (code.length < 2) throw new Error("Pick a species and start date to generate the batch code");
 
       if (isEdit && batch) {
         const { error } = await supabase
@@ -132,7 +154,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
 
       const numeric = (value: string) => (value.trim() ? Number(value) : null);
       const rows = bagRows;
-      const firstDate = rows.find((row) => row.inoculationDate)?.inoculationDate;
+      const firstDate = form.startDate || rows.find((row) => row.inoculationDate)?.inoculationDate;
       const totalDry = rows.reduce((sum, row) => sum + (numeric(row.dryWeight) ?? 0), 0);
 
       const { data, error } = await supabase
@@ -156,11 +178,11 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           farm_id: form.farmId,
           species_id: speciesId,
           bag_number: index + 1,
-          bag_code: `${code}-${String(index + 1).padStart(3, "0")}`,
+          bag_code: bagCode(code, index + 1),
           net_weight_kg: numeric(row.netWeight),
           dry_weight_kg: numeric(row.dryWeight),
           spawn_weight_kg: numeric(row.spawnWeight),
-          inoculation_date: row.inoculationDate || null,
+          inoculation_date: row.inoculationDate || form.startDate || null,
         }));
         const inserted = await supabase.from("bags").insert(bags);
         if (inserted.error) throw inserted.error;
@@ -205,7 +227,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           <DialogDescription>
             {isEdit
               ? "Rename the batch or correct its species and room."
-              : "Name the batch and pick its species. Bag weights are captured when you add bags."}
+              : "Pick the species and start date — the batch code is generated automatically."}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -215,17 +237,40 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
             mutation.mutate();
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="batch-code">Batch name</Label>
-            <Input
-              id="batch-code"
-              value={form.batchCode}
-              maxLength={40}
-              placeholder="B-2026-04"
-              onChange={(event) => setForm((prev) => ({ ...prev, batchCode: event.target.value }))}
-              required
-            />
-          </div>
+          {isEdit ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="batch-code">Batch code</Label>
+              <Input
+                id="batch-code"
+                value={form.batchCode}
+                maxLength={40}
+                onChange={(event) => setForm((prev) => ({ ...prev, batchCode: event.target.value }))}
+                required
+              />
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="batch-start">Start date</Label>
+                <Input
+                  id="batch-start"
+                  type="date"
+                  value={form.startDate}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, startDate: event.target.value }))
+                  }
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="batch-code">Batch code</Label>
+                <Input id="batch-code" value={generatedCode} readOnly placeholder="BO1P-280826" />
+                <p className="text-xs text-muted-foreground">
+                  Generated from species, sequence and start date.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label>Species</Label>
