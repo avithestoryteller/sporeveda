@@ -161,7 +161,13 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       if (isEdit && batch) {
         const { error } = await supabase
           .from("batches")
-          .update({ batch_code: code, species_id: speciesId, farm_id: form.farmId, ...targets })
+          .update({
+            batch_code: code,
+            species_id: speciesId,
+            farm_id: form.farmId,
+            inoculation_date: form.startDate,
+            ...targets,
+          })
           .eq("id", batch.id);
         if (error) throw error;
         return batch.id;
