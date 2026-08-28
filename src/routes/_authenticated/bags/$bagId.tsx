@@ -120,6 +120,48 @@ function BagDetailPage() {
     notes: string;
   }>({ severity: "minor", action: "monitoring", type: "", notes: "" });
 
+  const [notes, setNotes] = useState("");
+  const [pinningDate, setPinningDate] = useState(todayISO());
+  const loadedBagNotes = data?.bag.notes ?? "";
+  const loadedPinning = data?.bag.pinning_date ?? null;
+  useEffect(() => {
+    setNotes(loadedBagNotes);
+  }, [loadedBagNotes, bagId]);
+  useEffect(() => {
+    setPinningDate(loadedPinning ?? todayISO());
+  }, [loadedPinning, bagId]);
+
+  const notesMutation = useMutation({
+    mutationFn: async (value: string) => {
+      const { error: updateError } = await supabase
+        .from("bags")
+        .update({ notes: value.trim() || null })
+        .eq("id", bagId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: async () => {
+      toast.success("Notes saved");
+      await queryClient.invalidateQueries({ queryKey: ["bag", bagId] });
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
+
+  const pinningMutation = useMutation({
+    mutationFn: async (value: string | null) => {
+      const { error: updateError } = await supabase
+        .from("bags")
+        .update({ pinning_date: value })
+        .eq("id", bagId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: async (_result, value) => {
+      toast.success(value ? "Pinning milestone recorded" : "Pinning milestone cleared");
+      await queryClient.invalidateQueries({ queryKey: ["bag", bagId] });
+      await queryClient.invalidateQueries({ queryKey: ["batch"] });
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
+
   const refresh = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["bag", bagId] }),
