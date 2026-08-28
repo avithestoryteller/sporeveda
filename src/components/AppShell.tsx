@@ -18,7 +18,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/hooks/use-org";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { NotificationsBell } from "@/components/NotificationsBell";
 import logoAsset from "@/assets/sporeveda-logo.png.asset.json";
+
 
 
 const NAV = [
