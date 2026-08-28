@@ -180,6 +180,7 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           batch_code: code,
           inoculation_date: firstDate || todayISO(),
           dry_substrate_weight_kg: totalDry > 0 ? totalDry : null,
+          ...targets,
         })
         .select("id")
         .single();
