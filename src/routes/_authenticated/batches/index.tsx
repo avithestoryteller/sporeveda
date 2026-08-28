@@ -178,14 +178,15 @@ function BatchesPage() {
         <Card>
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
-              {data.rows.map(({ batch, bagCount, discarded }) => (
+              {data.rows.map(({ batch, bagCount, discarded, stages }) => (
 
                 <li key={batch.id}>
                   <Link
                     to="/batches/$batchId"
                     params={{ batchId: batch.id }}
-                    className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/60"
+                    className="block px-4 py-3.5 transition-colors hover:bg-muted/60"
                   >
+                    <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{batch.batch_code}</p>
                       <p className="truncate text-xs text-muted-foreground">
