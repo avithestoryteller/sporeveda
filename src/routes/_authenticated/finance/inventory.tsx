@@ -102,6 +102,7 @@ type ItemForm = {
   category: string;
   unit: string;
   status: string;
+  vendor: string;
   threshold: string;
   notes: string;
   wastage: string;
@@ -112,11 +113,13 @@ const EMPTY_ITEM: ItemForm = {
   category: "substrate",
   unit: "kg",
   status: "in_stock",
+  vendor: "",
   threshold: "",
   notes: "",
   wastage: "",
   wastageNotes: "",
 };
+
 
 type PurchaseForm = {
   category: string;
@@ -285,6 +288,8 @@ function InventoryPage() {
       category: row.category ?? "other",
       unit: row.unit ?? "kg",
       status: (row as { status?: string | null }).status ?? "in_stock",
+      vendor: (row as { vendor?: string | null }).vendor ?? "",
+
       threshold: row.reorder_threshold === null ? "" : String(row.reorder_threshold),
       notes: row.notes ?? "",
       wastage: "",
@@ -393,6 +398,16 @@ function InventoryPage() {
       })),
     [itemRows],
   );
+
+  /** Vendor recorded on each inventory item, for display on the stock tiles. */
+  const vendorByItem = useMemo(
+    () =>
+      Object.fromEntries(
+        (itemRows ?? []).map((row) => [row.id, (row as { vendor?: string | null }).vendor ?? ""]),
+      ) as Record<string, string>,
+    [itemRows],
+  );
+
 
   const categoryItems = useMemo(
     () => allItems.filter((item) => item.category === purchaseForm.category),
@@ -542,6 +557,8 @@ function InventoryPage() {
         category: itemForm.category,
         unit: itemForm.unit,
         status: itemForm.status,
+        vendor: itemForm.vendor.trim() || null,
+
         reorder_threshold: threshold !== null && Number.isFinite(threshold) ? threshold : null,
         notes: itemForm.notes.trim() || null,
       };
@@ -597,6 +614,7 @@ function InventoryPage() {
           row.category === purchaseForm.category &&
           row.name.toLowerCase() === typedName.toLowerCase(),
       );
+      const vendor = purchaseForm.vendor.trim() || null;
       const itemId =
         matched?.id ??
         (await ensureInventoryItem({
@@ -604,9 +622,10 @@ function InventoryPage() {
           name: typedName,
           category: purchaseForm.category,
           unit: purchaseForm.unit,
+          vendor,
         }));
       const unit = matched?.unit || purchaseForm.unit;
-      const vendor = purchaseForm.vendor.trim() || null;
+
 
       const payload = {
         category: purchaseForm.category,
@@ -788,6 +807,17 @@ function InventoryPage() {
                   placeholder="25"
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="item-vendor">Vendor (optional)</Label>
+                <Input
+                  id="item-vendor"
+                  maxLength={80}
+                  value={itemForm.vendor}
+                  onChange={(event) => setItem("vendor", event.target.value)}
+                  placeholder="Supplier name"
+                />
+              </div>
+
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="item-notes">Notes</Label>
                 <Textarea
@@ -1175,7 +1205,13 @@ function InventoryPage() {
                     <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{row.name}</p>
-                      <p className="text-xs text-muted-foreground">{titleCase(row.category)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {titleCase(row.category)}
+                        {vendorByItem[row.inventory_item_id ?? ""]
+                          ? ` · ${vendorByItem[row.inventory_item_id ?? ""]}`
+                          : ""}
+                      </p>
+
                       <div className="mt-1">
                         <ItemStatusBadge status={row.item_status} />
                       </div>

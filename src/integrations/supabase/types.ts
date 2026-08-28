@@ -646,6 +646,7 @@ export type Database = {
           status: string
           unit: string
           updated_at: string
+          vendor: string | null
         }
         Insert: {
           category: string
@@ -658,6 +659,7 @@ export type Database = {
           status?: string
           unit: string
           updated_at?: string
+          vendor?: string | null
         }
         Update: {
           category?: string
@@ -670,6 +672,7 @@ export type Database = {
           status?: string
           unit?: string
           updated_at?: string
+          vendor?: string | null
         }
         Relationships: [
           {
@@ -799,6 +802,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "memberships_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          created_by: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          kind: string
+          link: string | null
+          org_id: string
+          read_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          kind?: string
+          link?: string | null
+          org_id: string
+          read_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          kind?: string
+          link?: string | null
+          org_id?: string
+          read_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"

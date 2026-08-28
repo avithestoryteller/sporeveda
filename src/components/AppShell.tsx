@@ -18,7 +18,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/hooks/use-org";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { NotificationsBell } from "@/components/NotificationsBell";
 import logoAsset from "@/assets/sporeveda-logo.png.asset.json";
+
 
 
 const NAV = [
@@ -86,12 +88,14 @@ export function AppShell({ children }: { children?: ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
+            <NotificationsBell />
             <div className="hidden text-right sm:block">
               <p className="max-w-[12rem] truncate text-xs font-medium">{org?.name}</p>
               <p className="text-[10px] uppercase tracking-wide text-sidebar-foreground/60">
                 {role}
               </p>
             </div>
+
             <Button
               variant="ghost"
               size="icon"

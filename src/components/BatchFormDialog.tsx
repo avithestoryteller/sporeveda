@@ -30,8 +30,12 @@ import {
   DEFAULT_SUBSTRATE_PER_BAG_KG,
   SPAWN_PER_BAG_STORAGE_KEY,
   SUBSTRATE_PER_BAG_STORAGE_KEY,
+  reconcileMaterialForBatch,
+  type MaterialCheck,
 } from "@/lib/materials";
+import { NOTIFICATIONS_QUERY_KEY, pushNotification } from "@/lib/notifications";
 import { bagCode, buildBatchCode, nextBatchNumber } from "@/lib/batch-code";
+
 
 function storedRate(key: string, fallback: number) {
   if (typeof window === "undefined") return fallback;
@@ -220,6 +224,40 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
         spawn_vendor: form.spawnVendor.trim() || null,
       };
 
+      const speciesName =
+        (options.data?.species ?? []).find((item) => item.id === speciesId)?.common_name ??
+        form.newSpecies.trim();
+
+      /** Links substrate + spawn to inventory, creating draft purchases when stock is short. */
+      const linkInventory = async (batchId: string, bagCount: number) => {
+        const perSubstrate = storedRate(SUBSTRATE_PER_BAG_STORAGE_KEY, DEFAULT_SUBSTRATE_PER_BAG_KG);
+        const perSpawn = storedRate(SPAWN_PER_BAG_STORAGE_KEY, DEFAULT_SPAWN_PER_BAG_KG);
+        const checks: MaterialCheck[] = [];
+        const substrate = await reconcileMaterialForBatch({
+          orgId,
+          category: "substrate",
+          name: form.substrateType,
+          vendor: form.substrateVendor,
+          batchId,
+          batchCode: code,
+          farmId: form.farmId,
+          requiredQty: bagCount * perSubstrate,
+        });
+        if (substrate) checks.push(substrate);
+        const spawn = await reconcileMaterialForBatch({
+          orgId,
+          category: "spawn",
+          name: speciesName ? `${speciesName} Spawn` : "",
+          vendor: form.spawnVendor,
+          batchId,
+          batchCode: code,
+          farmId: form.farmId,
+          requiredQty: bagCount * perSpawn,
+        });
+        if (spawn) checks.push(spawn);
+        return checks;
+      };
+
       if (isEdit && batch) {
         const { error } = await supabase
           .from("batches")
@@ -232,7 +270,12 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           })
           .eq("id", batch.id);
         if (error) throw error;
-        return batch.id;
+        const bagCount = await supabase
+          .from("bags")
+          .select("id", { count: "exact", head: true })
+          .eq("batch_id", batch.id);
+        const checks = await linkInventory(batch.id, bagCount.count ?? 0);
+        return { id: batch.id, code, checks };
       }
 
       const numeric = (value: string) => (value.trim() ? Number(value) : null);
@@ -277,20 +320,45 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
         if (dry && dry > 0) window.localStorage.setItem(SUBSTRATE_PER_BAG_STORAGE_KEY, String(dry));
         if (spawn && spawn > 0) window.localStorage.setItem(SPAWN_PER_BAG_STORAGE_KEY, String(spawn));
       }
-      return data.id;
+
+      const checks = await linkInventory(data.id, rows.length);
+      return { id: data.id, code, checks };
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       toast.success(isEdit ? "Batch updated" : "Batch created — add bags next");
       setOpen(false);
+
+      const created = result.checks.filter((check) => check.createdPurchase);
+      for (const check of created) {
+        await pushNotification({
+          orgId,
+          kind: "inventory",
+          title: "Inventory entry created",
+          body: `An inventory entry for ${check.name} (${check.category}) was created from batch ${result.code} — click to edit.`,
+          link: "/finance/inventory",
+          entityType: "inventory_item",
+          entityId: check.itemId,
+        });
+      }
+      if (created.length) {
+        toast.info(
+          `No stock found for ${created.map((check) => check.name).join(" and ")} — inventory entries created.`,
+        );
+      }
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["batches"] }),
         queryClient.invalidateQueries({ queryKey: ["batch"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
         queryClient.invalidateQueries({ queryKey: ["batch-form-options"] }),
+        queryClient.invalidateQueries({ queryKey: ["inventory"] }),
+        queryClient.invalidateQueries({ queryKey: ["costs"] }),
+        queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_QUERY_KEY] }),
       ]);
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
