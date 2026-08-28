@@ -691,6 +691,33 @@ function InventoryPage() {
           });
           if (adjust.error) throw adjust.error;
         }
+        if (wastage > 0) {
+          const reason = itemForm.wastageReason.trim();
+          const logged = await supabase.from("inventory_usage").insert({
+            org_id: orgId,
+            inventory_item_id: editingItemId,
+            quantity_used: wastage,
+            used_date: todayISO(),
+            notes: reason ? `Wastage — ${reason}` : "Wastage",
+          });
+          if (logged.error) throw logged.error;
+          if (itemForm.orderReplacement) {
+            const replacement = await supabase.from("costs").insert({
+              org_id: orgId,
+              category: payload.category,
+              vendor: payload.vendor,
+              status: itemForm.replacementStatus,
+              description: `${name} — replacement for ${wastage} ${payload.unit} wastage`,
+              amount: 0,
+              cost_type: "one_time",
+              incurred_date: todayISO(),
+              inventory_item_id: editingItemId,
+              quantity_purchased: wastage,
+              notes: reason ? `Replacement order — ${reason}` : "Replacement order for wastage",
+            });
+            if (replacement.error) throw replacement.error;
+          }
+        }
         return;
       }
       const { data: inserted, error } = await supabase
