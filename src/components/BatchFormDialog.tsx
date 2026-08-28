@@ -151,10 +151,16 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
       const code = isEdit ? form.batchCode.trim() : generatedCode;
       if (code.length < 2) throw new Error("Pick a species and start date to generate the batch code");
 
+      const num = (value: string) => (value.trim() ? Number(value) : null);
+      const targets = {
+        target_avg_temp_c: num(form.targetTemp),
+        target_avg_humidity_pct: num(form.targetHumidity),
+      };
+
       if (isEdit && batch) {
         const { error } = await supabase
           .from("batches")
-          .update({ batch_code: code, species_id: speciesId, farm_id: form.farmId })
+          .update({ batch_code: code, species_id: speciesId, farm_id: form.farmId, ...targets })
           .eq("id", batch.id);
         if (error) throw error;
         return batch.id;
