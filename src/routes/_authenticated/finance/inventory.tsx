@@ -657,11 +657,16 @@ function InventoryPage() {
       if (totalRaw && (!Number.isFinite(total) || total < 0))
         throw new Error("Enter a valid total weight / quantity");
 
+      const wastageRaw = itemForm.wastageQty.trim();
+      const wastage = wastageRaw ? Number(wastageRaw) : 0;
+      if (wastageRaw && (!Number.isFinite(wastage) || wastage <= 0))
+        throw new Error("Enter a valid wastage quantity");
+
       if (editingItemId) {
         const current = stockRows.find((row) => row.inventory_item_id === editingItemId);
         const purchased = toNumber(current?.total_purchased_qty) ?? 0;
         const used =
-          (toNumber(current?.total_used_qty) ?? 0) + (current?.derivedUsed ?? 0);
+          (toNumber(current?.total_used_qty) ?? 0) + (current?.derivedUsed ?? 0) + wastage;
         const diff = total - purchased;
         const finalStatus =
           total <= used + 0.0001 && (total > 0 || used > 0) ? "depleted" : payload.status;
