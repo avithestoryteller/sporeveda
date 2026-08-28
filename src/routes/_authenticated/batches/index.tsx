@@ -114,6 +114,36 @@ function StageFunnel({
   );
 }
 
+function BatchStageBar({
+  stages,
+  bagCount,
+}: {
+  stages: { stage: string; count: number }[];
+  bagCount: number;
+}) {
+  if (bagCount === 0) return null;
+  return (
+    <div
+      className="mt-2 flex h-3 w-full overflow-hidden rounded-full bg-muted"
+      role="img"
+      aria-label={`Bags by stage: ${stages
+        .map((s) => `${STAGE_LABEL[s.stage as BagStage] ?? s.stage} ${s.count}`)
+        .join(", ")}`}
+    >
+      {stages.map(({ stage, count }) => (
+        <div
+          key={stage}
+          className="h-full transition-all"
+          title={`${STAGE_LABEL[stage as BagStage] ?? stage}: ${count} bag${count === 1 ? "" : "s"}`}
+          style={{
+            width: `${(count / bagCount) * 100}%`,
+            background: STAGE_COLOR[stage as BagStage] ?? "var(--muted-foreground)",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 function BatchesPage() {
   const orgId = useOrgId();
