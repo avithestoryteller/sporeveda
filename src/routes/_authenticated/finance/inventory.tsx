@@ -399,6 +399,16 @@ function InventoryPage() {
     [itemRows],
   );
 
+  /** Vendor recorded on each inventory item, for display on the stock tiles. */
+  const vendorByItem = useMemo(
+    () =>
+      Object.fromEntries(
+        (itemRows ?? []).map((row) => [row.id, (row as { vendor?: string | null }).vendor ?? ""]),
+      ) as Record<string, string>,
+    [itemRows],
+  );
+
+
   const categoryItems = useMemo(
     () => allItems.filter((item) => item.category === purchaseForm.category),
     [allItems, purchaseForm.category],
