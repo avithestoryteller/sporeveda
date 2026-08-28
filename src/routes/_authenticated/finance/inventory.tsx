@@ -1542,6 +1542,17 @@ function InventoryPage() {
                     {remaining.toLocaleString("en-IN", { maximumFractionDigits: 2 })}{" "}
                     <span className="text-sm font-normal text-muted-foreground">{row.unit}</span>
                   </p>
+                  {canEdit && remaining <= 0.0001 && pending && pending.qty > 0 ? (
+                    <Button
+                      size="sm"
+                      className="mt-3 w-full"
+                      disabled={markInStock.isPending}
+                      onClick={() => markInStock.mutate(row.inventory_item_id!)}
+                    >
+                      <PackageCheck className="size-4" /> Mark in stock (
+                      {pending.qty.toLocaleString("en-IN", { maximumFractionDigits: 2 })} {row.unit})
+                    </Button>
+                  ) : null}
                   <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <div>
                       <dt>Avg cost</dt>
