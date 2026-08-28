@@ -571,6 +571,7 @@ function InventoryPage() {
     () =>
       stockRows
         .map((row) => ({
+          id: row.inventory_item_id ?? "",
           name: row.name ?? "Item",
           unit: row.unit ?? "",
           qty: toNumber((row as { incoming_qty?: number | null }).incoming_qty) ?? 0,
@@ -578,6 +579,49 @@ function InventoryPage() {
         .filter((row) => row.qty > 0),
     [stockRows],
   );
+
+  /** Purchases still awaiting receipt, grouped by item — powers the one-click receive action. */
+  const pendingPurchasesByItem = useMemo(() => {
+    const map = new Map<string, { ids: string[]; qty: number }>();
+    for (const row of purchases ?? []) {
+      const itemId = row.inventory_item_id;
+      if (!itemId) continue;
+      const status = (row as { status?: string | null }).status ?? "received";
+      if (status !== "ordered" && status !== "in_transit") continue;
+      const entry = map.get(itemId) ?? { ids: [], qty: 0 };
+      entry.ids.push(row.id);
+      entry.qty += toNumber(row.quantity_purchased) ?? 0;
+      map.set(itemId, entry);
+    }
+    return map;
+  }, [purchases]);
+
+  const markInStock = useMutation({
+    mutationFn: async (itemId: string) => {
+      const pending = pendingPurchasesByItem.get(itemId);
+      if (!pending || pending.ids.length === 0)
+        throw new Error("Nothing on order for this item — record a purchase first");
+      const received = await supabase
+        .from("costs")
+        .update({ status: "received" })
+        .in("id", pending.ids);
+      if (received.error) throw received.error;
+      const updated = await supabase
+        .from("inventory_items")
+        .update({ status: "in_stock" })
+        .eq("id", itemId);
+      if (updated.error) throw updated.error;
+    },
+    onSuccess: () => {
+      toast.success("Marked in stock");
+      queryClient.invalidateQueries({ queryKey: ["inventory-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["costs"] });
+      queryClient.invalidateQueries({ queryKey: ["financials"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   const lowStock = activeStockRows.filter((row) => {
     const threshold = toNumber(row.reorder_threshold);
