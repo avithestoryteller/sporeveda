@@ -795,6 +795,17 @@ function InventoryPage() {
                   placeholder="25"
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="item-vendor">Vendor (optional)</Label>
+                <Input
+                  id="item-vendor"
+                  maxLength={80}
+                  value={itemForm.vendor}
+                  onChange={(event) => setItem("vendor", event.target.value)}
+                  placeholder="Supplier name"
+                />
+              </div>
+
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="item-notes">Notes</Label>
                 <Textarea
