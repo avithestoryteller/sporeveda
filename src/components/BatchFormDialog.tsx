@@ -339,6 +339,42 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
             </Select>
           </div>
 
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="batch-target-temp">Target avg temperature (°C)</Label>
+              <Input
+                id="batch-target-temp"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                min={0}
+                max={60}
+                placeholder="e.g. 24.5"
+                value={form.targetTemp}
+                onChange={(event) => setForm((prev) => ({ ...prev, targetTemp: event.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="batch-target-humidity">Target avg humidity (%RH)</Label>
+              <Input
+                id="batch-target-humidity"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                min={0}
+                max={100}
+                placeholder="e.g. 85"
+                value={form.targetHumidity}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, targetHumidity: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Optional — leave blank if this batch has no specific climate target.
+          </p>
+
           {!isEdit ? (
             <div className="space-y-2">
               <Label>Bags</Label>
