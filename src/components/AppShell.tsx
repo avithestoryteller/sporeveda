@@ -9,6 +9,7 @@ import {
   BarChart3,
   ListChecks,
   FileUp,
+  Download,
   IndianRupee,
   LogOut,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const NAV = [
   { to: "/compare", label: "Compare", icon: BarChart3 },
   { to: "/bulk", label: "Bulk", icon: ListChecks },
   { to: "/import", label: "Import", icon: FileUp },
+  { to: "/export", label: "Export", icon: Download },
 ] as const;
 
 const FINANCE_NAV = { to: "/finance", label: "Finance", icon: IndianRupee } as const;
