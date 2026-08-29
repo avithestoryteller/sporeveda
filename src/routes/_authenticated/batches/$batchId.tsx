@@ -454,6 +454,14 @@ function BatchDetailPage() {
                   ) : null}
                 </div>
               </Link>
+              {canEdit && bag.current_stage === "colonizing" ? (
+                <PinningTileControl
+                  bagId={bag.id}
+                  batchId={batch.id}
+                  inoculationDate={start}
+                  pinningDate={bag.pinning_date}
+                />
+              ) : null}
               {canEdit ? (
                 <div className="absolute right-1.5 top-1.5">
                   <BagFormDialog
