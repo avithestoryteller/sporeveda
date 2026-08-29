@@ -148,12 +148,14 @@ function BagDetailPage() {
 
   const pinningMutation = useMutation({
     mutationFn: async (value: string | null) => {
-      const update: Record<string, unknown> = { pinning_date: value };
-      if (value) {
-        update.current_stage = "fruiting";
-        update.updated_at = new Date().toISOString();
-      }
-      const { error: updateError } = await supabase.from("bags").update(update).eq("id", bagId);
+      const { error: updateError } = await supabase
+        .from("bags")
+        .update(
+          value
+            ? { pinning_date: value, current_stage: "fruiting", updated_at: new Date().toISOString() }
+            : { pinning_date: value },
+        )
+        .eq("id", bagId);
       if (updateError) throw updateError;
     },
     onSuccess: async (_result, value) => {
