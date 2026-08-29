@@ -26,6 +26,53 @@ export const SPAWN_PER_BAG_STORAGE_KEY = "sporeveda.spawnPerBagKg.v2";
 export const DEFAULT_SUBSTRATE_PER_BAG_KG = 1.25;
 export const SUBSTRATE_PER_BAG_STORAGE_KEY = "sporeveda.substratePerBagKg.v3";
 
+/** Weight of one empty PP grow bag, in grams (1 kg ≈ 142 bags). */
+export const DEFAULT_PP_BAG_WEIGHT_G = 7;
+export const PP_BAG_WEIGHT_STORAGE_KEY = "sporeveda.ppBagWeightG.v1";
+
+/** True when an inventory item represents empty PP / poly grow bags. */
+export function isPackagingBagItem(name: string | null | undefined) {
+  const value = (name ?? "").toLowerCase();
+  return /(\bpp\b|poly\s*|grow\s*)?bags?\b/.test(value) && /\bpp\b|poly|grow/.test(value);
+}
+
+/**
+ * Consumption of empty PP bag stock derived from production: every bag ever
+ * created (including discarded ones) consumes one empty bag. Usage is spread
+ * across matching PP-bag inventory items, filling each item up to the quantity
+ * purchased before spilling over to the next.
+ */
+export function derivePackagingUsage(params: {
+  items: { id: string; name: string | null; purchased: number }[];
+  totalBags: number;
+  gramsPerBag: number;
+}): Record<string, UsageDetail> {
+  const usage: Record<string, UsageDetail> = {};
+  const perBagKg = params.gramsPerBag / 1000;
+  if (perBagKg <= 0 || params.totalBags <= 0) return usage;
+  const pool = params.items.filter((item) => isPackagingBagItem(item.name));
+  if (pool.length === 0) return usage;
+
+  let remainingBags = params.totalBags;
+  for (const item of pool) {
+    if (remainingBags <= 0) break;
+    const capacityBags = item.purchased > 0 ? item.purchased / perBagKg : Infinity;
+    const bags = Math.min(remainingBags, capacityBags);
+    usage[item.id] = { qty: bags * perBagKg, bags };
+    remainingBags -= bags;
+  }
+  // Any overflow lands on the last item so the shortfall stays visible.
+  if (remainingBags > 0 && pool.length) {
+    const last = pool[pool.length - 1]!;
+    const entry = usage[last.id] ?? { qty: 0, bags: 0 };
+    entry.qty += remainingBags * perBagKg;
+    entry.bags += remainingBags;
+    usage[last.id] = entry;
+  }
+  return usage;
+}
+
+
 export type MaterialLine = {
   name: string;
   variety: string;
