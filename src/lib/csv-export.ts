@@ -42,7 +42,8 @@ export type DatasetDef = {
   /** Path to the farm id for room filtering (null = not filterable by room). */
   farmColumn: string | null;
   speciesColumn: string | null;
-  map: (row: Record<string, any>) => Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  map: (row: any) => Record<string, unknown>;
 };
 
 const label = (value: unknown) => (value === null || value === undefined ? "" : value);
