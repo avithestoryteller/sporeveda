@@ -491,7 +491,7 @@ function InventoryPage() {
     for (const row of stock ?? []) {
       if (row.inventory_item_id) categoryByItem[row.inventory_item_id] = row.category ?? "other";
     }
-    return deriveUsageDetailByItem({
+    const usage = deriveUsageDetailByItem({
       costRows: consumption.links,
       bagsPerBatch: consumption.bagsPerBatch,
       weightsPerBatch: consumption.weightsPerBatch,
@@ -513,7 +513,20 @@ function InventoryPage() {
         vendor: (row as { vendor?: string | null }).vendor ?? null,
       })),
     });
-  }, [consumption, stock, itemRows, spawnPerBagKg, substratePerBagKg]);
+
+    // Empty PP grow bags: one per bag ever created, including discarded ones.
+    const packaging = derivePackagingUsage({
+      items: (stock ?? []).map((row) => ({
+        id: row.inventory_item_id as string,
+        name: row.name as string | null,
+        purchased: toNumber(row.total_purchased_qty) ?? 0,
+      })),
+      totalBags: consumption.totalBags ?? 0,
+      gramsPerBag: ppBagWeightG,
+    });
+    return { ...usage, ...packaging };
+  }, [consumption, stock, itemRows, spawnPerBagKg, substratePerBagKg, ppBagWeightG]);
+
 
   /** Items whose purchase row was auto-created from a batch and still needs details. */
   const needsReviewItems = useMemo(() => {
