@@ -247,7 +247,7 @@ function InventoryPage() {
           .not("batch_id", "is", null),
         supabase
           .from("bags")
-          .select("batch_id, spawn_weight_kg, dry_weight_kg, current_stage")
+          .select("batch_id, spawn_weight_kg, dry_weight_kg, current_stage, inoculation_date")
           .eq("org_id", orgId),
         supabase
           .from("batches")
