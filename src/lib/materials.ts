@@ -42,8 +42,20 @@ export function materialItemName(name: string, variety: string) {
   return v ? `${base} — ${v}` : base;
 }
 
+/** Normalised name used to decide whether two inventory items are the same material. */
+function materialKey(name: string | null | undefined) {
+  return (name ?? "")
+    .toLowerCase()
+    .replace(/[—–-]/g, " ")
+    .replace(/\b(spawn|substrate|pellets?|grain|bags?)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 /**
  * Finds an inventory item by name + category for the org, creating it when missing.
+ * Matching ignores filler words such as "Spawn"/"Pellets" so "Shiitake" and
+ * "Shiitake Spawn" from the same vendor are treated as one item.
  * Returns the inventory item id.
  */
 export async function ensureInventoryItem(params: {
@@ -58,12 +70,14 @@ export async function ensureInventoryItem(params: {
   // Stock is tracked per vendor: same material from another vendor is its own item.
   const existing = await supabase
     .from("inventory_items")
-    .select("id, vendor")
+    .select("id, name, vendor")
     .eq("org_id", params.orgId)
-    .eq("category", params.category)
-    .eq("name", params.name);
+    .eq("category", params.category);
   if (existing.error) throw existing.error;
-  const rows = existing.data ?? [];
+  const key = materialKey(params.name);
+  const rows = (existing.data ?? []).filter(
+    (row) => row.name === params.name || (key.length > 1 && materialKey(row.name) === key),
+  );
   const sameVendor = rows.find(
     (row) => (row.vendor ?? "").trim().toLowerCase() === (vendor ?? "").toLowerCase(),
   );
@@ -90,6 +104,7 @@ export async function ensureInventoryItem(params: {
   if (created.error) throw created.error;
   return created.data.id;
 }
+
 
 /** Quantity of an inventory item currently on hand, counting received purchases only. */
 export async function availableStock(itemId: string): Promise<number> {
