@@ -1,5 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Sprout } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
@@ -9,10 +12,12 @@ import { BatchClimateCard } from "@/components/BatchClimateCard";
 import { PageHeader } from "@/components/AppShell";
 import { StageBadge } from "@/components/StageBadge";
 import { StatTile } from "@/components/StatTile";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { STAGE_ORDER, type BagStage } from "@/lib/stages";
-import { fmtDate, num, toNumber } from "@/lib/format";
+import { fmtDate, num, todayISO, toNumber } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/batches/$batchId")({
   head: () => ({
@@ -94,6 +99,92 @@ function useBatchDetail(batchId: string) {
       };
     },
   });
+}
+
+function PinningTileControl({
+  bagId,
+  batchId,
+  inoculationDate,
+  pinningDate,
+}: {
+  bagId: string;
+  batchId: string;
+  inoculationDate: string | null;
+  pinningDate: string | null;
+}) {
+  const queryClient = useQueryClient();
+  const [date, setDate] = useState(pinningDate ?? todayISO());
+  useEffect(() => {
+    setDate(pinningDate ?? todayISO());
+  }, [pinningDate]);
+
+  const mutation = useMutation({
+    mutationFn: async (value: string | null) => {
+      const { error: updateError } = await supabase
+        .from("bags")
+        .update({ pinning_date: value })
+        .eq("id", bagId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: async (_result, value) => {
+      toast.success(value ? "Pinning milestone recorded" : "Pinning milestone cleared");
+      await queryClient.invalidateQueries({ queryKey: ["batch", batchId] });
+      await queryClient.invalidateQueries({ queryKey: ["bag", bagId] });
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
+
+  const daysBetween = (from: string | null | undefined, to: string | null | undefined) => {
+    if (!from || !to) return null;
+    const a = new Date(from.length <= 10 ? `${from}T00:00:00` : from).getTime();
+    const b = new Date(to.length <= 10 ? `${to}T00:00:00` : to).getTime();
+    if (Number.isNaN(a) || Number.isNaN(b)) return null;
+    return Math.max(0, Math.round((b - a) / 86_400_000));
+  };
+
+  const day = daysBetween(inoculationDate, pinningDate ?? date);
+
+  return (
+    <div className="mt-3 rounded-md border border-border bg-muted/40 p-2">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+        <Sprout className="size-3.5" /> Pinning milestone
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Input
+          type="date"
+          aria-label="Pinning date"
+          className="h-8 w-32 text-xs"
+          value={date}
+          onChange={(event) => setDate(event.target.value)}
+        />
+        <Button
+          size="sm"
+          className="h-8 text-xs"
+          onClick={() => mutation.mutate(date)}
+          disabled={mutation.isPending || !date}
+        >
+          {pinningDate ? "Update" : "Mark"}
+        </Button>
+        {pinningDate ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 text-xs"
+            onClick={() => mutation.mutate(null)}
+            disabled={mutation.isPending}
+          >
+            Clear
+          </Button>
+        ) : null}
+      </div>
+      {pinningDate ? (
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
+          Recorded {fmtDate(pinningDate)}
+          {day !== null ? ` · Day ${day}` : null}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 function BatchDetailPage() {
@@ -332,6 +423,8 @@ function BatchDetailPage() {
                             </span>
                           ) : null}
                         </>
+                      ) : bag.current_stage === "colonizing" ? (
+                        <span className="text-muted-foreground">Not marked</span>
                       ) : (
                         "—"
                       )}
@@ -361,6 +454,14 @@ function BatchDetailPage() {
                   ) : null}
                 </div>
               </Link>
+              {canEdit && bag.current_stage === "colonizing" ? (
+                <PinningTileControl
+                  bagId={bag.id}
+                  batchId={batch.id}
+                  inoculationDate={start}
+                  pinningDate={bag.pinning_date}
+                />
+              ) : null}
               {canEdit ? (
                 <div className="absolute right-1.5 top-1.5">
                   <BagFormDialog
