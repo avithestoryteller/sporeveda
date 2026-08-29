@@ -36,13 +36,17 @@ import { fmtDate, todayISO, toNumber } from "@/lib/format";
 import { fmtMoney, titleCase } from "@/lib/money";
 import {
   type BatchWeights,
+  DEFAULT_PP_BAG_WEIGHT_G,
   DEFAULT_SPAWN_PER_BAG_KG,
   DEFAULT_SUBSTRATE_PER_BAG_KG,
+  PP_BAG_WEIGHT_STORAGE_KEY,
   SPAWN_PER_BAG_STORAGE_KEY,
   SUBSTRATE_PER_BAG_STORAGE_KEY,
+  derivePackagingUsage,
   deriveUsageDetailByItem,
   ensureInventoryItem,
 } from "@/lib/materials";
+
 
 
 export const Route = createFileRoute("/_authenticated/finance/inventory")({
