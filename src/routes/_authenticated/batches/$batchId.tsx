@@ -427,7 +427,7 @@ function BatchDetailPage() {
                             </span>
                           ) : null}
                         </>
-                      ) : bag.current_stage === "colonizing" ? (
+                      ) : bag.current_stage === "bulking" ? (
                         <span className="text-muted-foreground">Not marked</span>
                       ) : (
                         "—"
@@ -458,7 +458,7 @@ function BatchDetailPage() {
                   ) : null}
                 </div>
               </Link>
-              {canEdit && bag.current_stage === "colonizing" ? (
+              {canEdit && bag.current_stage === "bulking" ? (
                 <PinningTileControl
                   bagId={bag.id}
                   batchId={batch.id}
