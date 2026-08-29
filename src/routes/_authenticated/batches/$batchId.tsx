@@ -1,5 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Sprout } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg, useOrgId } from "@/hooks/use-org";
@@ -9,10 +12,12 @@ import { BatchClimateCard } from "@/components/BatchClimateCard";
 import { PageHeader } from "@/components/AppShell";
 import { StageBadge } from "@/components/StageBadge";
 import { StatTile } from "@/components/StatTile";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { STAGE_ORDER, type BagStage } from "@/lib/stages";
-import { fmtDate, num, toNumber } from "@/lib/format";
+import { fmtDate, num, todayISO, toNumber } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/batches/$batchId")({
   head: () => ({
