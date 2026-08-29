@@ -322,6 +322,11 @@ export function deriveUsageDetailByItem(params: {
   const batches = params.batches ?? [];
   const items = params.items ?? [];
   const weights = params.weightsPerBatch ?? {};
+  // The substrate-per-bag fallback only applies to paddy straw batches; other
+  // substrates rely on logged bag weights only.
+  const paddyByBatch = new Map<string, boolean>(
+    batches.map((batch) => [batch.id, materialKey(batch.substrate_type).includes("paddy")]),
+  );
 
   // batchId -> category -> itemId -> purchased qty
   const grouped = new Map<string, Map<string, Map<string, number>>>();
