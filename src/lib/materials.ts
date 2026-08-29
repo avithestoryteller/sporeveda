@@ -302,7 +302,8 @@ export type UsageDetail = { qty: number; bags: number };
 /**
  * Derives material consumption per inventory item from production data. When bags
  * carry logged spawn / dry-substrate weights those actual weights are used; bags
- * without a logged weight fall back to `spawnPerBagKg` / `substratePerBagKg`.
+ * without a logged weight fall back to `spawnPerBagKg`, and to `substratePerBagKg`
+ * only for paddy straw batches (other substrates count logged weights only).
  * Every bag counts, including discarded ones. Items linked to the batch through
  * purchase rows split the consumption in proportion to the quantity purchased for
  * that batch; batches with no linked purchase fall back to the inventory item
