@@ -339,10 +339,12 @@ function BagDetailPage() {
               <span className="text-sm text-muted-foreground">
                 {stage === "bulking"
                   ? "No pinning milestone recorded yet."
-                  : "Pinning is marked while the bag is bulking."}
+                  : stage === "fruiting"
+                    ? "No pinning date recorded yet — add one below for this historical entry."
+                    : "Pinning is marked while the bag is bulking."}
               </span>
             )}
-            {canEdit && stage === "bulking" ? (
+            {canEdit && (stage === "bulking" || (stage === "fruiting" && !bag.pinning_date)) ? (
 
               <div className="flex flex-wrap items-center gap-2">
                 <Input
