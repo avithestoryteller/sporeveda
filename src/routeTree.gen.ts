@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBulkRouteImport } from './routes/_authenticated/bulk'
 import { Route as AuthenticatedCompareRouteImport } from './routes/_authenticated/compare'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedExportRouteImport } from './routes/_authenticated/export'
 import { Route as AuthenticatedFinanceRouteRouteImport } from './routes/_authenticated/finance/route'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedLogRouteImport } from './routes/_authenticated/log'
@@ -56,6 +57,11 @@ const AuthenticatedCompareRoute = AuthenticatedCompareRouteImport.update({
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedExportRoute = AuthenticatedExportRouteImport.update({
+  id: '/export',
+  path: '/export',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedFinanceRouteRoute =
@@ -139,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/bulk': typeof AuthenticatedBulkRoute
   '/compare': typeof AuthenticatedCompareRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/export': typeof AuthenticatedExportRoute
   '/import': typeof AuthenticatedImportRoute
   '/log': typeof AuthenticatedLogRoute
   '/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/bulk': typeof AuthenticatedBulkRoute
   '/compare': typeof AuthenticatedCompareRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/export': typeof AuthenticatedExportRoute
   '/import': typeof AuthenticatedImportRoute
   '/log': typeof AuthenticatedLogRoute
   '/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
@@ -180,6 +188,7 @@ export interface FileRoutesById {
   '/_authenticated/bulk': typeof AuthenticatedBulkRoute
   '/_authenticated/compare': typeof AuthenticatedCompareRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/export': typeof AuthenticatedExportRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
   '/_authenticated/log': typeof AuthenticatedLogRoute
   '/_authenticated/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/bulk'
     | '/compare'
     | '/dashboard'
+    | '/export'
     | '/import'
     | '/log'
     | '/bags/$bagId'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/bulk'
     | '/compare'
     | '/dashboard'
+    | '/export'
     | '/import'
     | '/log'
     | '/bags/$bagId'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bulk'
     | '/_authenticated/compare'
     | '/_authenticated/dashboard'
+    | '/_authenticated/export'
     | '/_authenticated/import'
     | '/_authenticated/log'
     | '/_authenticated/bags/$bagId'
@@ -304,6 +316,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/export': {
+      id: '/_authenticated/export'
+      path: '/export'
+      fullPath: '/export'
+      preLoaderRoute: typeof AuthenticatedExportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/finance': {
@@ -425,6 +444,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBulkRoute: typeof AuthenticatedBulkRoute
   AuthenticatedCompareRoute: typeof AuthenticatedCompareRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedExportRoute: typeof AuthenticatedExportRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
   AuthenticatedLogRoute: typeof AuthenticatedLogRoute
   AuthenticatedBagsBagIdRoute: typeof AuthenticatedBagsBagIdRoute
@@ -440,6 +460,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBulkRoute: AuthenticatedBulkRoute,
   AuthenticatedCompareRoute: AuthenticatedCompareRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedExportRoute: AuthenticatedExportRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,
   AuthenticatedLogRoute: AuthenticatedLogRoute,
   AuthenticatedBagsBagIdRoute: AuthenticatedBagsBagIdRoute,
