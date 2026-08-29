@@ -36,13 +36,17 @@ import { fmtDate, todayISO, toNumber } from "@/lib/format";
 import { fmtMoney, titleCase } from "@/lib/money";
 import {
   type BatchWeights,
+  DEFAULT_PP_BAG_WEIGHT_G,
   DEFAULT_SPAWN_PER_BAG_KG,
   DEFAULT_SUBSTRATE_PER_BAG_KG,
+  PP_BAG_WEIGHT_STORAGE_KEY,
   SPAWN_PER_BAG_STORAGE_KEY,
   SUBSTRATE_PER_BAG_STORAGE_KEY,
+  derivePackagingUsage,
   deriveUsageDetailByItem,
   ensureInventoryItem,
 } from "@/lib/materials";
+
 
 
 export const Route = createFileRoute("/_authenticated/finance/inventory")({
@@ -181,6 +185,7 @@ function InventoryPage() {
   const [openForm, setOpenForm] = useState<"item" | "purchase" | null>(null);
   const [spawnPerBagKg, setSpawnPerBagKg] = useState(DEFAULT_SPAWN_PER_BAG_KG);
   const [substratePerBagKg, setSubstratePerBagKg] = useState(DEFAULT_SUBSTRATE_PER_BAG_KG);
+  const [ppBagWeightG, setPpBagWeightG] = useState(DEFAULT_PP_BAG_WEIGHT_G);
 
   useEffect(() => {
     const read = (key: string) => {
@@ -192,7 +197,10 @@ function InventoryPage() {
     if (spawn) setSpawnPerBagKg(spawn);
     const substrate = read(SUBSTRATE_PER_BAG_STORAGE_KEY);
     if (substrate) setSubstratePerBagKg(substrate);
+    const pp = read(PP_BAG_WEIGHT_STORAGE_KEY);
+    if (pp) setPpBagWeightG(pp);
   }, []);
+
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
 
@@ -278,7 +286,16 @@ function InventoryPage() {
         else entry.substrateMissingBags += 1;
       }
 
-      return { links: links.data ?? [], bagsPerBatch, weightsPerBatch, batches: batchRows.data ?? [] };
+      const totalBags = (bags.data ?? []).length;
+
+      return {
+        links: links.data ?? [],
+        bagsPerBatch,
+        weightsPerBatch,
+        batches: batchRows.data ?? [],
+        totalBags,
+      };
+
 
     },
   });
@@ -482,7 +499,7 @@ function InventoryPage() {
     for (const row of stock ?? []) {
       if (row.inventory_item_id) categoryByItem[row.inventory_item_id] = row.category ?? "other";
     }
-    return deriveUsageDetailByItem({
+    const usage = deriveUsageDetailByItem({
       costRows: consumption.links,
       bagsPerBatch: consumption.bagsPerBatch,
       weightsPerBatch: consumption.weightsPerBatch,
@@ -504,7 +521,20 @@ function InventoryPage() {
         vendor: (row as { vendor?: string | null }).vendor ?? null,
       })),
     });
-  }, [consumption, stock, itemRows, spawnPerBagKg, substratePerBagKg]);
+
+    // Empty PP grow bags: one per bag ever created, including discarded ones.
+    const packaging = derivePackagingUsage({
+      items: (stock ?? []).map((row) => ({
+        id: row.inventory_item_id as string,
+        name: row.name as string | null,
+        purchased: toNumber(row.total_purchased_qty) ?? 0,
+      })),
+      totalBags: consumption.totalBags ?? 0,
+      gramsPerBag: ppBagWeightG,
+    });
+    return { ...usage, ...packaging };
+  }, [consumption, stock, itemRows, spawnPerBagKg, substratePerBagKg, ppBagWeightG]);
+
 
   /** Items whose purchase row was auto-created from a batch and still needs details. */
   const needsReviewItems = useMemo(() => {
@@ -1501,7 +1531,25 @@ function InventoryPage() {
               }}
             />
           </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="pp-bag-weight" className="text-xs text-muted-foreground">
+              PP bag weight (g)
+            </Label>
+            <Input
+              id="pp-bag-weight"
+              className="h-8 w-24"
+              inputMode="decimal"
+              value={ppBagWeightG}
+              onChange={(event) => {
+                const grams = Number(event.target.value);
+                if (!Number.isFinite(grams) || grams < 0) return;
+                setPpBagWeightG(grams);
+                window.localStorage.setItem(PP_BAG_WEIGHT_STORAGE_KEY, String(grams));
+              }}
+            />
+          </div>
         </div>
+
       </div>
       {isLoading ? (
         <Skeleton className="h-48" />

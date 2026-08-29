@@ -332,9 +332,14 @@ function BagDetailPage() {
                 <Sprout className="size-4" /> Pinning · {fmtDate(bag.pinning_date)}
               </span>
             ) : (
-              <span className="text-sm text-muted-foreground">No pinning milestone recorded yet.</span>
+              <span className="text-sm text-muted-foreground">
+                {stage === "colonizing"
+                  ? "No pinning milestone recorded yet."
+                  : "Pinning is marked while the bag is colonising."}
+              </span>
             )}
-            {canEdit ? (
+            {canEdit && stage === "colonizing" ? (
+
               <div className="flex flex-wrap items-center gap-2">
                 <Input
                   type="date"
