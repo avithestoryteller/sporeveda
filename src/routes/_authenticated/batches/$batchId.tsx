@@ -317,12 +317,24 @@ function BatchDetailPage() {
                     <dt className="text-muted-foreground">Fruiting day</dt>
                     <dd className="font-medium">
                       {fruitingDay === null ? "—" : `Day ${fruitingDay}`}
-                      {pinningDay !== null ? (
-                        <span className="font-normal text-muted-foreground">
-                          {" "}
-                          · pinned d{pinningDay}
-                        </span>
-                      ) : null}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Pinning</dt>
+                    <dd className="font-medium">
+                      {bag.pinning_date ? (
+                        <>
+                          {fmtDate(bag.pinning_date)}
+                          {pinningDay !== null ? (
+                            <span className="font-normal text-muted-foreground">
+                              {" "}
+                              · Day {pinningDay}
+                            </span>
+                          ) : null}
+                        </>
+                      ) : (
+                        "—"
+                      )}
                     </dd>
                   </div>
                 </dl>
