@@ -150,7 +150,11 @@ function BagDetailPage() {
     mutationFn: async (value: string | null) => {
       const { error: updateError } = await supabase
         .from("bags")
-        .update({ pinning_date: value })
+        .update(
+          value
+            ? { pinning_date: value, current_stage: "fruiting", updated_at: new Date().toISOString() }
+            : { pinning_date: value },
+        )
         .eq("id", bagId);
       if (updateError) throw updateError;
     },
