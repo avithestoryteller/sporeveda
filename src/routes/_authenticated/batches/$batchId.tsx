@@ -101,6 +101,92 @@ function useBatchDetail(batchId: string) {
   });
 }
 
+function PinningTileControl({
+  bagId,
+  batchId,
+  inoculationDate,
+  pinningDate,
+}: {
+  bagId: string;
+  batchId: string;
+  inoculationDate: string | null;
+  pinningDate: string | null;
+}) {
+  const queryClient = useQueryClient();
+  const [date, setDate] = useState(pinningDate ?? todayISO());
+  useEffect(() => {
+    setDate(pinningDate ?? todayISO());
+  }, [pinningDate]);
+
+  const mutation = useMutation({
+    mutationFn: async (value: string | null) => {
+      const { error: updateError } = await supabase
+        .from("bags")
+        .update({ pinning_date: value })
+        .eq("id", bagId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: async (_result, value) => {
+      toast.success(value ? "Pinning milestone recorded" : "Pinning milestone cleared");
+      await queryClient.invalidateQueries({ queryKey: ["batch", batchId] });
+      await queryClient.invalidateQueries({ queryKey: ["bag", bagId] });
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
+
+  const daysBetween = (from: string | null | undefined, to: string | null | undefined) => {
+    if (!from || !to) return null;
+    const a = new Date(from.length <= 10 ? `${from}T00:00:00` : from).getTime();
+    const b = new Date(to.length <= 10 ? `${to}T00:00:00` : to).getTime();
+    if (Number.isNaN(a) || Number.isNaN(b)) return null;
+    return Math.max(0, Math.round((b - a) / 86_400_000));
+  };
+
+  const day = daysBetween(inoculationDate, pinningDate ?? date);
+
+  return (
+    <div className="mt-3 rounded-md border border-border bg-muted/40 p-2">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+        <Sprout className="size-3.5" /> Pinning milestone
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Input
+          type="date"
+          aria-label="Pinning date"
+          className="h-8 w-32 text-xs"
+          value={date}
+          onChange={(event) => setDate(event.target.value)}
+        />
+        <Button
+          size="sm"
+          className="h-8 text-xs"
+          onClick={() => mutation.mutate(date)}
+          disabled={mutation.isPending || !date}
+        >
+          {pinningDate ? "Update" : "Mark"}
+        </Button>
+        {pinningDate ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 text-xs"
+            onClick={() => mutation.mutate(null)}
+            disabled={mutation.isPending}
+          >
+            Clear
+          </Button>
+        ) : null}
+      </div>
+      {pinningDate ? (
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
+          Recorded {fmtDate(pinningDate)}
+          {day !== null ? ` · Day ${day}` : null}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function BatchDetailPage() {
   const { batchId } = Route.useParams();
   const orgId = useOrgId();
