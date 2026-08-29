@@ -369,9 +369,14 @@ export function deriveUsageDetailByItem(params: {
         const actual = category === "spawn" ? logged.spawnKg : logged.substrateKg;
         const missing =
           category === "spawn" ? logged.spawnMissingBags : logged.substrateMissingBags;
-        consumed = actual + missing * perBag;
+        const fallback =
+          category === "substrate" && paddyByBatch.get(batchId) === false ? 0 : perBag;
+        consumed = actual + missing * fallback;
       } else {
-        consumed = bags * perBag;
+        consumed =
+          category === "substrate" && paddyByBatch.get(batchId) === false
+            ? 0
+            : bags * perBag;
       }
       if (consumed <= 0) continue;
       const totalQty = [...byItem.values()].reduce((sum, value) => sum + value, 0);
