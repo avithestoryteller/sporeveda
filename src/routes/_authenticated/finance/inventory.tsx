@@ -278,7 +278,16 @@ function InventoryPage() {
         else entry.substrateMissingBags += 1;
       }
 
-      return { links: links.data ?? [], bagsPerBatch, weightsPerBatch, batches: batchRows.data ?? [] };
+      const totalBags = (bags.data ?? []).length;
+
+      return {
+        links: links.data ?? [],
+        bagsPerBatch,
+        weightsPerBatch,
+        batches: batchRows.data ?? [],
+        totalBags,
+      };
+
 
     },
   });
