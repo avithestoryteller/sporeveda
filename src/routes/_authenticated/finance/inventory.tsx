@@ -185,6 +185,7 @@ function InventoryPage() {
   const [openForm, setOpenForm] = useState<"item" | "purchase" | null>(null);
   const [spawnPerBagKg, setSpawnPerBagKg] = useState(DEFAULT_SPAWN_PER_BAG_KG);
   const [substratePerBagKg, setSubstratePerBagKg] = useState(DEFAULT_SUBSTRATE_PER_BAG_KG);
+  const [ppBagWeightG, setPpBagWeightG] = useState(DEFAULT_PP_BAG_WEIGHT_G);
 
   useEffect(() => {
     const read = (key: string) => {
@@ -196,7 +197,10 @@ function InventoryPage() {
     if (spawn) setSpawnPerBagKg(spawn);
     const substrate = read(SUBSTRATE_PER_BAG_STORAGE_KEY);
     if (substrate) setSubstratePerBagKg(substrate);
+    const pp = read(PP_BAG_WEIGHT_STORAGE_KEY);
+    if (pp) setPpBagWeightG(pp);
   }, []);
+
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
 
