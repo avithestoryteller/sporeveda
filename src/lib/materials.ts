@@ -302,7 +302,8 @@ export type UsageDetail = { qty: number; bags: number };
 /**
  * Derives material consumption per inventory item from production data. When bags
  * carry logged spawn / dry-substrate weights those actual weights are used; bags
- * without a logged weight fall back to `spawnPerBagKg` / `substratePerBagKg`.
+ * without a logged weight fall back to `spawnPerBagKg`, and to `substratePerBagKg`
+ * only for paddy straw batches (other substrates count logged weights only).
  * Every bag counts, including discarded ones. Items linked to the batch through
  * purchase rows split the consumption in proportion to the quantity purchased for
  * that batch; batches with no linked purchase fall back to the inventory item
@@ -322,6 +323,11 @@ export function deriveUsageDetailByItem(params: {
   const batches = params.batches ?? [];
   const items = params.items ?? [];
   const weights = params.weightsPerBatch ?? {};
+  // The substrate-per-bag fallback only applies to paddy straw batches; other
+  // substrates rely on logged bag weights only.
+  const paddyByBatch = new Map<string, boolean>(
+    batches.map((batch) => [batch.id, materialKey(batch.substrate_type).includes("paddy")]),
+  );
 
   // batchId -> category -> itemId -> purchased qty
   const grouped = new Map<string, Map<string, Map<string, number>>>();
@@ -364,9 +370,14 @@ export function deriveUsageDetailByItem(params: {
         const actual = category === "spawn" ? logged.spawnKg : logged.substrateKg;
         const missing =
           category === "spawn" ? logged.spawnMissingBags : logged.substrateMissingBags;
-        consumed = actual + missing * perBag;
+        const fallback =
+          category === "substrate" && paddyByBatch.get(batchId) === false ? 0 : perBag;
+        consumed = actual + missing * fallback;
       } else {
-        consumed = bags * perBag;
+        consumed =
+          category === "substrate" && paddyByBatch.get(batchId) === false
+            ? 0
+            : bags * perBag;
       }
       if (consumed <= 0) continue;
       const totalQty = [...byItem.values()].reduce((sum, value) => sum + value, 0);
