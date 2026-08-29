@@ -423,6 +423,8 @@ function BatchDetailPage() {
                             </span>
                           ) : null}
                         </>
+                      ) : bag.current_stage === "colonizing" ? (
+                        <span className="text-muted-foreground">Not marked</span>
                       ) : (
                         "—"
                       )}
