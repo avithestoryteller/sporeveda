@@ -1531,7 +1531,25 @@ function InventoryPage() {
               }}
             />
           </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="pp-bag-weight" className="text-xs text-muted-foreground">
+              PP bag weight (g)
+            </Label>
+            <Input
+              id="pp-bag-weight"
+              className="h-8 w-24"
+              inputMode="decimal"
+              value={ppBagWeightG}
+              onChange={(event) => {
+                const grams = Number(event.target.value);
+                if (!Number.isFinite(grams) || grams < 0) return;
+                setPpBagWeightG(grams);
+                window.localStorage.setItem(PP_BAG_WEIGHT_STORAGE_KEY, String(grams));
+              }}
+            />
+          </div>
         </div>
+
       </div>
       {isLoading ? (
         <Skeleton className="h-48" />
