@@ -337,12 +337,12 @@ function BagDetailPage() {
               </span>
             ) : (
               <span className="text-sm text-muted-foreground">
-                {stage === "colonizing"
+                {stage === "bulking"
                   ? "No pinning milestone recorded yet."
-                  : "Pinning is marked while the bag is colonising."}
+                  : "Pinning is marked while the bag is bulking."}
               </span>
             )}
-            {canEdit && stage === "colonizing" ? (
+            {canEdit && stage === "bulking" ? (
 
               <div className="flex flex-wrap items-center gap-2">
                 <Input
