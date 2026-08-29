@@ -271,8 +271,8 @@ function InventoryPage() {
         });
         const spawn = Number(bag.spawn_weight_kg);
         if (Number.isFinite(spawn) && spawn > 0) entry.spawnKg += spawn;
-        // Bags still in prep with no inoculation date have not been spawned yet.
-        else if (bag.current_stage !== "prep" || bag.inoculation_date) entry.spawnMissingBags += 1;
+        // Bags still in prep have not been inoculated yet — no spawn consumed.
+        else if (bag.current_stage !== "prep") entry.spawnMissingBags += 1;
         const dry = Number(bag.dry_weight_kg);
         if (Number.isFinite(dry) && dry > 0) entry.substrateKg += dry;
         else entry.substrateMissingBags += 1;
