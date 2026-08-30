@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { STAGE_ORDER, type BagStage } from "@/lib/stages";
+import { nextStage, STAGE_LABEL, STAGE_ORDER, type BagStage } from "@/lib/stages";
 import { fmtDate, num, todayISO, toNumber } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/batches/$batchId")({
@@ -188,6 +188,55 @@ function PinningTileControl({
         </p>
       ) : null}
     </div>
+  );
+}
+
+function BagQuickMove({
+  bagId,
+  batchId,
+  currentStage,
+}: {
+  bagId: string;
+  batchId: string;
+  currentStage: BagStage;
+}) {
+  const queryClient = useQueryClient();
+  const next = nextStage(currentStage);
+
+  const mutation = useMutation({
+    mutationFn: async (stage: BagStage) => {
+      const { error: updateError } = await supabase
+        .from("bags")
+        .update({
+          current_stage: stage,
+          is_discarded: stage === "discarded",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", bagId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: async (_result, stage) => {
+      toast.success(`Moved to ${STAGE_LABEL[stage]}`);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["batch", batchId] }),
+        queryClient.invalidateQueries({ queryKey: ["bag", bagId] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
+
+  if (!next) return null;
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-7 w-full text-xs"
+      onClick={() => mutation.mutate(next)}
+      disabled={mutation.isPending}
+    >
+      {mutation.isPending ? "Moving…" : `Move to ${STAGE_LABEL[next]}`}
+    </Button>
   );
 }
 
@@ -473,6 +522,15 @@ function BatchDetailPage() {
                   inoculationDate={start}
                   pinningDate={bag.pinning_date}
                 />
+              ) : null}
+              {canEdit ? (
+                <div className="border-t border-border px-3 py-2">
+                  <BagQuickMove
+                    bagId={bag.id}
+                    batchId={batch.id}
+                    currentStage={bag.current_stage as BagStage}
+                  />
+                </div>
               ) : null}
               {canEdit ? (
                 <div className="absolute right-1.5 top-1.5">
