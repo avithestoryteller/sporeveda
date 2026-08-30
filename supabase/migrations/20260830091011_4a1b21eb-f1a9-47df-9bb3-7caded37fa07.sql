@@ -1,0 +1,1 @@
+ALTER TABLE public.bags ADD COLUMN prep_date date;
