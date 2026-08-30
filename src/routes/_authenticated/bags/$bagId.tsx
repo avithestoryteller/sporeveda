@@ -181,6 +181,7 @@ function BagDetailPage() {
         .update({
           current_stage: stage,
           is_discarded: stage === "discarded",
+          prep_date: stage === "prep" ? todayISO() : undefined,
           updated_at: new Date().toISOString(),
         })
         .eq("id", bagId);
