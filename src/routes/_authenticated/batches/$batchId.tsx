@@ -547,6 +547,7 @@ function BatchDetailPage() {
                       net_weight_kg: bag.net_weight_kg,
                       dry_weight_kg: bag.dry_weight_kg,
                       spawn_weight_kg: bag.spawn_weight_kg,
+                      prep_date: bag.prep_date,
                       notes: bag.notes,
                     }}
                   />
