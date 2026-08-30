@@ -335,6 +335,9 @@ function BagDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm font-medium">
+              Prep · {bag.prep_date ? fmtDate(bag.prep_date) : "—"}
+            </span>
             {bag.pinning_date ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
                 <Sprout className="size-4" /> Pinning · {fmtDate(bag.pinning_date)}
