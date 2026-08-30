@@ -102,6 +102,7 @@ export function BagFormDialog({
         net_weight_kg: numeric(form.netWeight),
         dry_weight_kg: numeric(form.dryWeight),
         spawn_weight_kg: numeric(form.spawnWeight),
+        prep_date: form.prepDate || null,
         notes: form.notes.trim() || null,
       };
 
