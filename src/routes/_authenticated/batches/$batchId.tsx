@@ -435,6 +435,10 @@ function BatchDetailPage() {
                 </div>
 
                 <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                  <div className="col-span-2">
+                    <dt className="text-muted-foreground">Prep date</dt>
+                    <dd className="font-medium">{bag.prep_date ? fmtDate(bag.prep_date) : "—"}</dd>
+                  </div>
                   <div>
                     <dt className="text-muted-foreground">Dry weight</dt>
                     <dd className="font-medium">{num(bag.dry_weight_kg, 2)} kg</dd>
