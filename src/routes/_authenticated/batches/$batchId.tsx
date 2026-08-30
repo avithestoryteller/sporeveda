@@ -524,6 +524,15 @@ function BatchDetailPage() {
                 />
               ) : null}
               {canEdit ? (
+                <div className="border-t border-border px-3 py-2">
+                  <BagQuickMove
+                    bagId={bag.id}
+                    batchId={batch.id}
+                    currentStage={bag.current_stage as BagStage}
+                  />
+                </div>
+              ) : null}
+              {canEdit ? (
                 <div className="absolute right-1.5 top-1.5">
                   <BagFormDialog
                     orgId={orgId}
