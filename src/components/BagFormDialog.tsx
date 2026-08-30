@@ -24,6 +24,7 @@ import {
   SUBSTRATE_PER_BAG_STORAGE_KEY,
 } from "@/lib/materials";
 import { MAX_BAG_NUMBER, bagCode } from "@/lib/batch-code";
+import { todayISO } from "@/lib/format";
 
 export type BagFormValues = {
   id: string;
@@ -31,6 +32,7 @@ export type BagFormValues = {
   net_weight_kg: number | string | null;
   dry_weight_kg: number | string | null;
   spawn_weight_kg: number | string | null;
+  prep_date: string | null;
   notes: string | null;
 };
 
