@@ -75,6 +75,7 @@ export type Database = {
           notes: string | null
           org_id: string
           pinning_date: string | null
+          prep_date: string | null
           spawn_weight_kg: number | null
           species_id: string
           updated_at: string
@@ -94,6 +95,7 @@ export type Database = {
           notes?: string | null
           org_id: string
           pinning_date?: string | null
+          prep_date?: string | null
           spawn_weight_kg?: number | null
           species_id: string
           updated_at?: string
@@ -113,6 +115,7 @@ export type Database = {
           notes?: string | null
           org_id?: string
           pinning_date?: string | null
+          prep_date?: string | null
           spawn_weight_kg?: number | null
           species_id?: string
           updated_at?: string

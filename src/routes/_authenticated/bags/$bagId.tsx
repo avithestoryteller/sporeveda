@@ -176,14 +176,18 @@ function BagDetailPage() {
 
   const stageMutation = useMutation({
     mutationFn: async (stage: BagStage) => {
-      const { error: updateError } = await supabase
-        .from("bags")
-        .update({
-          current_stage: stage,
-          is_discarded: stage === "discarded",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", bagId);
+      const update: {
+        current_stage: BagStage;
+        is_discarded: boolean;
+        updated_at: string;
+        prep_date?: string | null;
+      } = {
+        current_stage: stage,
+        is_discarded: stage === "discarded",
+        updated_at: new Date().toISOString(),
+      };
+      if (stage === "prep") update.prep_date = todayISO();
+      const { error: updateError } = await supabase.from("bags").update(update).eq("id", bagId);
       if (updateError) throw updateError;
     },
     onSuccess: async (_result, stage) => {
@@ -331,6 +335,9 @@ function BagDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm font-medium">
+              Prep · {bag.prep_date ? fmtDate(bag.prep_date) : "—"}
+            </span>
             {bag.pinning_date ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
                 <Sprout className="size-4" /> Pinning · {fmtDate(bag.pinning_date)}

@@ -24,6 +24,7 @@ import {
   SUBSTRATE_PER_BAG_STORAGE_KEY,
 } from "@/lib/materials";
 import { MAX_BAG_NUMBER, bagCode } from "@/lib/batch-code";
+import { todayISO } from "@/lib/format";
 
 export type BagFormValues = {
   id: string;
@@ -31,6 +32,7 @@ export type BagFormValues = {
   net_weight_kg: number | string | null;
   dry_weight_kg: number | string | null;
   spawn_weight_kg: number | string | null;
+  prep_date: string | null;
   notes: string | null;
 };
 
@@ -76,6 +78,7 @@ export function BagFormDialog({
     spawnWeight: bag
       ? str(bag.spawn_weight_kg)
       : String(storedRate(SPAWN_PER_BAG_STORAGE_KEY, DEFAULT_SPAWN_PER_BAG_KG)),
+    prepDate: bag ? str(bag.prep_date) : todayISO(),
     notes: bag?.notes ?? "",
   });
 
@@ -99,6 +102,7 @@ export function BagFormDialog({
         net_weight_kg: numeric(form.netWeight),
         dry_weight_kg: numeric(form.dryWeight),
         spawn_weight_kg: numeric(form.spawnWeight),
+        prep_date: form.prepDate || null,
         notes: form.notes.trim() || null,
       };
 
@@ -219,6 +223,17 @@ export function BagFormDialog({
                 }
               />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="bag-prep-date">Prep date</Label>
+            <Input
+              id="bag-prep-date"
+              type="date"
+              value={form.prepDate}
+              onChange={(event) => setForm((prev) => ({ ...prev, prepDate: event.target.value }))}
+              required
+            />
+            <p className="text-xs text-muted-foreground">Date the bag was prepared / started.</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="bag-notes">Notes</Label>

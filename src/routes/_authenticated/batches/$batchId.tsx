@@ -58,7 +58,7 @@ function useBatchDetail(batchId: string) {
       const bags = await supabase
         .from("bags")
         .select(
-          "id, bag_code, bag_number, current_stage, net_weight_kg, dry_weight_kg, spawn_weight_kg, notes, is_discarded, inoculation_date, pinning_date",
+          "id, bag_code, bag_number, current_stage, net_weight_kg, dry_weight_kg, spawn_weight_kg, notes, is_discarded, inoculation_date, pinning_date, prep_date",
         )
         .eq("batch_id", batchId)
         .order("bag_number");
@@ -205,14 +205,18 @@ function BagQuickMove({
 
   const mutation = useMutation({
     mutationFn: async (stage: BagStage) => {
-      const { error: updateError } = await supabase
-        .from("bags")
-        .update({
-          current_stage: stage,
-          is_discarded: stage === "discarded",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", bagId);
+      const update: {
+        current_stage: BagStage;
+        is_discarded: boolean;
+        updated_at: string;
+        prep_date?: string | null;
+      } = {
+        current_stage: stage,
+        is_discarded: stage === "discarded",
+        updated_at: new Date().toISOString(),
+      };
+      if (stage === "prep") update.prep_date = todayISO();
+      const { error: updateError } = await supabase.from("bags").update(update).eq("id", bagId);
       if (updateError) throw updateError;
     },
     onSuccess: async (_result, stage) => {
@@ -435,6 +439,10 @@ function BatchDetailPage() {
                 </div>
 
                 <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                  <div className="col-span-2">
+                    <dt className="text-muted-foreground">Prep date</dt>
+                    <dd className="font-medium">{bag.prep_date ? fmtDate(bag.prep_date) : "—"}</dd>
+                  </div>
                   <div>
                     <dt className="text-muted-foreground">Dry weight</dt>
                     <dd className="font-medium">{num(bag.dry_weight_kg, 2)} kg</dd>
@@ -547,6 +555,7 @@ function BatchDetailPage() {
                       net_weight_kg: bag.net_weight_kg,
                       dry_weight_kg: bag.dry_weight_kg,
                       spawn_weight_kg: bag.spawn_weight_kg,
+                      prep_date: bag.prep_date,
                       notes: bag.notes,
                     }}
                   />
