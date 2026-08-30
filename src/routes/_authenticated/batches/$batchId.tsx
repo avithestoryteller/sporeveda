@@ -205,14 +205,18 @@ function BagQuickMove({
 
   const mutation = useMutation({
     mutationFn: async (stage: BagStage) => {
-      const { error: updateError } = await supabase
-        .from("bags")
-        .update({
-          current_stage: stage,
-          is_discarded: stage === "discarded",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", bagId);
+      const update: {
+        current_stage: BagStage;
+        is_discarded: boolean;
+        updated_at: string;
+        prep_date?: string | null;
+      } = {
+        current_stage: stage,
+        is_discarded: stage === "discarded",
+        updated_at: new Date().toISOString(),
+      };
+      if (stage === "prep") update.prep_date = todayISO();
+      const { error: updateError } = await supabase.from("bags").update(update).eq("id", bagId);
       if (updateError) throw updateError;
     },
     onSuccess: async (_result, stage) => {
