@@ -225,6 +225,17 @@ export function BagFormDialog({
             </div>
           </div>
           <div className="space-y-1.5">
+            <Label htmlFor="bag-prep-date">Prep date</Label>
+            <Input
+              id="bag-prep-date"
+              type="date"
+              value={form.prepDate}
+              onChange={(event) => setForm((prev) => ({ ...prev, prepDate: event.target.value }))}
+              required
+            />
+            <p className="text-xs text-muted-foreground">Date the bag was prepared / started.</p>
+          </div>
+          <div className="space-y-1.5">
             <Label htmlFor="bag-notes">Notes</Label>
             <Textarea
               id="bag-notes"
