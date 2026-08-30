@@ -387,6 +387,18 @@ function BatchDetailPage() {
 
                 <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
                   <div>
+                    <dt className="text-muted-foreground">Dry weight</dt>
+                    <dd className="font-medium">{num(bag.dry_weight_kg, 2)} kg</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Net weight</dt>
+                    <dd className="font-medium">{num(bag.net_weight_kg, 2)} kg</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Spawn weight</dt>
+                    <dd className="font-medium">{num(bag.spawn_weight_kg, 3)} kg</dd>
+                  </div>
+                  <div>
                     <dt className="text-muted-foreground">Substrate</dt>
                     <dd className="truncate font-medium">
                       {batch.substrate_type ?? "—"}
@@ -397,10 +409,6 @@ function BatchDetailPage() {
                         </span>
                       ) : null}
                     </dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">Spawn vendor</dt>
-                    <dd className="truncate font-medium">{batch.spawn_vendor ?? "—"}</dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Days to colonise</dt>
