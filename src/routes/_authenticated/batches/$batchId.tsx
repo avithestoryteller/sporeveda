@@ -191,6 +191,55 @@ function PinningTileControl({
   );
 }
 
+function BagQuickMove({
+  bagId,
+  batchId,
+  currentStage,
+}: {
+  bagId: string;
+  batchId: string;
+  currentStage: BagStage;
+}) {
+  const queryClient = useQueryClient();
+  const next = nextStage(currentStage);
+
+  const mutation = useMutation({
+    mutationFn: async (stage: BagStage) => {
+      const { error: updateError } = await supabase
+        .from("bags")
+        .update({
+          current_stage: stage,
+          is_discarded: stage === "discarded",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", bagId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: async (_result, stage) => {
+      toast.success(`Moved to ${STAGE_LABEL[stage]}`);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["batch", batchId] }),
+        queryClient.invalidateQueries({ queryKey: ["bag", bagId] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
+
+  if (!next) return null;
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-7 w-full text-xs"
+      onClick={() => mutation.mutate(next)}
+      disabled={mutation.isPending}
+    >
+      {mutation.isPending ? "Moving…" : `Move to ${STAGE_LABEL[next]}`}
+    </Button>
+  );
+}
+
 function BatchDetailPage() {
   const { batchId } = Route.useParams();
   const orgId = useOrgId();
