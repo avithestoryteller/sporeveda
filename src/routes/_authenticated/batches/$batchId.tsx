@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { STAGE_ORDER, type BagStage } from "@/lib/stages";
+import { nextStage, STAGE_LABEL, STAGE_ORDER, type BagStage } from "@/lib/stages";
 import { fmtDate, num, todayISO, toNumber } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/batches/$batchId")({
