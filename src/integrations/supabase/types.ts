@@ -78,6 +78,7 @@ export type Database = {
           prep_date: string | null
           spawn_weight_kg: number | null
           species_id: string
+          supplement_weight_kg: number | null
           updated_at: string
         }
         Insert: {
@@ -98,6 +99,7 @@ export type Database = {
           prep_date?: string | null
           spawn_weight_kg?: number | null
           species_id: string
+          supplement_weight_kg?: number | null
           updated_at?: string
         }
         Update: {
@@ -118,6 +120,7 @@ export type Database = {
           prep_date?: string | null
           spawn_weight_kg?: number | null
           species_id?: string
+          supplement_weight_kg?: number | null
           updated_at?: string
         }
         Relationships: [
