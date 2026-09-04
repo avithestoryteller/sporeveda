@@ -97,6 +97,18 @@ export function BagRowsEditor({
                 </td>
                 <td className="px-2 py-1.5">
                   <Input
+                    aria-label={`Supplement weight for bag ${startNumber + index}`}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="h-8"
+                    value={row.supplementWeight}
+                    onChange={(event) => update(row.key, { supplementWeight: event.target.value })}
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <Input
+
                     aria-label={`Start date for bag ${startNumber + index}`}
                     type="date"
                     className="h-8"
