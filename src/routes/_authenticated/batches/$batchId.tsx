@@ -456,6 +456,13 @@ function BatchDetailPage() {
                     <dd className="font-medium">{num(bag.spawn_weight_kg, 3)} kg</dd>
                   </div>
                   <div>
+                    <dt className="text-muted-foreground">Supplement</dt>
+                    <dd className="font-medium">
+                      {bag.supplement_weight_kg ? `${num(bag.supplement_weight_kg, 3)} kg` : "N/A"}
+                    </dd>
+                  </div>
+
+                  <div>
                     <dt className="text-muted-foreground">Substrate</dt>
                     <dd className="truncate font-medium">
                       {batch.substrate_type ?? "—"}
