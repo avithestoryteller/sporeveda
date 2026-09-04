@@ -50,7 +50,9 @@ export function BagRowsEditor({
               <th className="px-2 py-2 text-left font-medium">Dry (kg)</th>
               <th className="px-2 py-2 text-left font-medium">Net (kg)</th>
               <th className="px-2 py-2 text-left font-medium">Spawn (kg)</th>
+              <th className="px-2 py-2 text-left font-medium">Supplement (kg)</th>
               <th className="px-2 py-2 text-left font-medium">Start date</th>
+
               <th className="w-10 px-2 py-2" />
             </tr>
           </thead>
