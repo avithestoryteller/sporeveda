@@ -30,11 +30,54 @@ export const SUBSTRATE_PER_BAG_STORAGE_KEY = "sporeveda.substratePerBagKg.v3";
 export const DEFAULT_PP_BAG_WEIGHT_G = 7;
 export const PP_BAG_WEIGHT_STORAGE_KEY = "sporeveda.ppBagWeightG.v1";
 
+/** Default supplement (e.g. wheat bran) used per bag, in kg. */
+export const DEFAULT_SUPPLEMENT_PER_BAG_KG = 0.35;
+export const SUPPLEMENT_PER_BAG_STORAGE_KEY = "sporeveda.supplementPerBagKg.v1";
+
 /** True when an inventory item represents empty PP / poly grow bags. */
 export function isPackagingBagItem(name: string | null | undefined) {
   const value = (name ?? "").toLowerCase();
   return /(\bpp\b|poly\s*|grow\s*)?bags?\b/.test(value) && /\bpp\b|poly|grow/.test(value);
 }
+
+/** True when an inventory item is a supplement (bran / supplement additives). */
+export function isSupplementItem(name: string | null | undefined) {
+  const value = (name ?? "").toLowerCase();
+  return /\bbran\b|supplement/.test(value);
+}
+
+/**
+ * Consumption of supplement stock (e.g. wheat bran) derived from the supplement
+ * weight logged on each bag. Usage fills each supplement item up to the quantity
+ * purchased before spilling over to the next; any shortfall lands on the last item
+ * so a deficit stays visible.
+ */
+export function deriveSupplementUsage(params: {
+  items: { id: string; name: string | null; purchased: number }[];
+  totalSupplementKg: number;
+}): Record<string, UsageDetail> {
+  const usage: Record<string, UsageDetail> = {};
+  let remaining = params.totalSupplementKg;
+  if (!(remaining > 0)) return usage;
+  const pool = params.items.filter((item) => isSupplementItem(item.name));
+  if (pool.length === 0) return usage;
+
+  for (const item of pool) {
+    if (remaining <= 0) break;
+    const capacity = item.purchased > 0 ? item.purchased : Infinity;
+    const qty = Math.min(remaining, capacity);
+    usage[item.id] = { qty, bags: 0 };
+    remaining -= qty;
+  }
+  if (remaining > 0) {
+    const last = pool[pool.length - 1]!;
+    const entry = usage[last.id] ?? { qty: 0, bags: 0 };
+    entry.qty += remaining;
+    usage[last.id] = entry;
+  }
+  return usage;
+}
+
 
 /**
  * Consumption of empty PP bag stock derived from production: every bag ever
@@ -307,7 +350,10 @@ export function resolveItemForBatch(
   category: MaterialCategory,
   items: InventoryItemRow[],
 ): string | null {
-  const pool = items.filter((item) => norm(item.category) === category);
+  const pool = items.filter(
+    (item) => norm(item.category) === category && !isSupplementItem(item.name),
+  );
+
   if (pool.length === 0) return null;
 
   const material =

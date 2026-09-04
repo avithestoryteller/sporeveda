@@ -8,6 +8,7 @@ export type BagRow = {
   dryWeight: string;
   netWeight: string;
   spawnWeight: string;
+  supplementWeight: string;
   inoculationDate: string;
 };
 
@@ -17,10 +18,12 @@ export function makeBagRow(defaults: Partial<BagRow> = {}): BagRow {
     dryWeight: "",
     netWeight: "",
     spawnWeight: "",
+    supplementWeight: "",
     inoculationDate: "",
     ...defaults,
   };
 }
+
 
 /** Tabular editor for the bags logged alongside a new batch. */
 export function BagRowsEditor({
@@ -47,7 +50,9 @@ export function BagRowsEditor({
               <th className="px-2 py-2 text-left font-medium">Dry (kg)</th>
               <th className="px-2 py-2 text-left font-medium">Net (kg)</th>
               <th className="px-2 py-2 text-left font-medium">Spawn (kg)</th>
+              <th className="px-2 py-2 text-left font-medium">Supplement (kg)</th>
               <th className="px-2 py-2 text-left font-medium">Start date</th>
+
               <th className="w-10 px-2 py-2" />
             </tr>
           </thead>
@@ -92,6 +97,18 @@ export function BagRowsEditor({
                 </td>
                 <td className="px-2 py-1.5">
                   <Input
+                    aria-label={`Supplement weight for bag ${startNumber + index}`}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="h-8"
+                    value={row.supplementWeight}
+                    onChange={(event) => update(row.key, { supplementWeight: event.target.value })}
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <Input
+
                     aria-label={`Start date for bag ${startNumber + index}`}
                     type="date"
                     className="h-8"
@@ -115,7 +132,7 @@ export function BagRowsEditor({
             ))}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-4 text-xs text-muted-foreground">
+                <td colSpan={7} className="px-3 py-4 text-xs text-muted-foreground">
                   No bags logged yet — add rows to create bags with this batch.
                 </td>
               </tr>
@@ -136,6 +153,7 @@ export function BagRowsEditor({
                     dryWeight: last.dryWeight,
                     netWeight: last.netWeight,
                     spawnWeight: last.spawnWeight,
+                    supplementWeight: last.supplementWeight,
                     inoculationDate: last.inoculationDate,
                   }
                 : {},

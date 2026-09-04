@@ -309,6 +309,8 @@ export function BatchFormDialog({ orgId, batch }: { orgId: string; batch?: Batch
           net_weight_kg: numeric(row.netWeight),
           dry_weight_kg: numeric(row.dryWeight),
           spawn_weight_kg: numeric(row.spawnWeight),
+          supplement_weight_kg: numeric(row.supplementWeight),
+
           inoculation_date: row.inoculationDate || form.startDate || null,
         }));
         const inserted = await supabase.from("bags").insert(bags);

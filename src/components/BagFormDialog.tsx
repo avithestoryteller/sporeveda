@@ -32,9 +32,11 @@ export type BagFormValues = {
   net_weight_kg: number | string | null;
   dry_weight_kg: number | string | null;
   spawn_weight_kg: number | string | null;
+  supplement_weight_kg?: number | string | null;
   prep_date: string | null;
   notes: string | null;
 };
+
 
 function storedRate(key: string, fallback: number) {
   if (typeof window === "undefined") return fallback;
@@ -78,9 +80,11 @@ export function BagFormDialog({
     spawnWeight: bag
       ? str(bag.spawn_weight_kg)
       : String(storedRate(SPAWN_PER_BAG_STORAGE_KEY, DEFAULT_SPAWN_PER_BAG_KG)),
+    supplementWeight: bag ? str(bag.supplement_weight_kg) : "",
     prepDate: bag ? str(bag.prep_date) : todayISO(),
     notes: bag?.notes ?? "",
   });
+
 
   const [form, setForm] = useState(initial);
 
@@ -102,6 +106,8 @@ export function BagFormDialog({
         net_weight_kg: numeric(form.netWeight),
         dry_weight_kg: numeric(form.dryWeight),
         spawn_weight_kg: numeric(form.spawnWeight),
+        supplement_weight_kg: numeric(form.supplementWeight),
+
         prep_date: form.prepDate || null,
         notes: form.notes.trim() || null,
       };
@@ -223,7 +229,25 @@ export function BagFormDialog({
                 }
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="bag-supplement">Supplement weight (kg)</Label>
+              <Input
+                id="bag-supplement"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="e.g. 0.35"
+                value={form.supplementWeight}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, supplementWeight: event.target.value }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Wheat bran or other supplement added to this bag. Leave blank if none.
+              </p>
+            </div>
           </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="bag-prep-date">Prep date</Label>
             <Input
