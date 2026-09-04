@@ -43,6 +43,7 @@ import {
   SPAWN_PER_BAG_STORAGE_KEY,
   SUBSTRATE_PER_BAG_STORAGE_KEY,
   derivePackagingUsage,
+  deriveSupplementUsage,
   deriveUsageDetailByItem,
   ensureInventoryItem,
 } from "@/lib/materials";
@@ -255,7 +256,7 @@ function InventoryPage() {
           .not("batch_id", "is", null),
         supabase
           .from("bags")
-          .select("batch_id, spawn_weight_kg, dry_weight_kg, current_stage, inoculation_date")
+          .select("batch_id, spawn_weight_kg, dry_weight_kg, supplement_weight_kg, current_stage, inoculation_date")
           .eq("org_id", orgId),
         supabase
           .from("batches")
@@ -287,6 +288,10 @@ function InventoryPage() {
       }
 
       const totalBags = (bags.data ?? []).length;
+      const totalSupplementKg = (bags.data ?? []).reduce((sum, bag) => {
+        const value = Number((bag as { supplement_weight_kg?: number | null }).supplement_weight_kg);
+        return sum + (Number.isFinite(value) && value > 0 ? value : 0);
+      }, 0);
 
       return {
         links: links.data ?? [],
@@ -294,6 +299,7 @@ function InventoryPage() {
         weightsPerBatch,
         batches: batchRows.data ?? [],
         totalBags,
+        totalSupplementKg,
       };
 
 
@@ -532,7 +538,16 @@ function InventoryPage() {
       totalBags: consumption.totalBags ?? 0,
       gramsPerBag: ppBagWeightG,
     });
-    return { ...usage, ...packaging };
+    // Supplement (wheat bran) consumed per bag, from each bag's logged supplement weight.
+    const supplement = deriveSupplementUsage({
+      items: (stock ?? []).map((row) => ({
+        id: row.inventory_item_id as string,
+        name: row.name as string | null,
+        purchased: toNumber(row.total_purchased_qty) ?? 0,
+      })),
+      totalSupplementKg: consumption.totalSupplementKg ?? 0,
+    });
+    return { ...usage, ...packaging, ...supplement };
   }, [consumption, stock, itemRows, spawnPerBagKg, substratePerBagKg, ppBagWeightG]);
 
 
