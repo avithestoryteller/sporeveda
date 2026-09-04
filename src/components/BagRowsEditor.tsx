@@ -8,6 +8,7 @@ export type BagRow = {
   dryWeight: string;
   netWeight: string;
   spawnWeight: string;
+  supplementWeight: string;
   inoculationDate: string;
 };
 
@@ -17,10 +18,12 @@ export function makeBagRow(defaults: Partial<BagRow> = {}): BagRow {
     dryWeight: "",
     netWeight: "",
     spawnWeight: "",
+    supplementWeight: "",
     inoculationDate: "",
     ...defaults,
   };
 }
+
 
 /** Tabular editor for the bags logged alongside a new batch. */
 export function BagRowsEditor({
