@@ -229,7 +229,25 @@ export function BagFormDialog({
                 }
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="bag-supplement">Supplement weight (kg)</Label>
+              <Input
+                id="bag-supplement"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="e.g. 0.35"
+                value={form.supplementWeight}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, supplementWeight: event.target.value }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Wheat bran or other supplement added to this bag. Leave blank if none.
+              </p>
+            </div>
           </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="bag-prep-date">Prep date</Label>
             <Input
