@@ -350,7 +350,10 @@ export function resolveItemForBatch(
   category: MaterialCategory,
   items: InventoryItemRow[],
 ): string | null {
-  const pool = items.filter((item) => norm(item.category) === category);
+  const pool = items.filter(
+    (item) => norm(item.category) === category && !isSupplementItem(item.name),
+  );
+
   if (pool.length === 0) return null;
 
   const material =
