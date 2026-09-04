@@ -32,9 +32,11 @@ export type BagFormValues = {
   net_weight_kg: number | string | null;
   dry_weight_kg: number | string | null;
   spawn_weight_kg: number | string | null;
+  supplement_weight_kg?: number | string | null;
   prep_date: string | null;
   notes: string | null;
 };
+
 
 function storedRate(key: string, fallback: number) {
   if (typeof window === "undefined") return fallback;
