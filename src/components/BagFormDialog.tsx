@@ -80,9 +80,11 @@ export function BagFormDialog({
     spawnWeight: bag
       ? str(bag.spawn_weight_kg)
       : String(storedRate(SPAWN_PER_BAG_STORAGE_KEY, DEFAULT_SPAWN_PER_BAG_KG)),
+    supplementWeight: bag ? str(bag.supplement_weight_kg) : "",
     prepDate: bag ? str(bag.prep_date) : todayISO(),
     notes: bag?.notes ?? "",
   });
+
 
   const [form, setForm] = useState(initial);
 
