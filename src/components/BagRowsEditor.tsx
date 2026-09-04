@@ -132,7 +132,7 @@ export function BagRowsEditor({
             ))}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-4 text-xs text-muted-foreground">
+                <td colSpan={7} className="px-3 py-4 text-xs text-muted-foreground">
                   No bags logged yet — add rows to create bags with this batch.
                 </td>
               </tr>
@@ -153,6 +153,7 @@ export function BagRowsEditor({
                     dryWeight: last.dryWeight,
                     netWeight: last.netWeight,
                     spawnWeight: last.spawnWeight,
+                    supplementWeight: last.supplementWeight,
                     inoculationDate: last.inoculationDate,
                   }
                 : {},
