@@ -192,6 +192,8 @@ function BatchesPage() {
                       <p className="truncate text-xs text-muted-foreground">
                         {batch.species?.common_name ?? "Species"} · {batch.farms?.name ?? "Room"} ·{" "}
                         {batch.substrate_type ?? "substrate n/a"}
+                        {batch.spawn_vendor ? ` · spawn ${batch.spawn_vendor}` : null}
+                        {batch.substrate_vendor ? ` · substrate ${batch.substrate_vendor}` : null}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">

@@ -318,8 +318,11 @@ function BatchDetailPage() {
               </Link>
             ) : (
               "Room"
-            )}{" "}
-            · inoculated {fmtDate(batch.inoculation_date)}
+            )}
+            {batch.spawn_vendor ? ` · spawn ${batch.spawn_vendor}` : null}
+            {batch.substrate_vendor ? ` · substrate ${batch.substrate_vendor}` : null}
+            {" · inoculated "}
+            {fmtDate(batch.inoculation_date)}
           </>
         }
         action={
