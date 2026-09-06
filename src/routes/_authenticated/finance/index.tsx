@@ -86,7 +86,7 @@ function FinanceDashboard() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["financials", orgId, range.from, range.to],
     enabled: Boolean(orgId),
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const [monthly, cumulative, breakdown, batches] = await Promise.all([
         supabase

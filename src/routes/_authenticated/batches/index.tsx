@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/batches/")({
 function useBatches() {
   return useQuery({
     queryKey: ["batches"],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const [batches, bags] = await Promise.all([
         supabase
