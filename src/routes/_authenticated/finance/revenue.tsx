@@ -47,6 +47,7 @@ type FormState = {
   saleDate: string;
   buyer: string;
   speciesId: string;
+  produceItemId: string;
   quantity: string;
   price: string;
   amount: string;
@@ -61,6 +62,7 @@ const EMPTY: FormState = {
   saleDate: todayISO(),
   buyer: "",
   speciesId: NONE,
+  produceItemId: NONE,
   quantity: "",
   price: "",
   amount: "",
@@ -86,7 +88,7 @@ function RevenuePage() {
     queryKey: ["finance-refs-revenue", orgId],
     enabled: Boolean(orgId),
     queryFn: async () => {
-      const [farms, batches, species] = await Promise.all([
+      const [farms, batches, species, produce] = await Promise.all([
         supabase.from("farms").select("id, name").eq("org_id", orgId).order("name"),
         supabase
           .from("batches")
@@ -94,11 +96,23 @@ function RevenuePage() {
           .eq("org_id", orgId)
           .order("inoculation_date", { ascending: false }),
         supabase.from("species").select("id, common_name").order("common_name"),
+        supabase
+          .from("inventory_items")
+          .select("id, name, subcategory, species_id")
+          .eq("org_id", orgId)
+          .eq("category", "produce")
+          .order("name"),
       ]);
       if (farms.error) throw farms.error;
       if (batches.error) throw batches.error;
       if (species.error) throw species.error;
-      return { farms: farms.data ?? [], batches: batches.data ?? [], species: species.data ?? [] };
+      if (produce.error) throw produce.error;
+      return {
+        farms: farms.data ?? [],
+        batches: batches.data ?? [],
+        species: species.data ?? [],
+        produce: produce.data ?? [],
+      };
     },
   });
 
@@ -143,6 +157,7 @@ function RevenuePage() {
         sale_date: form.saleDate,
         buyer: form.buyer.trim() || null,
         species_id: form.speciesId === NONE ? null : form.speciesId,
+        inventory_item_id: form.produceItemId === NONE ? null : form.produceItemId,
         quantity_kg: form.quantity ? Number(form.quantity) : null,
         price_per_kg: form.price ? Number(form.price) : null,
         amount,
@@ -208,6 +223,33 @@ function RevenuePage() {
                   onChange={(event) => set("buyer", event.target.value)}
                   placeholder="Local market / restaurant"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Produce sold</Label>
+                <Select
+                  value={form.produceItemId}
+                  onValueChange={(value) => {
+                    set("produceItemId", value);
+                    const item = (refs?.produce ?? []).find((row) => row.id === value);
+                    if (item?.species_id) set("speciesId", item.species_id);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>Not linked to produce stock</SelectItem>
+                    {(refs?.produce ?? []).map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Linking a sale deducts the quantity from produce stock.
+                </p>
               </div>
 
               <div className="space-y-1.5">

@@ -12,6 +12,7 @@ const TABS = [
   { to: "/finance/costs", label: "Costs", exact: false },
   { to: "/finance/revenue", label: "Revenue", exact: false },
   { to: "/finance/inventory", label: "Inventory", exact: false },
+  { to: "/finance/produce", label: "Produce", exact: false },
 ] as const;
 
 function FinanceLayout() {
