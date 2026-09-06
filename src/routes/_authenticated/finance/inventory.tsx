@@ -123,11 +123,14 @@ type ItemForm = {
   threshold: string;
   totalQty: string;
   notes: string;
+  adjustQty: string;
+  adjustReason: string;
   wastageQty: string;
   wastageReason: string;
   orderReplacement: boolean;
   replacementStatus: string;
 };
+const DEFAULT_ADJUST_REASON = "Stock adjustment";
 const EMPTY_ITEM: ItemForm = {
   name: "",
   category: "substrate",
@@ -137,11 +140,14 @@ const EMPTY_ITEM: ItemForm = {
   threshold: "",
   totalQty: "",
   notes: "",
+  adjustQty: "",
+  adjustReason: DEFAULT_ADJUST_REASON,
   wastageQty: "",
   wastageReason: "",
   orderReplacement: false,
   replacementStatus: "ordered",
 };
+
 
 
 
@@ -364,8 +370,11 @@ function InventoryPage() {
         ) ?? 0,
       ),
       notes: row.notes ?? "",
+      adjustQty: "",
+      adjustReason: DEFAULT_ADJUST_REASON,
       wastageQty: "",
       wastageReason: "",
+
       orderReplacement: false,
       replacementStatus: "ordered",
     });
@@ -781,6 +790,12 @@ function InventoryPage() {
       if (wastageRaw && (!Number.isFinite(wastage) || wastage <= 0))
         throw new Error("Enter a valid wastage quantity");
 
+      const adjustRaw = itemForm.adjustQty.trim();
+      const adjustQty = adjustRaw ? Number(adjustRaw) : 0;
+      if (adjustRaw && !Number.isFinite(adjustQty))
+        throw new Error("Enter a valid adjustment quantity");
+      const adjustReason = itemForm.adjustReason.trim() || DEFAULT_ADJUST_REASON;
+
       if (editingItemId) {
         const current = stockRows.find((row) => row.inventory_item_id === editingItemId);
         const purchased = toNumber(current?.total_purchased_qty) ?? 0;
@@ -788,7 +803,9 @@ function InventoryPage() {
           (toNumber(current?.total_used_qty) ?? 0) + (current?.derivedUsed ?? 0) + wastage;
         const diff = total - purchased;
         const finalStatus =
-          total <= used + 0.0001 && (total > 0 || used > 0) ? "depleted" : payload.status;
+          total + adjustQty <= used + 0.0001 && (total > 0 || used > 0)
+            ? "depleted"
+            : payload.status;
         const { error } = await supabase
           .from("inventory_items")
           .update({ ...payload, status: finalStatus })
@@ -806,10 +823,28 @@ function InventoryPage() {
             incurred_date: todayISO(),
             inventory_item_id: editingItemId,
             quantity_purchased: diff,
-            notes: "Stock total adjustment",
+            notes: adjustReason,
           });
           if (adjust.error) throw adjust.error;
         }
+        if (Math.abs(adjustQty) > 0.0001) {
+          const signed = `${adjustQty > 0 ? "+" : ""}${adjustQty}`;
+          const manual = await supabase.from("costs").insert({
+            org_id: orgId,
+            category: payload.category,
+            vendor: payload.vendor,
+            status: "received",
+            description: `${name} — stock adjustment ${signed} ${payload.unit}`,
+            amount: 0,
+            cost_type: "one_time",
+            incurred_date: todayISO(),
+            inventory_item_id: editingItemId,
+            quantity_purchased: adjustQty,
+            notes: adjustReason,
+          });
+          if (manual.error) throw manual.error;
+        }
+
         if (wastage > 0) {
           const reason = itemForm.wastageReason.trim();
           const logged = await supabase.from("inventory_usage").insert({
@@ -1125,6 +1160,37 @@ function InventoryPage() {
                   rows={2}
                 />
               </div>
+              {editingItemId ? (
+                <div className="space-y-3 rounded-lg border border-border p-3 sm:col-span-2">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="item-adjust">Quantity adjustment ({itemForm.unit})</Label>
+                      <Input
+                        id="item-adjust"
+                        inputMode="text"
+                        value={itemForm.adjustQty}
+                        onChange={(event) => setItem("adjustQty", event.target.value)}
+                        placeholder="e.g. -2.5 or 5"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="item-adjust-reason">Reason for adjustment</Label>
+                      <Input
+                        id="item-adjust-reason"
+                        maxLength={120}
+                        value={itemForm.adjustReason}
+                        onChange={(event) => setItem("adjustReason", event.target.value)}
+                        placeholder={DEFAULT_ADJUST_REASON}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use a negative number to reduce stock, positive to add. The reason is saved with
+                    the adjustment (default: {DEFAULT_ADJUST_REASON}).
+                  </p>
+                </div>
+              ) : null}
+
               {editingItemId ? (
                 <div className="space-y-3 rounded-lg border border-border p-3 sm:col-span-2">
                   <div className="grid gap-3 sm:grid-cols-2">
