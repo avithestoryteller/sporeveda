@@ -7,9 +7,7 @@ import {
   Boxes,
   ClipboardList,
   BarChart3,
-  ListChecks,
-  FileUp,
-  Download,
+  Database,
   IndianRupee,
   LogOut,
 } from "lucide-react";
