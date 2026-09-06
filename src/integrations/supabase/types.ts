@@ -652,7 +652,9 @@ export type Database = {
           notes: string | null
           org_id: string
           reorder_threshold: number | null
+          species_id: string | null
           status: string
+          subcategory: string | null
           unit: string
           updated_at: string
           vendor: string | null
@@ -665,7 +667,9 @@ export type Database = {
           notes?: string | null
           org_id: string
           reorder_threshold?: number | null
+          species_id?: string | null
           status?: string
+          subcategory?: string | null
           unit: string
           updated_at?: string
           vendor?: string | null
@@ -678,7 +682,9 @@ export type Database = {
           notes?: string | null
           org_id?: string
           reorder_threshold?: number | null
+          species_id?: string | null
           status?: string
+          subcategory?: string | null
           unit?: string
           updated_at?: string
           vendor?: string | null
@@ -689,6 +695,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "species"
             referencedColumns: ["id"]
           },
         ]
@@ -922,6 +935,7 @@ export type Database = {
           created_by: string | null
           farm_id: string | null
           id: string
+          inventory_item_id: string | null
           notes: string | null
           org_id: string
           payment_method: string | null
@@ -939,6 +953,7 @@ export type Database = {
           created_by?: string | null
           farm_id?: string | null
           id?: string
+          inventory_item_id?: string | null
           notes?: string | null
           org_id: string
           payment_method?: string | null
@@ -956,6 +971,7 @@ export type Database = {
           created_by?: string | null
           farm_id?: string | null
           id?: string
+          inventory_item_id?: string | null
           notes?: string | null
           org_id?: string
           payment_method?: string | null
@@ -1014,6 +1030,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_farm_species_performance"
             referencedColumns: ["farm_id"]
+          },
+          {
+            foreignKeyName: "revenue_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "v_inventory_stock"
+            referencedColumns: ["inventory_item_id"]
           },
           {
             foreignKeyName: "revenue_org_id_fkey"
