@@ -26,6 +26,7 @@ import { Route as AuthenticatedFarmsIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance/index'
 import { Route as AuthenticatedFinanceCostsRouteImport } from './routes/_authenticated/finance/costs'
 import { Route as AuthenticatedFinanceInventoryRouteImport } from './routes/_authenticated/finance/inventory'
+import { Route as AuthenticatedFinanceProduceRouteImport } from './routes/_authenticated/finance/produce'
 import { Route as AuthenticatedFinanceRevenueRouteImport } from './routes/_authenticated/finance/revenue'
 import { Route as AuthenticatedRoomsIndexRouteImport } from './routes/_authenticated/rooms/index'
 import { Route as AuthenticatedRoomsFarmIdRouteImport } from './routes/_authenticated/rooms/$farmId'
@@ -120,6 +121,12 @@ const AuthenticatedFinanceInventoryRoute =
     path: '/inventory',
     getParentRoute: () => AuthenticatedFinanceRouteRoute,
   } as any)
+const AuthenticatedFinanceProduceRoute =
+  AuthenticatedFinanceProduceRouteImport.update({
+    id: '/produce',
+    path: '/produce',
+    getParentRoute: () => AuthenticatedFinanceRouteRoute,
+  } as any)
 const AuthenticatedFinanceRevenueRoute =
   AuthenticatedFinanceRevenueRouteImport.update({
     id: '/revenue',
@@ -152,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/finance/costs': typeof AuthenticatedFinanceCostsRoute
   '/finance/inventory': typeof AuthenticatedFinanceInventoryRoute
+  '/finance/produce': typeof AuthenticatedFinanceProduceRoute
   '/finance/revenue': typeof AuthenticatedFinanceRevenueRoute
   '/rooms/$farmId': typeof AuthenticatedRoomsFarmIdRoute
   '/batches/': typeof AuthenticatedBatchesIndexRoute
@@ -172,6 +180,7 @@ export interface FileRoutesByTo {
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/finance/costs': typeof AuthenticatedFinanceCostsRoute
   '/finance/inventory': typeof AuthenticatedFinanceInventoryRoute
+  '/finance/produce': typeof AuthenticatedFinanceProduceRoute
   '/finance/revenue': typeof AuthenticatedFinanceRevenueRoute
   '/rooms/$farmId': typeof AuthenticatedRoomsFarmIdRoute
   '/batches': typeof AuthenticatedBatchesIndexRoute
@@ -195,6 +204,7 @@ export interface FileRoutesById {
   '/_authenticated/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/_authenticated/finance/costs': typeof AuthenticatedFinanceCostsRoute
   '/_authenticated/finance/inventory': typeof AuthenticatedFinanceInventoryRoute
+  '/_authenticated/finance/produce': typeof AuthenticatedFinanceProduceRoute
   '/_authenticated/finance/revenue': typeof AuthenticatedFinanceRevenueRoute
   '/_authenticated/rooms/$farmId': typeof AuthenticatedRoomsFarmIdRoute
   '/_authenticated/batches/': typeof AuthenticatedBatchesIndexRoute
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/batches/$batchId'
     | '/finance/costs'
     | '/finance/inventory'
+    | '/finance/produce'
     | '/finance/revenue'
     | '/rooms/$farmId'
     | '/batches/'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/batches/$batchId'
     | '/finance/costs'
     | '/finance/inventory'
+    | '/finance/produce'
     | '/finance/revenue'
     | '/rooms/$farmId'
     | '/batches'
@@ -260,6 +272,7 @@ export interface FileRouteTypes {
     | '/_authenticated/batches/$batchId'
     | '/_authenticated/finance/costs'
     | '/_authenticated/finance/inventory'
+    | '/_authenticated/finance/produce'
     | '/_authenticated/finance/revenue'
     | '/_authenticated/rooms/$farmId'
     | '/_authenticated/batches/'
@@ -395,6 +408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceInventoryRouteImport
       parentRoute: typeof AuthenticatedFinanceRouteRoute
     }
+    '/_authenticated/finance/produce': {
+      id: '/_authenticated/finance/produce'
+      path: '/produce'
+      fullPath: '/finance/produce'
+      preLoaderRoute: typeof AuthenticatedFinanceProduceRouteImport
+      parentRoute: typeof AuthenticatedFinanceRouteRoute
+    }
     '/_authenticated/finance/revenue': {
       id: '/_authenticated/finance/revenue'
       path: '/revenue'
@@ -422,6 +442,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedFinanceRouteRouteChildren {
   AuthenticatedFinanceCostsRoute: typeof AuthenticatedFinanceCostsRoute
   AuthenticatedFinanceInventoryRoute: typeof AuthenticatedFinanceInventoryRoute
+  AuthenticatedFinanceProduceRoute: typeof AuthenticatedFinanceProduceRoute
   AuthenticatedFinanceRevenueRoute: typeof AuthenticatedFinanceRevenueRoute
   AuthenticatedFinanceIndexRoute: typeof AuthenticatedFinanceIndexRoute
 }
@@ -430,6 +451,7 @@ const AuthenticatedFinanceRouteRouteChildren: AuthenticatedFinanceRouteRouteChil
   {
     AuthenticatedFinanceCostsRoute: AuthenticatedFinanceCostsRoute,
     AuthenticatedFinanceInventoryRoute: AuthenticatedFinanceInventoryRoute,
+    AuthenticatedFinanceProduceRoute: AuthenticatedFinanceProduceRoute,
     AuthenticatedFinanceRevenueRoute: AuthenticatedFinanceRevenueRoute,
     AuthenticatedFinanceIndexRoute: AuthenticatedFinanceIndexRoute,
   }
