@@ -370,8 +370,11 @@ function InventoryPage() {
         ) ?? 0,
       ),
       notes: row.notes ?? "",
+      adjustQty: "",
+      adjustReason: DEFAULT_ADJUST_REASON,
       wastageQty: "",
       wastageReason: "",
+
       orderReplacement: false,
       replacementStatus: "ordered",
     });
