@@ -542,7 +542,7 @@ function BatchDetailPage() {
                 />
               ) : null}
               {canEdit ? (
-                <div className="border-t border-border px-3 py-2">
+                <div className="border-t border-border px-2 py-1.5">
                   <BagQuickMove
                     bagId={bag.id}
                     batchId={batch.id}
