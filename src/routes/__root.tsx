@@ -21,6 +21,9 @@ import {
   getQueryPersister,
 } from "@/lib/query-persist";
 
+const SUPABASE_ORIGIN = import.meta.env["VITE_SUPABASE_URL"] ?? "";
+
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
