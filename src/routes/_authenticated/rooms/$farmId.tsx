@@ -285,7 +285,7 @@ export const Route = createFileRoute("/_authenticated/rooms/$farmId")({
 function useFarmDetail(farmId: string) {
   return useQuery({
     queryKey: ["farm", farmId],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
     queryFn: async () => {
 
       const since = daysAgoISO(30);

@@ -44,8 +44,8 @@ function useDashboardData(orgId: string) {
   return useQuery({
     queryKey: ["dashboard", orgId],
     enabled: Boolean(orgId),
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 24 * 60 * 60_000,
     queryFn: async () => {
       const monthStart = startOfMonthISO();
 
