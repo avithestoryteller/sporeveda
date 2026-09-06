@@ -104,8 +104,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      // Warm the DNS/TLS handshake to the backend before the first data call.
+      { rel: "preconnect", href: SUPABASE_ORIGIN, crossOrigin: "anonymous" },
+      { rel: "dns-prefetch", href: SUPABASE_ORIGIN },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap",
