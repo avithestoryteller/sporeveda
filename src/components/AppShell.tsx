@@ -7,9 +7,7 @@ import {
   Boxes,
   ClipboardList,
   BarChart3,
-  ListChecks,
-  FileUp,
-  Download,
+  Database,
   IndianRupee,
   LogOut,
 } from "lucide-react";
@@ -31,9 +29,7 @@ const NAV = [
   { to: "/batches", label: "Batches", icon: Boxes },
   { to: "/log", label: "Log", icon: ClipboardList },
   { to: "/compare", label: "Compare", icon: BarChart3 },
-  { to: "/bulk", label: "Bulk", icon: ListChecks },
-  { to: "/import", label: "Import", icon: FileUp },
-  { to: "/export", label: "Export", icon: Download },
+  { to: "/data", label: "Data", icon: Database },
 ] as const;
 
 const FINANCE_NAV = { to: "/finance", label: "Finance", icon: IndianRupee } as const;
