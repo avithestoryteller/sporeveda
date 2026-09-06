@@ -174,7 +174,7 @@ function ProducePage() {
         subcategory: entry.form,
         species_id: entry.speciesId,
         unit: "kg",
-        status: "active",
+        status: "in_stock",
       }));
       const { error } = await supabase.from("inventory_items").insert(rows);
       if (error) throw error;
