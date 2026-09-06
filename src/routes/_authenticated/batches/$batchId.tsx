@@ -430,47 +430,47 @@ function BatchDetailPage() {
               key={bag.id}
               className="relative rounded-lg border border-border bg-card transition-colors hover:border-primary"
             >
-              <Link to="/bags/$bagId" params={{ bagId: bag.id }} className="block p-3">
-                <div className="flex items-start justify-between gap-2 pr-7">
-                  <p className="truncate text-sm font-medium">{bag.bag_code}</p>
+              <Link to="/bags/$bagId" params={{ bagId: bag.id }} className="block p-2">
+                <div className="flex items-start justify-between gap-1 pr-7">
+                  <p className="truncate text-xs font-medium">{bag.bag_code}</p>
                   {contaminatedBagIds.has(bag.id) ? (
                     <span className="size-2 shrink-0 rounded-full bg-destructive" />
                   ) : null}
                 </div>
-                <div className="mt-2">
+                <div className="mt-1.5">
                   <StageBadge stage={bag.current_stage as BagStage} size="sm" />
                 </div>
 
-                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                <dl className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1">
                   <div className="col-span-2">
-                    <dt className="text-muted-foreground">Prep date</dt>
-                    <dd className="font-medium">{bag.prep_date ? fmtDate(bag.prep_date) : "—"}</dd>
+                    <dt className="text-[11px] leading-none text-muted-foreground">Prep date</dt>
+                    <dd className="text-sm font-semibold">{bag.prep_date ? fmtDate(bag.prep_date) : "—"}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Dry weight</dt>
-                    <dd className="font-medium">{num(bag.dry_weight_kg, 2)} kg</dd>
+                    <dt className="text-[11px] leading-none text-muted-foreground">Dry weight</dt>
+                    <dd className="text-sm font-semibold">{num(bag.dry_weight_kg, 2)} kg</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Net weight</dt>
-                    <dd className="font-medium">{num(bag.net_weight_kg, 2)} kg</dd>
+                    <dt className="text-[11px] leading-none text-muted-foreground">Net weight</dt>
+                    <dd className="text-sm font-semibold">{num(bag.net_weight_kg, 2)} kg</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Spawn weight</dt>
-                    <dd className="font-medium">{num(bag.spawn_weight_kg, 3)} kg</dd>
+                    <dt className="text-[11px] leading-none text-muted-foreground">Spawn weight</dt>
+                    <dd className="text-sm font-semibold">{num(bag.spawn_weight_kg, 3)} kg</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Supplement</dt>
-                    <dd className="font-medium">
+                    <dt className="text-[11px] leading-none text-muted-foreground">Supplement</dt>
+                    <dd className="text-sm font-semibold">
                       {bag.supplement_weight_kg ? `${num(bag.supplement_weight_kg, 3)} kg` : "N/A"}
                     </dd>
                   </div>
 
                   <div>
-                    <dt className="text-muted-foreground">Substrate</dt>
-                    <dd className="truncate font-medium">
+                    <dt className="text-[11px] leading-none text-muted-foreground">Substrate</dt>
+                    <dd className="truncate text-sm font-semibold">
                       {batch.substrate_type ?? "—"}
                       {batch.substrate_vendor ? (
-                        <span className="font-normal text-muted-foreground">
+                        <span className="text-xs font-normal text-muted-foreground">
                           {" "}
                           · {batch.substrate_vendor}
                         </span>
@@ -478,32 +478,32 @@ function BatchDetailPage() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Days to colonise</dt>
-                    <dd className="font-medium">
+                    <dt className="text-[11px] leading-none text-muted-foreground">Days to colonise</dt>
+                    <dd className="text-sm font-semibold">
                       {daysToColonise === null ? "—" : `${daysToColonise} d`}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Fruiting day</dt>
-                    <dd className="font-medium">
+                    <dt className="text-[11px] leading-none text-muted-foreground">Fruiting day</dt>
+                    <dd className="text-sm font-semibold">
                       {fruitingDay === null ? "—" : `Day ${fruitingDay}`}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Pinning</dt>
-                    <dd className="font-medium">
+                    <dt className="text-[11px] leading-none text-muted-foreground">Pinning</dt>
+                    <dd className="text-sm font-semibold">
                       {bag.pinning_date ? (
                         <>
                           {fmtDate(bag.pinning_date)}
                           {pinningDay !== null ? (
-                            <span className="font-normal text-muted-foreground">
+                            <span className="text-xs font-normal text-muted-foreground">
                               {" "}
                               · Day {pinningDay}
                             </span>
                           ) : null}
                         </>
                       ) : bag.current_stage === "bulking" ? (
-                        <span className="text-muted-foreground">Not marked</span>
+                        <span className="text-xs text-muted-foreground">Not marked</span>
                       ) : (
                         "—"
                       )}
@@ -511,10 +511,10 @@ function BatchDetailPage() {
                   </div>
                 </dl>
 
-                <div className="mt-3">
-                  <p className="text-xs text-muted-foreground">
+                <div className="mt-2">
+                  <p className="text-[11px] text-muted-foreground">
                     Flushes ·{" "}
-                    <span className="font-medium text-foreground">
+                    <span className="font-semibold text-foreground">
                       {wet > 0 ? `${(wet / 1000).toFixed(2)} kg total` : "no harvest yet"}
                     </span>
                   </p>
@@ -523,7 +523,7 @@ function BatchDetailPage() {
                       {flushes.map((flush) => (
                         <li
                           key={`${bag.id}-${flush.flush}`}
-                          className="rounded-full bg-muted px-2 py-0.5 text-[11px]"
+                          className="rounded-full bg-muted px-1.5 py-0.5 text-[10px]"
                           title={`Flush ${flush.flush} on ${fmtDate(flush.date)}`}
                         >
                           F{flush.flush} · {flush.kg.toFixed(2)} kg · {fmtDate(flush.date)}
@@ -542,7 +542,7 @@ function BatchDetailPage() {
                 />
               ) : null}
               {canEdit ? (
-                <div className="border-t border-border px-3 py-2">
+                <div className="border-t border-border px-2 py-1.5">
                   <BagQuickMove
                     bagId={bag.id}
                     batchId={batch.id}
