@@ -790,6 +790,12 @@ function InventoryPage() {
       if (wastageRaw && (!Number.isFinite(wastage) || wastage <= 0))
         throw new Error("Enter a valid wastage quantity");
 
+      const adjustRaw = itemForm.adjustQty.trim();
+      const adjustQty = adjustRaw ? Number(adjustRaw) : 0;
+      if (adjustRaw && !Number.isFinite(adjustQty))
+        throw new Error("Enter a valid adjustment quantity");
+      const adjustReason = itemForm.adjustReason.trim() || DEFAULT_ADJUST_REASON;
+
       if (editingItemId) {
         const current = stockRows.find((row) => row.inventory_item_id === editingItemId);
         const purchased = toNumber(current?.total_purchased_qty) ?? 0;
@@ -797,7 +803,9 @@ function InventoryPage() {
           (toNumber(current?.total_used_qty) ?? 0) + (current?.derivedUsed ?? 0) + wastage;
         const diff = total - purchased;
         const finalStatus =
-          total <= used + 0.0001 && (total > 0 || used > 0) ? "depleted" : payload.status;
+          total + adjustQty <= used + 0.0001 && (total > 0 || used > 0)
+            ? "depleted"
+            : payload.status;
         const { error } = await supabase
           .from("inventory_items")
           .update({ ...payload, status: finalStatus })
@@ -815,10 +823,28 @@ function InventoryPage() {
             incurred_date: todayISO(),
             inventory_item_id: editingItemId,
             quantity_purchased: diff,
-            notes: "Stock total adjustment",
+            notes: adjustReason,
           });
           if (adjust.error) throw adjust.error;
         }
+        if (Math.abs(adjustQty) > 0.0001) {
+          const signed = `${adjustQty > 0 ? "+" : ""}${adjustQty}`;
+          const manual = await supabase.from("costs").insert({
+            org_id: orgId,
+            category: payload.category,
+            vendor: payload.vendor,
+            status: "received",
+            description: `${name} — stock adjustment ${signed} ${payload.unit}`,
+            amount: 0,
+            cost_type: "one_time",
+            incurred_date: todayISO(),
+            inventory_item_id: editingItemId,
+            quantity_purchased: adjustQty,
+            notes: adjustReason,
+          });
+          if (manual.error) throw manual.error;
+        }
+
         if (wastage > 0) {
           const reason = itemForm.wastageReason.trim();
           const logged = await supabase.from("inventory_usage").insert({
