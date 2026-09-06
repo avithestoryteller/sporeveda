@@ -123,11 +123,14 @@ type ItemForm = {
   threshold: string;
   totalQty: string;
   notes: string;
+  adjustQty: string;
+  adjustReason: string;
   wastageQty: string;
   wastageReason: string;
   orderReplacement: boolean;
   replacementStatus: string;
 };
+const DEFAULT_ADJUST_REASON = "Stock adjustment";
 const EMPTY_ITEM: ItemForm = {
   name: "",
   category: "substrate",
@@ -137,11 +140,14 @@ const EMPTY_ITEM: ItemForm = {
   threshold: "",
   totalQty: "",
   notes: "",
+  adjustQty: "",
+  adjustReason: DEFAULT_ADJUST_REASON,
   wastageQty: "",
   wastageReason: "",
   orderReplacement: false,
   replacementStatus: "ordered",
 };
+
 
 
 
