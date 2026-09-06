@@ -190,7 +190,7 @@ function ProducePage() {
     );
     const missing: { speciesId: string; form: "fresh" | "dried" }[] = [];
     for (const speciesId of Object.keys(harvestKgBySpecies)) {
-      if (harvestKgBySpecies[speciesId] <= 0) continue;
+      if ((harvestKgBySpecies[speciesId] ?? 0) <= 0) continue;
       for (const form of ["fresh", "dried"] as const) {
         if (!existing.has(`${speciesId}:${form}`)) missing.push({ speciesId, form });
       }
