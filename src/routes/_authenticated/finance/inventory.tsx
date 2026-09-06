@@ -1164,6 +1164,37 @@ function InventoryPage() {
                 <div className="space-y-3 rounded-lg border border-border p-3 sm:col-span-2">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
+                      <Label htmlFor="item-adjust">Quantity adjustment ({itemForm.unit})</Label>
+                      <Input
+                        id="item-adjust"
+                        inputMode="text"
+                        value={itemForm.adjustQty}
+                        onChange={(event) => setItem("adjustQty", event.target.value)}
+                        placeholder="e.g. -2.5 or 5"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="item-adjust-reason">Reason for adjustment</Label>
+                      <Input
+                        id="item-adjust-reason"
+                        maxLength={120}
+                        value={itemForm.adjustReason}
+                        onChange={(event) => setItem("adjustReason", event.target.value)}
+                        placeholder={DEFAULT_ADJUST_REASON}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use a negative number to reduce stock, positive to add. The reason is saved with
+                    the adjustment (default: {DEFAULT_ADJUST_REASON}).
+                  </p>
+                </div>
+              ) : null}
+
+              {editingItemId ? (
+                <div className="space-y-3 rounded-lg border border-border p-3 sm:col-span-2">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
                       <Label htmlFor="item-wastage">Wastage ({itemForm.unit})</Label>
                       <Input
                         id="item-wastage"
