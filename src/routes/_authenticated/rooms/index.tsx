@@ -138,7 +138,7 @@ function FarmsPage() {
                   to="/rooms/$farmId"
                   params={{ farmId: farm.id }}
                   aria-label={`Open ${farm.name}`}
-                  className="absolute inset-0 z-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="absolute inset-0 z-10 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <CardHeader className="pb-2">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
@@ -150,7 +150,7 @@ function FarmsPage() {
                         </p>
                       ) : null}
                     </div>
-                    <div className="relative z-10 flex shrink-0 items-center gap-1">
+                    <div className="relative z-20 flex shrink-0 items-center gap-1">
                       {!farm.is_active ? (
                         <span className="rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground">
                           Inactive
@@ -171,7 +171,7 @@ function FarmsPage() {
                   </div>
 
                 </CardHeader>
-                <CardContent className="relative z-0 space-y-3 text-sm">
+                <CardContent className="space-y-3 text-sm">
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <p className="text-xs text-muted-foreground">Bags</p>
