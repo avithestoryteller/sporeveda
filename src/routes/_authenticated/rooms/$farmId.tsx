@@ -621,11 +621,22 @@ function FarmDetailPage() {
               No bags assigned to this room.
             </p>
           ) : (
-            <div className="h-72 w-full">
+            <div className="w-full overflow-x-auto pb-2 [scrollbar-width:thin]">
+              <div
+                className="h-80"
+                style={{ minWidth: `${Math.max(560, stackData.length * 96)}px` }}
+              >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stackData} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="batch" tick={{ fontSize: 11 }} tickLine={false} />
+                  <XAxis
+                    dataKey="batch"
+                    interval={0}
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    height={42}
+                    tickMargin={8}
+                  />
                   <YAxis tick={{ fontSize: 11 }} tickLine={false} width={38} allowDecimals={false} />
                   <Tooltip
                     contentStyle={{
@@ -647,6 +658,7 @@ function FarmDetailPage() {
                   ))}
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             </div>
           )}
         </CardContent>

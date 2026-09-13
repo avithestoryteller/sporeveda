@@ -133,26 +133,24 @@ function FarmsPage() {
           {data.map(({ farm, totalBags, activeBags, lastLog, avgTemp, avgHumidity }) => {
             const gap = daysSince(lastLog);
             return (
-              <Card key={farm.id}>
+              <Card key={farm.id} className="relative transition-colors hover:border-primary/40">
+                <Link
+                  to="/rooms/$farmId"
+                  params={{ farmId: farm.id }}
+                  aria-label={`Open ${farm.name}`}
+                  className="absolute inset-0 z-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
                 <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0">
-                      <CardTitle className="truncate font-display text-base">
-                        <Link
-                          to="/rooms/$farmId"
-                          params={{ farmId: farm.id }}
-                          className="hover:underline"
-                        >
-                          {farm.name}
-                        </Link>
-                      </CardTitle>
+                      <CardTitle className="truncate font-display text-base">{farm.name}</CardTitle>
                       {farm.location_notes ? (
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {farm.location_notes}
                         </p>
                       ) : null}
                     </div>
-                    <div className="flex shrink-0 items-center gap-1">
+                    <div className="relative z-10 flex shrink-0 items-center gap-1">
                       {!farm.is_active ? (
                         <span className="rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground">
                           Inactive
@@ -173,7 +171,7 @@ function FarmsPage() {
                   </div>
 
                 </CardHeader>
-                <CardContent className="space-y-3 text-sm">
+                <CardContent className="relative z-0 space-y-3 text-sm">
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <p className="text-xs text-muted-foreground">Bags</p>
