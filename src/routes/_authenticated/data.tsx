@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ListChecks, FileUp, Download } from "lucide-react";
+import { ListChecks, FileUp, Download, FileSpreadsheet } from "lucide-react";
 
 import { PageHeader } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -37,6 +37,12 @@ const TOOLS = [
     label: "Export data",
     description: "Download filtered CSVs of bags, batches, harvests, costs, inventory, and more.",
     icon: Download,
+  },
+  {
+    to: "/room-report",
+    label: "Room report",
+    description: "One Excel workbook per room: climate, batches, bags, harvests, and contamination.",
+    icon: FileSpreadsheet,
   },
 ] as const;
 

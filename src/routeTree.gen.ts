@@ -20,6 +20,7 @@ import { Route as AuthenticatedExportRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedFinanceRouteRouteImport } from './routes/_authenticated/finance/route'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedLogRouteImport } from './routes/_authenticated/log'
+import { Route as AuthenticatedRoomReportRouteImport } from './routes/_authenticated/room-report'
 import { Route as AuthenticatedBagsBagIdRouteImport } from './routes/_authenticated/bags/$bagId'
 import { Route as AuthenticatedBatchesIndexRouteImport } from './routes/_authenticated/batches/index'
 import { Route as AuthenticatedBatchesBatchIdRouteImport } from './routes/_authenticated/batches/$batchId'
@@ -85,6 +86,11 @@ const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
 const AuthenticatedLogRoute = AuthenticatedLogRouteImport.update({
   id: '/log',
   path: '/log',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRoomReportRoute = AuthenticatedRoomReportRouteImport.update({
+  id: '/room-report',
+  path: '/room-report',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBagsBagIdRoute = AuthenticatedBagsBagIdRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/export': typeof AuthenticatedExportRoute
   '/import': typeof AuthenticatedImportRoute
   '/log': typeof AuthenticatedLogRoute
+  '/room-report': typeof AuthenticatedRoomReportRoute
   '/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/finance/costs': typeof AuthenticatedFinanceCostsRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/export': typeof AuthenticatedExportRoute
   '/import': typeof AuthenticatedImportRoute
   '/log': typeof AuthenticatedLogRoute
+  '/room-report': typeof AuthenticatedRoomReportRoute
   '/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/finance/costs': typeof AuthenticatedFinanceCostsRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/_authenticated/export': typeof AuthenticatedExportRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
   '/_authenticated/log': typeof AuthenticatedLogRoute
+  '/_authenticated/room-report': typeof AuthenticatedRoomReportRoute
   '/_authenticated/bags/$bagId': typeof AuthenticatedBagsBagIdRoute
   '/_authenticated/batches/$batchId': typeof AuthenticatedBatchesBatchIdRoute
   '/_authenticated/finance/costs': typeof AuthenticatedFinanceCostsRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/export'
     | '/import'
     | '/log'
+    | '/room-report'
     | '/bags/$bagId'
     | '/batches/$batchId'
     | '/finance/costs'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/export'
     | '/import'
     | '/log'
+    | '/room-report'
     | '/bags/$bagId'
     | '/batches/$batchId'
     | '/finance/costs'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/_authenticated/export'
     | '/_authenticated/import'
     | '/_authenticated/log'
+    | '/_authenticated/room-report'
     | '/_authenticated/bags/$bagId'
     | '/_authenticated/batches/$batchId'
     | '/_authenticated/finance/costs'
@@ -376,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/log'
       fullPath: '/log'
       preLoaderRoute: typeof AuthenticatedLogRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/room-report': {
+      id: '/_authenticated/room-report'
+      path: '/room-report'
+      fullPath: '/room-report'
+      preLoaderRoute: typeof AuthenticatedRoomReportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/bags/$bagId': {
@@ -489,6 +508,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExportRoute: typeof AuthenticatedExportRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
   AuthenticatedLogRoute: typeof AuthenticatedLogRoute
+  AuthenticatedRoomReportRoute: typeof AuthenticatedRoomReportRoute
   AuthenticatedBagsBagIdRoute: typeof AuthenticatedBagsBagIdRoute
   AuthenticatedBatchesBatchIdRoute: typeof AuthenticatedBatchesBatchIdRoute
   AuthenticatedRoomsFarmIdRoute: typeof AuthenticatedRoomsFarmIdRoute
@@ -506,6 +526,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExportRoute: AuthenticatedExportRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,
   AuthenticatedLogRoute: AuthenticatedLogRoute,
+  AuthenticatedRoomReportRoute: AuthenticatedRoomReportRoute,
   AuthenticatedBagsBagIdRoute: AuthenticatedBagsBagIdRoute,
   AuthenticatedBatchesBatchIdRoute: AuthenticatedBatchesBatchIdRoute,
   AuthenticatedRoomsFarmIdRoute: AuthenticatedRoomsFarmIdRoute,
