@@ -82,16 +82,16 @@ export async function downloadRoomReport({ orgId, farmId, roomName, from, to }: 
 
   const book = XLSX.utils.book_new();
   const roomRow = room.data;
+  if (!roomRow) throw new Error("Room not found");
 
   addSheet(book, "Room summary", [
     { field: "Room", value: label(roomRow.name) },
     { field: "Report period", value: `${from} to ${to}` },
-    { field: "Location", value: label(roomRow.location) },
-    { field: "Colonisation temp target (°C)", value: `${label(roomRow.target_colonisation_temp_min_c)} – ${label(roomRow.target_colonisation_temp_max_c)}` },
-    { field: "Colonisation humidity target (%)", value: `${label(roomRow.target_colonisation_humidity_min_pct)} – ${label(roomRow.target_colonisation_humidity_max_pct)}` },
-    { field: "Fruiting temp target (°C)", value: `${label(roomRow.target_fruiting_temp_min_c)} – ${label(roomRow.target_fruiting_temp_max_c)}` },
+    { field: "Location", value: label(roomRow.location_notes) },
+    { field: "Colonisation temp target (°C)", value: `${label(roomRow.target_colonization_temp_min)} – ${label(roomRow.target_colonization_temp_max)}` },
+    { field: "Colonisation humidity target (%)", value: `${label(roomRow.target_colonization_humidity_min_pct)} – ${label(roomRow.target_colonization_humidity_max_pct)}` },
+    { field: "Fruiting temp target (°C)", value: `${label(roomRow.target_fruiting_temp_min)} – ${label(roomRow.target_fruiting_temp_max)}` },
     { field: "Fruiting humidity target (%)", value: `${label(roomRow.target_fruiting_humidity_min_pct)} – ${label(roomRow.target_fruiting_humidity_max_pct)}` },
-    { field: "Notes", value: label(roomRow.notes) },
   ]);
 
   addSheet(
