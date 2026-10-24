@@ -12,8 +12,8 @@ export type RoomReportOptions = {
 
 const label = (value: unknown) => (value === null || value === undefined ? "" : value);
 
-function autoWidth(rows: Record<string, unknown>[]) {
-  if (rows.length === 0) return undefined;
+function autoWidth(rows: Record<string, unknown>[]): XLSX.ColInfo[] {
+  if (rows.length === 0) return [];
   return Object.keys(rows[0]!).map((key) => ({
     wch: Math.min(
       40,
