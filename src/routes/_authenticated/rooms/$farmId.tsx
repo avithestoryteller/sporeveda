@@ -275,7 +275,7 @@ export const Route = createFileRoute("/_authenticated/rooms/$farmId")({
   }),
   errorComponent: ({ error }) => (
     <p role="alert" className="text-sm text-destructive">
-      {error.message}
+      {error instanceof Error ? error.message : "Something went wrong"}
     </p>
   ),
   notFoundComponent: () => <p className="text-sm text-muted-foreground">Room not found.</p>,
