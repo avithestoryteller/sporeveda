@@ -192,6 +192,9 @@ function ImportPage() {
         queryClient.invalidateQueries({ queryKey: ["recent-readings"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
         queryClient.invalidateQueries({ queryKey: ["farm"] }),
+        queryClient.invalidateQueries({ queryKey: ["farms"] }),
+        queryClient.invalidateQueries({ queryKey: ["farm-sites"] }),
+        queryClient.invalidateQueries({ queryKey: ["batch-climate"] }),
         queryClient.invalidateQueries({ queryKey: ["import-existing"] }),
       ]);
     },
