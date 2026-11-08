@@ -134,6 +134,8 @@ function LogPage() {
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
         queryClient.invalidateQueries({ queryKey: ["farm"] }),
         queryClient.invalidateQueries({ queryKey: ["farms"] }),
+        queryClient.invalidateQueries({ queryKey: ["farm-sites"] }),
+        queryClient.invalidateQueries({ queryKey: ["batch-climate"] }),
       ]);
     },
     onError: (error: Error) => toast.error(error.message),
